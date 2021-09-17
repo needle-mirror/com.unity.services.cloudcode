@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Unity.GameBackend.CloudCode;
@@ -32,10 +33,14 @@ namespace Unity.Services.CloudCode
         {
             var dictArgs = new Dictionary<string, object>();
 
-            var fields = args.GetType().GetFields();
-            foreach (var field in fields)
+            FieldInfo[] fields = args?.GetType().GetFields();
+
+            if (fields != null)
             {
-                dictArgs[field.Name] = field.GetValue(args);
+                foreach (var field in fields)
+                {
+                    dictArgs[field.Name] = field.GetValue(args);
+                }
             }
 
             var runArgs = new RunScriptArguments(dictArgs);
@@ -81,8 +86,8 @@ namespace Unity.Services.CloudCode
                 throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
             }
 
-            object output = result.Result.Output;
-            return output.ToString();
+            object output = result?.Result?.Output;
+            return output?.ToString();
         }
 
         /// <summary>

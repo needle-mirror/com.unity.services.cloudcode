@@ -34,7 +34,7 @@ namespace Unity.GameBackend.CloudCode.Apis.CloudCode
                 // We return a merge between the current configuration and the
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).
-                Configuration globalConfiguration = new Configuration("https://cloud-code.cloud.unity3d.com", 10, 4, null);
+                Configuration globalConfiguration = new Configuration("https://cloud-code.services.api.unity.com", 10, 4, null);
                 if (UnityServicesCloudCodeService.Instance != null)
                 {
                     globalConfiguration = UnityServicesCloudCodeService.Instance.Configuration;

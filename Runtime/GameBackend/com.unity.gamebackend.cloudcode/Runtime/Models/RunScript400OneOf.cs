@@ -24,7 +24,7 @@ namespace Unity.GameBackend.CloudCode.Models
     {
         public object Value { get; }
         public Type Type { get; }
-        private const string DiscriminatorKey = "";
+        private const string DiscriminatorKey = "type";
 
         public RunScript400OneOf(object value, Type type)
         {
@@ -32,7 +32,7 @@ namespace Unity.GameBackend.CloudCode.Models
             this.Type = type;
         }
 
-        private static Dictionary<string, Type> TypeLookup = new Dictionary<string, Type>(){  };
+        private static Dictionary<string, Type> TypeLookup = new Dictionary<string, Type>(){ { "problems/basic", typeof(BasicErrorResponse) },{ "problems/validation", typeof(ValidationErrorResponse) },{ "BasicErrorResponse", typeof(BasicErrorResponse) }, { "ValidationErrorResponse", typeof(ValidationErrorResponse) } };
         private static List<Type> PossibleTypes = new List<Type>(){ typeof(BasicErrorResponse) , typeof(ValidationErrorResponse)  };
 
         private static Type GetConcreteType(string type)

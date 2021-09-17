@@ -14,7 +14,7 @@ To get started with the Cloud Code SDK:
 **Note**: The Cloud Code SDK requires that an authentication flow from the Authentication SDK has been completed prior to using any of the Cloud Code APIs, as a valid player ID and access token are required to access the Cloud Code services. This can be achieved with the following code snippet for anonymous authentication, or see the documentation for the Authentication SDK for more details and other sign in methods:
 
 ```cs
-Authentication.SignInAnonymously();
+await AuthenticationService.Instance.SignInAnonymouslyAsync();
 ```
 
 ## Using the SDK
@@ -38,58 +38,35 @@ public static async Task<TResult> CallEndpointAsync<TRequest, TResult>(string fu
 #### Example Use
 
 ```
-using System.Collections;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.CloudCode;
-using Unity.Services.Core;
 using UnityEngine;
-using UnityEngine.UI;
 
-
-class Example : MonoBehaviour {
-    public Text text;
-
-
-    class RequestType {
+class Example : MonoBehaviour
+{
+    class RequestType
+    {
         public int a;
         public int b;
     }
 
-    class ResultType {
+    class ResultType
+    {
         public int value;
     }
 
-
-    private IEnumerator UpdateTextWhenFinished(Task<ResultType> task)
+    public async Task CallMethod()
     {
-        while (!task.IsCompleted)
+        if (!AuthenticationService.Instance.IsSignedIn)
         {
-            yield return null;
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
 
-        text.text = task.Result.value.ToString();
-    }
+        var request = new RequestType {a = 13, b = 37};
+        ResultType result = await CloudCode.CallEndpointAsync<ResultType>("add", request);
 
-    // fired from a button or similar
-    public void CallMethod()
-    {
-        IAsyncOperation auth = new Unity.Services.Core.AsyncOperation();
-        ((Unity.Services.Core.AsyncOperation)auth).Succeed();
-        if (!Authentication.IsSignedIn)
-        {
-            auth = Authentication.SignInAnonymously();
-        }
-
-        var task = Task.Run<ResultType>(async () =>
-        {
-            await auth;
-
-            var request = new RequestType {a = 1, b = 2};
-            return await CloudCode.CallEndpointAsync<RequestType, ResultType>("add", request);
-        });
-
-        StartCoroutine(UpdateTextWhenFinished(task));
+        Debug.Log(result.value.ToString());
     }
 }
 ```

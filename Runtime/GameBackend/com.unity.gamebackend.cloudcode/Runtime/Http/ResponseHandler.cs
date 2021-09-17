@@ -93,9 +93,9 @@ namespace Unity.GameBackend.CloudCode.Http
                 }
                 throw;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new ResponseDeserializationException(response);
+                throw new ResponseDeserializationException(response, e);
             }
         }
 
@@ -134,9 +134,9 @@ namespace Unity.GameBackend.CloudCode.Http
                 }
                 throw;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new ResponseDeserializationException(response);
+                throw new ResponseDeserializationException(response, e);
             }
         }
 
@@ -169,9 +169,9 @@ namespace Unity.GameBackend.CloudCode.Http
                 }
                 throw;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new ResponseDeserializationException(response);
+                throw new ResponseDeserializationException(response, e);
             }
         }
     }

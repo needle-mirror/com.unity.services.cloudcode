@@ -1,9 +1,10 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "1.0.0-pre.4",
+  "version": "1.0.0-pre.5",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
+  "documentationUrl": "https://docs.unity.com/cloud-code/",
   "dependencies": {
     "com.unity.services.authentication": "1.0.0-pre.4",
     "com.unity.services.core": "1.1.0-pre.8",
@@ -14,12 +15,15 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.nuget.newtonsoft-json": "2.0.0"
   },
+  "relatedPackages": {
+    "com.unity.services.cloudcode.tests": "1.0.0-pre.5"
+  },
   "upmCi": {
-    "footprint": "df04c6d5cea940bda790accd8cf84be7e6dd0591"
+    "footprint": "929ae9ecabd9d72625a290767ed830b0183ce9c1"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Catapult.mono.git",
     "type": "git",
-    "revision": "24e0850287ee78608686d6fe92bf0526a965afd4"
+    "revision": "be2535b85c1c16b5af4cfa56127ded63f35f61aa"
   }
 }
