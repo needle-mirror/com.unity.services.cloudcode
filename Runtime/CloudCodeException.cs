@@ -1,12 +1,16 @@
 using System;
 using System.Text;
+using Unity.GameBackend.CloudCode.Http;
+using Unity.GameBackend.CloudCode.Models;
+using Unity.Services.Core;
+using UnityEngine;
 
 namespace Unity.Services.CloudCode
 {
     /// <summary>
     /// Exception for results failures from Cloud Code
     /// </summary>
-    public class CloudCodeException : Core.RequestFailedException
+    public class CloudCodeException : RequestFailedException
     {
         private CloudCodeException(int errorCode, string message)
             : base(errorCode, message) { }
@@ -20,31 +24,50 @@ namespace Unity.Services.CloudCode
         public CloudCodeException(int errorCode, string message, Exception innerException)
             : base(errorCode, message, innerException) { }
 
-        string message = null;
+        string m_Message = null;
+        
         public override string ToString()
         {
-            if (message == null)
+            if (m_Message == null)
             {
-                var err = InnerException as Unity.GameBackend.CloudCode.Http.HttpException<Unity.GameBackend.CloudCode.Models.BasicErrorResponse>;
-                if (err != null)
+                if (InnerException is HttpException<BasicErrorResponse> err)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine(err.Message);
+                    sb.AppendLine(err.ActualError.Title);
+                    sb.AppendLine(err.ActualError.Detail);
                     foreach (var errorMessage in err.ActualError.Details)
                     {
                         sb.AppendLine(errorMessage.ToString());
                     }
 
-                    message = sb.ToString();
-                    return message;
+                    m_Message = sb.ToString();
+                    return m_Message;
                 }
-                else
+
+                if (InnerException is HttpException<ValidationErrorResponse> validationErr)
                 {
-                    return base.ToString();
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine(validationErr.Message);
+                    sb.AppendLine(validationErr.ActualError.Title);
+                    foreach (var errorMessage in validationErr.ActualError.Errors)
+                    {
+                        sb.AppendLine($"{errorMessage.Field}: {string.Join(",", errorMessage.Messages)}");
+                    }
+
+                    m_Message = sb.ToString();
+                    return m_Message;
                 }
+
+                if (InnerException is HttpException httpException)
+                {
+                    return httpException.Response.ErrorMessage ?? "Unknown Error";
+                } 
+
+                return InnerException?.Message ?? "Unknown Error";
             }
 
-            return message;
+            return m_Message;
         }
 
         public override string Message => ToString();

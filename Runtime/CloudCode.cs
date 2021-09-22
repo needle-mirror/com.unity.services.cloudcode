@@ -58,33 +58,7 @@ namespace Unity.Services.CloudCode
         /// <returns>string representation of the return value of the called function. intended to enable custom serializers</returns>
         public static async Task<string> CallEndpointAsync(string function, object args)
         {
-            Response<RunScriptResponse> result;
-            try
-            {
-                result = await GetResponseAsync(function, args);
-            }
-            catch (HttpException<BasicErrorResponse> e)
-            {
-                if (e.Response.IsNetworkError)
-                {
-                    throw new CloudCodeException(Core.CommonErrorCodes.TransportError, e.Message, e);
-                }
-                
-                throw new CloudCodeException(e.ActualError.Code, e.Message, e);
-            }
-            catch (HttpException e)
-            {
-                if (e.Response.IsNetworkError)
-                {
-                    throw new CloudCodeException(Core.CommonErrorCodes.TransportError, e.Message, e);
-                }
-                
-                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
-            }
-            catch (Exception e)
-            {
-                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
-            }
+            Response<RunScriptResponse> result = await GetRunScriptResponse(function, args);
 
             object output = result?.Result?.Output;
             return output?.ToString();
@@ -99,33 +73,7 @@ namespace Unity.Services.CloudCode
         /// <returns>serialized output from the called function</returns>
         public static async Task<TResult> CallEndpointAsync<TResult>(string function, object args)
         {
-            Response<RunScriptResponse> result;
-            try
-            {
-                result = await GetResponseAsync(function, args);
-            }
-            catch (HttpException<BasicErrorResponse> e)
-            {
-                if (e.Response.IsNetworkError)
-                {
-                    throw new CloudCodeException(Core.CommonErrorCodes.TransportError, e.Message, e);
-                }
-
-                throw new CloudCodeException(e.ActualError.Code, e.Message, e);
-            }
-            catch (HttpException e)
-            {
-                if (e.Response.IsNetworkError)
-                {
-                    throw new CloudCodeException(Core.CommonErrorCodes.TransportError, e.Message, e);
-                }
-
-                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
-            }
-            catch (Exception e)
-            {
-                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
-            }
+            Response<RunScriptResponse> result = await GetRunScriptResponse(function, args);
 
             object output = result.Result.Output;
             if (output is int
@@ -142,6 +90,39 @@ namespace Unity.Services.CloudCode
 
             var jobj = (JObject)result.Result.Output;
             return jobj.ToObject<TResult>();
+        }
+
+        static async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, object args)
+        {
+            try
+            {
+                return await GetResponseAsync(function, args);
+            }
+            catch (HttpException<BasicErrorResponse> e)
+            {
+                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
+                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
+                Debug.LogError(cloudCodeException.Message);
+                throw cloudCodeException;
+            }
+            catch (HttpException<ValidationErrorResponse> e)
+            {
+                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
+                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
+                Debug.LogError(cloudCodeException.Message);
+                throw cloudCodeException;
+            }
+            catch (HttpException e)
+            {
+                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : (int) e.Response.StatusCode;
+                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
+                Debug.LogError(cloudCodeException.Message);
+                throw cloudCodeException;
+            }
+            catch (Exception e)
+            {
+                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
+            }
         }
     }
 }
