@@ -12,7 +12,7 @@ namespace Unity.GameBackend.CloudCode.Http
     {
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            JsonObject jobj = (JsonObject) value;
+            JsonObjectInternal jobj = (JsonObjectInternal) value;
 
             if (jobj.obj == null)
             {

@@ -29,7 +29,7 @@ namespace Unity.Services.CloudCode
         
         static ICloudCodeApiClient client => UnityServicesCloudCodeService.Instance.CloudCodeApi;
 
-        private static async Task<Response<RunScriptResponse>> GetResponseAsync(string function, object args)
+        private static async Task<Response<RunScriptResponseInternal>> GetResponseAsync(string function, object args)
         {
             var dictArgs = new Dictionary<string, object>();
 
@@ -43,7 +43,7 @@ namespace Unity.Services.CloudCode
                 }
             }
 
-            var runArgs = new RunScriptArguments(dictArgs);
+            var runArgs = new RunScriptArgumentsInternal(dictArgs);
             var runScript = new RunScriptRequest(s_ProjectId, function, runArgs);
             var task = client.RunScriptAsync(runScript);
 
@@ -58,7 +58,7 @@ namespace Unity.Services.CloudCode
         /// <returns>string representation of the return value of the called function. intended to enable custom serializers</returns>
         public static async Task<string> CallEndpointAsync(string function, object args)
         {
-            Response<RunScriptResponse> result = await GetRunScriptResponse(function, args);
+            Response<RunScriptResponseInternal> result = await GetRunScriptResponse(function, args);
 
             object output = result?.Result?.Output;
             return output?.ToString();
@@ -73,7 +73,7 @@ namespace Unity.Services.CloudCode
         /// <returns>serialized output from the called function</returns>
         public static async Task<TResult> CallEndpointAsync<TResult>(string function, object args)
         {
-            Response<RunScriptResponse> result = await GetRunScriptResponse(function, args);
+            Response<RunScriptResponseInternal> result = await GetRunScriptResponse(function, args);
 
             object output = result.Result.Output;
             if (output is int
@@ -92,20 +92,20 @@ namespace Unity.Services.CloudCode
             return jobj.ToObject<TResult>();
         }
 
-        static async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, object args)
+        static async Task<Response<RunScriptResponseInternal>> GetRunScriptResponse(string function, object args)
         {
             try
             {
                 return await GetResponseAsync(function, args);
             }
-            catch (HttpException<BasicErrorResponse> e)
+            catch (HttpException<BasicErrorResponseInternal> e)
             {
                 int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
                 CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
                 Debug.LogError(cloudCodeException.Message);
                 throw cloudCodeException;
             }
-            catch (HttpException<ValidationErrorResponse> e)
+            catch (HttpException<ValidationErrorResponseInternal> e)
             {
                 int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
                 CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);

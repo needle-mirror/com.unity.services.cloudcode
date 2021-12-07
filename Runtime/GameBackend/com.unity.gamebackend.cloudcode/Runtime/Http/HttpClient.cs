@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 using System.Threading.Tasks;
 using Unity.GameBackend.CloudCode.Helpers;
 using Unity.GameBackend.CloudCode.Scheduler;
-using TaskScheduler = Unity.GameBackend.CloudCode.Scheduler.TaskScheduler;
+using TaskScheduler = Unity.GameBackend.CloudCode.Scheduler.TaskSchedulerInternal;
 
 namespace Unity.GameBackend.CloudCode.Http
 {

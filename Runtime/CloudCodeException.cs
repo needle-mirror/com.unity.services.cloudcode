@@ -30,29 +30,53 @@ namespace Unity.Services.CloudCode
         {
             if (m_Message == null)
             {
-                if (InnerException is HttpException<BasicErrorResponse> err)
+                if (InnerException is HttpException<BasicErrorResponseInternal> err)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine(err.Message);
-                    sb.AppendLine(err.ActualError.Title);
-                    sb.AppendLine(err.ActualError.Detail);
-                    foreach (var errorMessage in err.ActualError.Details)
-                    {
-                        sb.AppendLine(errorMessage.ToString());
-                    }
 
+                    if (err.ActualError != null)
+                    {
+                        sb.AppendLine(err.ActualError.Title);
+
+                        if (!String.IsNullOrEmpty(err.ActualError.Detail))
+                        {
+                            sb.AppendLine(err.ActualError.Detail);
+                        }
+
+                        if (err.ActualError.Details != null)
+                        {
+                            foreach (object errorMessage in err.ActualError.Details)
+                            {
+                                sb.AppendLine(errorMessage.ToString());
+                            }
+                        }
+                    }
                     m_Message = sb.ToString();
                     return m_Message;
                 }
 
-                if (InnerException is HttpException<ValidationErrorResponse> validationErr)
+                if (InnerException is HttpException<ValidationErrorResponseInternal> validationErr)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine(validationErr.Message);
-                    sb.AppendLine(validationErr.ActualError.Title);
-                    foreach (var errorMessage in validationErr.ActualError.Errors)
+
+                    if (validationErr.ActualError != null)
                     {
-                        sb.AppendLine($"{errorMessage.Field}: {string.Join(",", errorMessage.Messages)}");
+                        sb.AppendLine(validationErr.ActualError.Title);
+
+                        if (!String.IsNullOrEmpty(validationErr.ActualError.Detail))
+                        {
+                            sb.AppendLine(validationErr.ActualError.Detail);
+                        }
+
+                        if (validationErr.ActualError.Errors != null)
+                        {
+                            foreach (var errorMessage in validationErr.ActualError.Errors)
+                            {
+                                sb.AppendLine($"{errorMessage.Field}: {String.Join(",", errorMessage.Messages)}");
+                            }
+                        }
                     }
 
                     m_Message = sb.ToString();

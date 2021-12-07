@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Unity.GameBackend.CloudCode.Models;
 using Unity.GameBackend.CloudCode.Http;
-using TaskScheduler = Unity.GameBackend.CloudCode.Scheduler.TaskScheduler;
+using TaskScheduler = Unity.GameBackend.CloudCode.Scheduler.TaskSchedulerInternal;
 using Unity.Services.Authentication.Internal;
 using Unity.GameBackend.CloudCode.CloudCode;
 
@@ -18,7 +18,7 @@ namespace Unity.GameBackend.CloudCode.Apis.CloudCode
             /// <param name="operationConfiguration">Configuration for RunScript</param>
             /// <returns>Task for a Response object containing status code, headers, and RunScriptResponse object</returns>
             /// <exception cref="Unity.GameBackend.CloudCode.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-            Task<Response<RunScriptResponse>> RunScriptAsync(RunScriptRequest request, Configuration operationConfiguration = null);
+            Task<Response<RunScriptResponseInternal>> RunScriptAsync(RunScriptRequest request, Configuration operationConfiguration = null);
 
     }
 
@@ -55,10 +55,10 @@ namespace Unity.GameBackend.CloudCode.Apis.CloudCode
         }
 
 
-        public async Task<Response<RunScriptResponse>> RunScriptAsync(RunScriptRequest request,
+        public async Task<Response<RunScriptResponseInternal>> RunScriptAsync(RunScriptRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(RunScriptResponse)   },{"400", typeof(RunScript400OneOf)   },{"401", typeof(BasicErrorResponse)   },{"404", typeof(BasicErrorResponse)   },{"422", typeof(BasicErrorResponse)   },{"429", typeof(BasicErrorResponse)   },{"500", typeof(BasicErrorResponse)   },{"503", typeof(BasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(RunScriptResponseInternal)   },{"400", typeof(RunScript400OneOfInternal)   },{"401", typeof(BasicErrorResponseInternal)   },{"404", typeof(BasicErrorResponseInternal)   },{"422", typeof(BasicErrorResponseInternal)   },{"429", typeof(BasicErrorResponseInternal)   },{"500", typeof(BasicErrorResponseInternal)   },{"503", typeof(BasicErrorResponseInternal)   } };
             
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -69,8 +69,8 @@ namespace Unity.GameBackend.CloudCode.Apis.CloudCode
                 request.ConstructHeaders(_accessToken, finalConfiguration),
                 finalConfiguration.RequestTimeout ?? _baseTimeout);
 
-            var handledResponse = ResponseHandler.HandleAsyncResponse<RunScriptResponse>(response, statusCodeToTypeMap);
-            return new Response<RunScriptResponse>(response, handledResponse);
+            var handledResponse = ResponseHandler.HandleAsyncResponse<RunScriptResponseInternal>(response, statusCodeToTypeMap);
+            return new Response<RunScriptResponseInternal>(response, handledResponse);
         }
 
     }

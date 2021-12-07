@@ -20,9 +20,9 @@ namespace Unity.GameBackend.CloudCode.Http
             
             // If we are deserializing a JsonObject we need to construct a new
             // one since JsonObjects are just used to encapsulate other types.
-            if (typeof(T) == typeof(JsonObject))
+            if (typeof(T) == typeof(JsonObjectInternal))
             {
-                object jObject = new JsonObject(JsonConvert.DeserializeObject(deserializedJson, settings));
+                object jObject = new JsonObjectInternal(JsonConvert.DeserializeObject(deserializedJson, settings));
                 return (T)jObject;
             }
             
@@ -51,7 +51,7 @@ namespace Unity.GameBackend.CloudCode.Http
                 Type responseType = statusCodeToTypeMap[response.StatusCode.ToString()];
                 if (responseType != null && response.IsHttpError || response.IsNetworkError)
                 {
-                    if (typeof(IOneOf).IsAssignableFrom(responseType))
+                    if (typeof(IOneOfInternal).IsAssignableFrom(responseType))
                     {
                         var instance = CreateOneOfException(response, responseType);
                         throw instance;
@@ -74,7 +74,7 @@ namespace Unity.GameBackend.CloudCode.Http
             try
             {
                 var dataObject = ResponseHandler.TryDeserializeResponse(response, responseType);
-                return CreateHttpException(response, ((IOneOf) dataObject).Type);
+                return CreateHttpException(response, ((IOneOfInternal) dataObject).Type);
             }
             catch (ArgumentException e)
             {

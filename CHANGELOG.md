@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-pre.7] - 2021-12-07
+
+### Fixed
+- NullReferenceException being thrown instead of some service errors
+- Documentation URL in package manifest
+- Deprecated some elements that should not have been public, these will be deleted in a later release
+
 ## [1.0.0-pre.6] - 2021-09-22
 - Fixes a crash that could occur with certain exceptions returned from the API
 

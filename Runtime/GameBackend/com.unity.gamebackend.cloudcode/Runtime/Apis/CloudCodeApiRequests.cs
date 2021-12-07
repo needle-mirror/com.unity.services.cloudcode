@@ -158,7 +158,7 @@ namespace Unity.GameBackend.CloudCode.CloudCode
         [Preserve]
         public string ScriptName { get; }
         [Preserve]
-        public RunScriptArguments RunScriptArguments { get; }
+        public RunScriptArgumentsInternal RunScriptArguments { get; }
         string PathAndQueryParams;
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Unity.GameBackend.CloudCode.CloudCode
         /// <param name="RunScriptArguments">RunScriptArguments param</param>
         /// <returns>A RunScript request object.</returns>
         [Preserve]
-        public RunScriptRequest(string projectId, string scriptName, RunScriptArguments runScriptArguments = default(RunScriptArguments))
+        public RunScriptRequest(string projectId, string scriptName, RunScriptArgumentsInternal runScriptArguments = default(RunScriptArgumentsInternal))
         {
             ProjectId = projectId;
             ScriptName = scriptName;
