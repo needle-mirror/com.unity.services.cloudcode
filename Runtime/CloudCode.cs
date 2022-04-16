@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using Unity.GameBackend.CloudCode;
-using Unity.GameBackend.CloudCode.Apis.CloudCode;
-using Unity.GameBackend.CloudCode.CloudCode;
-using Unity.GameBackend.CloudCode.Http;
-using Unity.GameBackend.CloudCode.Models;
+using Unity.Services.Authentication.Internal;
+using Unity.Services.CloudCode.Internal;
+using Unity.Services.CloudCode.Internal.Apis.CloudCode;
+using Unity.Services.CloudCode.Internal.CloudCode;
+using Unity.Services.CloudCode.Internal.Http;
+using Unity.Services.CloudCode.Internal.Models;
+using Unity.Services.Core;
 using UnityEngine;
 
 namespace Unity.Services.CloudCode
@@ -18,36 +20,19 @@ namespace Unity.Services.CloudCode
     ///
     /// Streamline your game code in the cloud. Cloud Code shifts your game logic away from your servers, interacting seamlessly with backend services.
     /// </summary>
-    public static class CloudCode
+    internal class CloudCodeInternal : ICloudCodeService
     {
-        static string s_ProjectId;
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void HoldTaskScheduler()
+        private readonly string m_ProjectId;
+        private readonly ICloudCodeApiClient m_ApiClient;
+        private readonly IPlayerId m_PlayerId;
+        private readonly IAccessToken m_AccessToken;
+
+        internal CloudCodeInternal(string projectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
         {
-            s_ProjectId = Application.cloudProjectId;
-        }
-        
-        static ICloudCodeApiClient client => UnityServicesCloudCodeService.Instance.CloudCodeApi;
-
-        private static async Task<Response<RunScriptResponseInternal>> GetResponseAsync(string function, object args)
-        {
-            var dictArgs = new Dictionary<string, object>();
-
-            FieldInfo[] fields = args?.GetType().GetFields();
-
-            if (fields != null)
-            {
-                foreach (var field in fields)
-                {
-                    dictArgs[field.Name] = field.GetValue(args);
-                }
-            }
-
-            var runArgs = new RunScriptArgumentsInternal(dictArgs);
-            var runScript = new RunScriptRequest(s_ProjectId, function, runArgs);
-            var task = client.RunScriptAsync(runScript);
-
-            return await task;
+            m_ProjectId = projectId;
+            m_ApiClient = cloudCodeApiClient;
+            m_PlayerId = playerId;
+            m_AccessToken = accessToken;
         }
 
         /// <summary>
@@ -55,27 +40,31 @@ namespace Unity.Services.CloudCode
         /// </summary>
         /// <param name="function">Cloud Code function to call</param>
         /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
-        /// <returns>string representation of the return value of the called function. intended to enable custom serializers</returns>
-        public static async Task<string> CallEndpointAsync(string function, object args)
+        /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
+        public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args)
         {
-            Response<RunScriptResponseInternal> result = await GetRunScriptResponse(function, args);
+            var result = await GetRunScriptResponse(function, args);
 
-            object output = result?.Result?.Output;
+            var output = result?.Result?.Output;
             return output?.ToString();
         }
 
         /// <summary>
         /// Calls a Cloud Code function.
         /// </summary>
-        /// <param name="function">Cloud Code function to call</param>
+        /// <param name="function">Cloud Code function to call.</param>
         /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
-        /// <typeparam name="TResult">Serialized from JSON returned by Cloud Code</typeparam>
-        /// <returns>serialized output from the called function</returns>
-        public static async Task<TResult> CallEndpointAsync<TResult>(string function, object args)
+        /// <typeparam name="TResult">Serialized from JSON returned by Cloud Code.</typeparam>
+        /// <returns>Serialized output from the called function.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
+        public async Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args)
         {
-            Response<RunScriptResponseInternal> result = await GetRunScriptResponse(function, args);
+            var result = await GetRunScriptResponse(function, args);
 
-            object output = result.Result.Output;
+            var output = result.Result.Output;
             if (output is int
                 || output is long
                 || output is short
@@ -92,37 +81,110 @@ namespace Unity.Services.CloudCode
             return jobj.ToObject<TResult>();
         }
 
-        static async Task<Response<RunScriptResponseInternal>> GetRunScriptResponse(string function, object args)
+        async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, Dictionary<string, object> args)
         {
+            ValidateRequiredDependencies();
+
             try
             {
                 return await GetResponseAsync(function, args);
             }
-            catch (HttpException<BasicErrorResponseInternal> e)
+            catch (HttpException<BasicErrorResponse> e)
             {
-                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
-                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
-                Debug.LogError(cloudCodeException.Message);
-                throw cloudCodeException;
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
             }
-            catch (HttpException<ValidationErrorResponseInternal> e)
+            catch (HttpException<ValidationErrorResponse> e)
             {
-                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : e.ActualError.Code;
-                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
-                Debug.LogError(cloudCodeException.Message);
-                throw cloudCodeException;
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+            }
+            catch (HttpException<InvocationErrorResponse> e)
+            {
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
             }
             catch (HttpException e)
             {
-                int code = e.Response.IsNetworkError ? Core.CommonErrorCodes.TransportError : (int) e.Response.StatusCode;
-                CloudCodeException cloudCodeException = new CloudCodeException(code, e.Message, e);
-                Debug.LogError(cloudCodeException.Message);
-                throw cloudCodeException;
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, (int)e.Response.StatusCode, e.Message, e);
             }
             catch (Exception e)
             {
-                throw new CloudCodeException(Core.CommonErrorCodes.Unknown, e.Message, e);
+                throw new CloudCodeException(CloudCodeExceptionReason.Unknown, CommonErrorCodes.Unknown, e.Message, e);
             }
+        }
+
+        private CloudCodeException BuildException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
+        {
+            var code = isNetworkError ? CommonErrorCodes.TransportError : errorCode;
+            var reason = isNetworkError ? CloudCodeExceptionReason.NoInternetConnection : GetErrorReason(statusCode);
+
+            CloudCodeException cloudCodeException;
+            if (statusCode == 429)
+            {
+                var retryAfter = 60;
+                if (innerException.Response.Headers != null &&
+                    innerException.Response.Headers.TryGetValue("Retry-After", out var retryAfterString))
+                {
+                    Int32.TryParse(retryAfterString, out retryAfter);
+                }
+                cloudCodeException = new CloudCodeRateLimitedException(reason, code, message, innerException, retryAfter);
+            }
+            else
+            {
+                cloudCodeException = new CloudCodeException(reason, code, message, innerException);
+            }
+            Debug.LogError(cloudCodeException.Message);
+            return cloudCodeException;
+        }
+
+        void ValidateRequiredDependencies()
+        {
+            if (String.IsNullOrEmpty(m_ProjectId))
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.ProjectIdMissing, CommonErrorCodes.Unknown,
+                    "Project ID is missing - make sure the project is correctly linked to your game and try again.", null);
+            }
+
+            if (String.IsNullOrEmpty(m_PlayerId.PlayerId))
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.PlayerIdMissing, CommonErrorCodes.Unknown,
+                    "Player ID is missing - ensure you are signed in through the Authentication SDK and try again.", null);
+            }
+
+            if (String.IsNullOrEmpty(m_AccessToken.AccessToken))
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.AccessTokenMissing, CommonErrorCodes.InvalidToken,
+                    "Access token is missing - ensure you are signed in through the Authentication SDK and try again.", null);
+            }
+        }
+
+        CloudCodeExceptionReason GetErrorReason(long statusCode)
+        {
+            switch (statusCode)
+            {
+                case 400:
+                    return CloudCodeExceptionReason.InvalidArgument;
+                case 401:
+                    return CloudCodeExceptionReason.Unauthorized;
+                case 404:
+                    return CloudCodeExceptionReason.NotFound;
+                case 422:
+                    return CloudCodeExceptionReason.ScriptError;
+                case 429:
+                    return CloudCodeExceptionReason.TooManyRequests;
+                case 500:
+                case 503:
+                    return CloudCodeExceptionReason.ServiceUnavailable;
+                default:
+                    return CloudCodeExceptionReason.Unknown;
+            }
+        }
+
+        async Task<Response<RunScriptResponse>> GetResponseAsync(string function, Dictionary<string, object> args)
+        {
+            var runArgs = new RunScriptArguments(args);
+            var runScript = new RunScriptRequest(m_ProjectId, function, runArgs);
+            var task = m_ApiClient.RunScriptAsync(runScript);
+
+            return await task;
         }
     }
 }

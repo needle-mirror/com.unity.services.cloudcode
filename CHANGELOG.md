@@ -4,6 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-pre.4] - 2022-04-16
+
+### **Breaking Changes**:
+- The interface provided by CloudCode has been replaced by CloudCodeService.Instance, and should be accessed from there instead. The old API will be removed in an upcoming release
+- Cloud Code methods now take a Dictionary<string, object> containing the script parameters instead of an object with named fields (the dictionary can still be null if the script does not have any parameters). The old API will be removed in an upcoming release
+- When a rate limit error occurs, a specific CloudCodeRateLimitedException will now be thrown which includes the RetryAfter value (in seconds)
+- Clarity and structure of some error messages has been improved
+- Some classes that were accidentally made public are now internal
+
+### Fixed
+- Installation and Analytics IDs not being forwarded to Cloud Code server (causing incorrect tracking downstream)
+
+### Added
+- Project Settings tab with link to Cloud Code dashboard
+- Cloud Code exceptions now include a Reason enum which is machine-readable
+
 ## [1.0.0-pre.7] - 2021-12-07
 
 ### Fixed

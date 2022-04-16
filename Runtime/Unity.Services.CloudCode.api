@@ -1,0 +1,51 @@
+// This file is generated. Do not modify by hand.
+// XML documentation file not found. To check if public methods have XML comments,
+// make sure the XML doc file is present and located next to the scraped dll
+namespace Unity.Services.CloudCode
+{
+    [System.Obsolete(@"The interface provided by CloudCode has moved to CloudCodeService.Instance, and should be accessed from there instead. This API will be removed in an upcoming release.")] public static class CloudCode
+    {
+        [System.Diagnostics.DebuggerStepThrough] [System.Obsolete(@"The interface provided by CloudCode.CallEndpointAsync(string, object) has been replaced by CloudCodeService.Instance.CallEndpointAsync(string, Dictionary<string, object>), and should be accessed from there instead. This API will be removed in an upcoming release.", false)] [System.Runtime.CompilerServices.AsyncStateMachine(typeof(Unity.Services.CloudCode.CloudCode.<CallEndpointAsync>d__0))] public static System.Threading.Tasks.Task<string> CallEndpointAsync(string function, object args);
+        [System.Diagnostics.DebuggerStepThrough] [System.Obsolete(@"The interface provided by CloudCode.CallEndpointAsync<TResult>(string, object) has been replaced by CloudCodeService.Instance.CallEndpointAsync<TResult>(string, Dictionary<string, object>), and should be accessed from there instead. This API will be removed in an upcoming release.", false)] [System.Runtime.CompilerServices.AsyncStateMachine(typeof(Unity.Services.CloudCode.CloudCode.<CallEndpointAsync>d__1<>))] public static System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, object args);
+    }
+
+    public class CloudCodeException : Unity.Services.Core.RequestFailedException
+    {
+        public virtual string Message { get; }
+        public Unity.Services.CloudCode.CloudCodeExceptionReason Reason { get; }
+        public virtual string ToString();
+    }
+
+    public enum CloudCodeExceptionReason
+    {
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason AccessTokenMissing = 4;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason InvalidArgument = 5;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason NoInternetConnection = 1;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason NotFound = 7;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason PlayerIdMissing = 3;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason ProjectIdMissing = 2;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason ScriptError = 10;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason ServiceUnavailable = 9;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason TooManyRequests = 8;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason Unauthorized = 6;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason Unknown = 0;
+        public int value__;
+    }
+
+    public class CloudCodeRateLimitedException : Unity.Services.CloudCode.CloudCodeException
+    {
+        public int RetryAfter { get; }
+    }
+
+    public class CloudCodeService
+    {
+        public static Unity.Services.CloudCode.ICloudCodeService Instance { get; }
+        public CloudCodeService() {}
+    }
+
+    public interface ICloudCodeService
+    {
+        public abstract System.Threading.Tasks.Task<string> CallEndpointAsync(string function, System.Collections.Generic.Dictionary<string, object> args);
+        public abstract System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, System.Collections.Generic.Dictionary<string, object> args);
+    }
+}
