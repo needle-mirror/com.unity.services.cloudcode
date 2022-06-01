@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.0.0-pre.4",
+  "version": "2.0.0",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -11,17 +11,17 @@
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "_upm": {
-    "changelog": "### **Breaking Changes**:\n- The interface provided by CloudCode has been replaced by CloudCodeService.Instance, and should be accessed from there instead. The old API will be removed in an upcoming release\n- Cloud Code methods now take a Dictionary<string, object> containing the script parameters instead of an object with named fields (the dictionary can still be null if the script does not have any parameters). The old API will be removed in an upcoming release\n- When a rate limit error occurs, a specific CloudCodeRateLimitedException will now be thrown which includes the RetryAfter value (in seconds)\n- Clarity and structure of some error messages has been improved\n- Some classes that were accidentally made public are now internal\n\n### Fixed\n- Installation and Analytics IDs not being forwarded to Cloud Code server (causing incorrect tracking downstream)\n\n### Added\n- Project Settings tab with link to Cloud Code dashboard\n- Cloud Code exceptions now include a Reason enum which is machine-readable"
+    "changelog": "- Moving out of Beta!"
   },
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.0.0-pre.4"
+    "com.unity.services.cloudcode.tests": "2.0.0"
   },
   "upmCi": {
-    "footprint": "1ed6a79ad65bf45418c0581e170de54bc90696fb"
+    "footprint": "4aa228a2b341f7eba4eb3fc3fd6ce44f6b93b01f"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "521e682cc36003e0458b2192ee792f1ed78562d6"
+    "revision": "d11ae9192b8801e4b2c7730de5a2bacff0924965"
   }
 }
