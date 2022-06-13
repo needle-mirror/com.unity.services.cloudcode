@@ -14,12 +14,6 @@ using UnityEngine;
 
 namespace Unity.Services.CloudCode
 {
-    /// <summary>
-    /// Client SDK for Cloud Code.
-    /// https://dashboard.unity3d.com/cloud-code
-    ///
-    /// Streamline your game code in the cloud. Cloud Code shifts your game logic away from your servers, interacting seamlessly with backend services.
-    /// </summary>
     internal class CloudCodeInternal : ICloudCodeService
     {
         private readonly string m_ProjectId;
@@ -35,14 +29,6 @@ namespace Unity.Services.CloudCode
             m_AccessToken = accessToken;
         }
 
-        /// <summary>
-        /// Calls a Cloud Code function.
-        /// </summary>
-        /// <param name="function">Cloud Code function to call</param>
-        /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
-        /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
-        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
-        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
         public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args)
         {
             var result = await GetRunScriptResponse(function, args);
@@ -51,15 +37,6 @@ namespace Unity.Services.CloudCode
             return output?.ToString();
         }
 
-        /// <summary>
-        /// Calls a Cloud Code function.
-        /// </summary>
-        /// <param name="function">Cloud Code function to call.</param>
-        /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
-        /// <typeparam name="TResult">Serialized from JSON returned by Cloud Code.</typeparam>
-        /// <returns>Serialized output from the called function.</returns>
-        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
-        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
         public async Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args)
         {
             var result = await GetRunScriptResponse(function, args);

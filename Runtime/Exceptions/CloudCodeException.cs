@@ -6,6 +6,9 @@ using Unity.Services.Core;
 
 namespace Unity.Services.CloudCode
 {
+    /// <summary>
+    /// A machine-readable reason for which an exception was thrown, in case different failure modes require different follow-up actions.
+    /// </summary>
     public enum CloudCodeExceptionReason
     {
         Unknown = 0,
