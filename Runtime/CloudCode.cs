@@ -10,20 +10,21 @@ using Unity.Services.CloudCode.Internal.CloudCode;
 using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.CloudCode.Internal.Models;
 using Unity.Services.Core;
+using Unity.Services.Core.Configuration.Internal;
 using UnityEngine;
 
 namespace Unity.Services.CloudCode
 {
     internal class CloudCodeInternal : ICloudCodeService
     {
-        private readonly string m_ProjectId;
         private readonly ICloudCodeApiClient m_ApiClient;
+        private readonly ICloudProjectId m_CloudProjectId;
         private readonly IPlayerId m_PlayerId;
         private readonly IAccessToken m_AccessToken;
 
-        internal CloudCodeInternal(string projectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
+        internal CloudCodeInternal(ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
         {
-            m_ProjectId = projectId;
+            m_CloudProjectId = cloudProjectId;
             m_ApiClient = cloudCodeApiClient;
             m_PlayerId = playerId;
             m_AccessToken = accessToken;
@@ -41,18 +42,29 @@ namespace Unity.Services.CloudCode
         {
             var result = await GetRunScriptResponse(function, args);
 
+            return DeserializeOutput<TResult>(result);
+        }
+
+        static TResult DeserializeOutput<TResult>(Response<RunScriptResponse> result)
+        {
             var output = result.Result.Output;
-            if (output is int
-                || output is long
-                || output is short
-                || output is float
-                || output is double
-                || output is string
-                || output is char
-                || output is bool)
-            {
-                return (TResult)output;
-            }
+
+            var expectedType = typeof(TResult);
+            if (expectedType == typeof(short)) return (TResult)(object)Convert.ToInt16(output);
+            if (expectedType == typeof(int)) return (TResult)(object)Convert.ToInt32(output);
+            if (expectedType == typeof(long)) return (TResult)(object)Convert.ToInt64(output);
+            if (expectedType == typeof(float)) return (TResult)(object)Convert.ToSingle(output);
+            if (expectedType == typeof(double)) return (TResult)(object)Convert.ToDouble(output);
+            if (expectedType == typeof(char)) return (TResult)(object)Convert.ToChar(output);
+            if (expectedType == typeof(string)) return (TResult)(object)Convert.ToString(output);
+            if (expectedType == typeof(bool)) return (TResult)(object)Convert.ToBoolean(output);
+            if (expectedType == typeof(DateTime)) return (TResult)(object)Convert.ToDateTime(output);
+            if (expectedType == typeof(byte)) return (TResult)(object)Convert.ToByte(output);
+            if (expectedType == typeof(decimal)) return (TResult)(object)Convert.ToDecimal(output);
+            if (expectedType == typeof(sbyte)) return (TResult)(object)Convert.ToSByte(output);
+            if (expectedType == typeof(ushort)) return (TResult)(object)Convert.ToUInt16(output);
+            if (expectedType == typeof(uint)) return (TResult)(object)Convert.ToUInt32(output);
+            if (expectedType == typeof(ulong)) return (TResult)(object)Convert.ToUInt64(output);
 
             var jobj = (JObject)result.Result.Output;
             return jobj.ToObject<TResult>();
@@ -114,7 +126,7 @@ namespace Unity.Services.CloudCode
 
         void ValidateRequiredDependencies()
         {
-            if (String.IsNullOrEmpty(m_ProjectId))
+            if (String.IsNullOrEmpty(m_CloudProjectId.GetCloudProjectId()))
             {
                 throw new CloudCodeException(CloudCodeExceptionReason.ProjectIdMissing, CommonErrorCodes.Unknown,
                     "Project ID is missing - make sure the project is correctly linked to your game and try again.", null);
@@ -157,8 +169,8 @@ namespace Unity.Services.CloudCode
 
         async Task<Response<RunScriptResponse>> GetResponseAsync(string function, Dictionary<string, object> args)
         {
-            var runArgs = new RunScriptArguments(args);
-            var runScript = new RunScriptRequest(m_ProjectId, function, runArgs);
+            var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>());
+            var runScript = new RunScriptRequest(m_CloudProjectId.GetCloudProjectId(), function, runArgs);
             var task = m_ApiClient.RunScriptAsync(runScript);
 
             return await task;

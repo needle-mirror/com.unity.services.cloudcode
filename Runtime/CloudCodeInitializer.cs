@@ -14,10 +14,14 @@ namespace Unity.Services.CloudCode
 {
     class CloudCodeInitializer : IInitializablePackage
     {
+        const string k_CloudEnvironmentKey = "com.unity.services.core.cloud-environment";
+        const string k_StagingEnvironment = "staging";
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
             CoreRegistry.Instance.RegisterPackage(new CloudCodeInitializer())
+                .DependsOn<ICloudProjectId>()
                 .DependsOn<IPlayerId>()
                 .DependsOn<IAccessToken>()
                 .DependsOn<IInstallationId>()
@@ -26,25 +30,28 @@ namespace Unity.Services.CloudCode
 
         public Task Initialize(CoreRegistry registry)
         {
+            var cloudProjectId = registry.GetServiceComponent<ICloudProjectId>();
             var accessToken = registry.GetServiceComponent<IAccessToken>();
             var playerId = registry.GetServiceComponent<IPlayerId>();
+            var installationId = registry.GetServiceComponent<IInstallationId>();
+            var projectConfiguration = registry.GetServiceComponent<IProjectConfiguration>();
 
             ICloudCodeApiClient cloudCodeApiClient = new CloudCodeApiClient(
                 new HttpClient(),
                 accessToken,
-                new Configuration(null, null, null, GetServiceHeaders(registry)));
+                new Configuration(GetHost(projectConfiguration), null, null, GetServiceHeaders(installationId, projectConfiguration)));
 
-            CloudCodeService.Instance = new CloudCodeInternal(Application.cloudProjectId, cloudCodeApiClient, playerId, accessToken);
+            CloudCodeService.Instance = new CloudCodeInternal(cloudProjectId, cloudCodeApiClient, playerId, accessToken);
 
             return Task.CompletedTask;
         }
 
-        static Dictionary<string, string> GetServiceHeaders(CoreRegistry registry)
+        static Dictionary<string, string> GetServiceHeaders(IInstallationId installationIdProvider, IProjectConfiguration projectConfiguration)
         {
             var headers = new Dictionary<string, string>();
 
-            var installationId = registry.GetServiceComponent<IInstallationId>().GetOrCreateIdentifier();
-            var analyticsUserId = registry.GetServiceComponent<IProjectConfiguration>().GetString("com.unity.services.core.analytics-user-id");
+            var installationId = installationIdProvider.GetOrCreateIdentifier();
+            var analyticsUserId = projectConfiguration.GetString("com.unity.services.core.analytics-user-id");
 
             headers.Add("unity-installation-id", installationId);
 
@@ -54,6 +61,19 @@ namespace Unity.Services.CloudCode
             }
 
             return headers;
+        }
+
+        static string GetHost(IProjectConfiguration projectConfiguration)
+        {
+            var cloudEnvironment = projectConfiguration?.GetString(k_CloudEnvironmentKey);
+
+            switch (cloudEnvironment)
+            {
+                case k_StagingEnvironment:
+                    return "https://cloud-code-stg.services.api.unity.com";
+                default:
+                    return "https://cloud-code.services.api.unity.com";
+            }
         }
     }
 }

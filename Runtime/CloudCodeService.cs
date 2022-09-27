@@ -19,7 +19,7 @@ namespace Unity.Services.CloudCode
         /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<string> CallEndpointAsync(string function, Dictionary<string, object> args);
+        Task<string> CallEndpointAsync(string function, Dictionary<string, object> args = null);
 
         /// <summary>
         /// Calls a Cloud Code function.
@@ -30,7 +30,7 @@ namespace Unity.Services.CloudCode
         /// <returns>Serialized output from the called function.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args);
+        Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args = null);
     }
 
     public class CloudCodeService

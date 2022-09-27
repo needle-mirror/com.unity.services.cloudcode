@@ -1,27 +1,39 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
-    "com.unity.services.authentication": "2.0.0",
+    "com.unity.services.authentication": "2.2.0",
     "com.unity.services.core": "1.4.0",
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.nuget.newtonsoft-json": "3.0.2"
   },
   "_upm": {
-    "changelog": "### Fixed\n- Missing XmlDoc on public ICloudCodeService interface"
+    "gameService": {
+      "projectDashboardUrl": "https://dashboard.unity3d.com/organizations/{0}/projects/{1}/cloud-code/about",
+      "projectDashboardUrlType": "OrganizationKeyAndProjectGuid"
+    },
+    "supportedPlatforms": [
+      "Android",
+      "iOS",
+      "Linux",
+      "Mac",
+      "PC",
+      "Windows 8 Universal",
+      "Windows 10 Universal"
+    ]
   },
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.0.1"
+    "com.unity.services.cloudcode.tests": "2.1.1"
   },
   "upmCi": {
-    "footprint": "56e951a086c7324b95986df599284ca19f6aeec5"
+    "footprint": "d3e60a2cd1cf19777e57aa7d3aee2cb692b9ab6d"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "3383d8297f6da9eac6c6df8892afa3ae40609bbf"
+    "revision": "3f42f9fdc2ffcf8b08eb25629f8d83841926275a"
   }
 }

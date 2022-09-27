@@ -1,0 +1,21 @@
+﻿{
+    "name": "Unity.Services.CloudCode.Authoring.Editor.Core",
+    "rootNamespace": "Unity.Services.CloudCode.Authoring.Editor.Core",
+    "noEngineReferences": true,
+    "includePlatforms": [
+        "Editor"
+    ],
+    "overrideReferences": false,
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_2021_3_OR_NEWER",
+        "DEPLOYMENT_API_AVAILABLE_V1"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0-pre.1,2.0.0)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1"
+        }
+    ]
+}
