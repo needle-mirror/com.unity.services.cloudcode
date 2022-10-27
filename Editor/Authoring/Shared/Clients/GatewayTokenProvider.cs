@@ -24,7 +24,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Clients
 
         public async Task<string> FetchGatewayToken()
         {
-            if (m_AccessTokens.GenesisAccessToken != m_LastKnownAccessToken || m_CurrentTime.Now >= m_NextRefreshTime)
+            if (m_AccessTokens.GenesisAccessToken != m_LastKnownAccessToken || m_CurrentTime.Now.ToUniversalTime() >= m_NextRefreshTime)
             {
                 if (!string.IsNullOrEmpty(m_AccessTokens.GenesisAccessToken))
                 {

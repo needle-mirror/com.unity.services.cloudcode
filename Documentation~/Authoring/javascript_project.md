@@ -99,21 +99,4 @@ it("test",async () =>{
 #### Running your tests
 Your tests can be run in command line with the following command `npm run test`
 
-## JS Hooks
 
-### Predeploy
-In order to run a script before the deployment happens, the `package.json`'s `scripts` entry needs to be modified.
-
-#### Example
-
-```
-{
-  "name": "cloudcode-authoring",
-  "version": "0.1.0",
-  "description": "Cloud Code Authoring",
-  "scripts": {
-    "test": "jest --silent",
-    "predeploy": "echo \"About to deploy\" && exit 0"
-  }
-}
-```
