@@ -19,5 +19,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Logging
         {
             SharedLogger.Log(message);
         }
+
+        public void LogVerbose(object message)
+        {
+            SharedLogger.LogVerbose(message);
+        }
     }
 }

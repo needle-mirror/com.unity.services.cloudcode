@@ -6,6 +6,7 @@ using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -43,7 +44,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 }
                 catch (Exception e)
                 {
-                    m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
+                    Logger.LogError($"An error occurred during 'CloudCode' deployment: {e}");
+                    Logger.LogException(e);
+                    m_DeploymentAnalytics.SendFailureDeploymentEvent($"{e.GetType()}: {e.Message}");
                     throw;
                 }
                 finally

@@ -84,10 +84,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
         async Task UploadFiles(IReadOnlyList<IScript> scripts)
         {
+            m_Logger.LogVerbose($"Uploading Scripts");
             foreach (var script in scripts)
             {
                 if (!m_ScriptCache.HasItemChanged(script))
                 {
+                    m_Logger.LogVerbose($"[Upload] Script {script.Name} was cached");
                     UpdateScriptProgress(script, 100f);
                     UpdateScriptStatus(script,
                         "Up to date",
@@ -105,8 +107,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             {
                 await Task.WhenAll(m_UploadTasks);
             }
-            catch
+            catch (Exception e)
             {
+                m_Logger.LogVerbose($"[Upload] An error ocurred on upload: {e}");
                 //we will use the task.Exceptions instead
             }
         }
@@ -130,6 +133,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         {
             try
             {
+                m_Logger.LogVerbose($"[Upload] Uploading {script.Name}");
                 var sendTimer = m_DeploymentAnalytics.BeginDeploySend(GetFileSize(script.Path));
                 await m_Client.UploadFromFile(script);
                 //Only dispose the timer if the upload was successful
@@ -168,8 +172,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             {
                 await Task.WhenAll(m_PublishTasks);
             }
-            catch
+            catch (Exception e)
             {
+                m_Logger.LogVerbose($"[Publishing] An error occurred on publishing: {e}");
                 //we will use the task.Exceptions instead
             }
         }
@@ -178,6 +183,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         {
             try
             {
+                m_Logger.LogVerbose($"[Publishing] Publishing {script.Name}");
                 await m_Client.Publish(script.Name);
                 m_DeploymentAnalytics.SendSuccessfulPublishEvent();
 
@@ -197,6 +203,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
         async Task UpdateLastPublishedDate(IReadOnlyList<IScript> localScripts)
         {
+            m_Logger.LogVerbose($"Updating LastPublishedDate");
             var remoteScriptInfos = await m_Client.ListScripts();
 
             foreach (var scriptInfo in remoteScriptInfos)
