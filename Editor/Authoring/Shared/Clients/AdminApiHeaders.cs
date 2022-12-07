@@ -1,4 +1,4 @@
-// WARNING: Auto generated code by Starbuck2. Modifications will be lost!
+// WARNING: Auto generated code. Modifications will be lost!
 using System.Collections.Generic;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 

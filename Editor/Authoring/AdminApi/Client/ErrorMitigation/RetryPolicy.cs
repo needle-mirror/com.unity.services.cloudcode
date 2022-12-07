@@ -1,13 +1,12 @@
 using System;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Client.Http;
 
-namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
+namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation
 {
     /// <summary>
     /// Retry Policy Provider class
     /// </summary>
-    internal class RetryPolicyProvider : IRetryPolicyProvider
+    class RetryPolicyProvider : IRetryPolicyProvider
     {
         /// <summary>
         /// Constructs a RetryPolicy based on the passed in operations type.
@@ -35,36 +34,36 @@ namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
 
     /// <summary>
     /// Retry Policy class that defines how exponential backoff and retry
-    /// behaviour should work. 
+    /// behaviour should work.
     /// </summary>
     /// <typeparam name="T">The type of the operation.</typeparam>
-    internal class RetryPolicy<T> : IRetryPolicy<T>
+    class RetryPolicy<T> : IRetryPolicy<T>
     {
-        private RetryPolicyConfig _retryPolicyConfig = new RetryPolicyConfig();
-        private Func<int, Task<T>> CreateOperation { get; set; }
-        private Func<T, Task<bool>> RetryCondition { get; set; }
+        RetryPolicyConfig _retryPolicyConfig = new RetryPolicyConfig();
+        Func<int, Task<T>> CreateOperation { get; set; }
+        Func<T, Task<bool>> RetryCondition { get; set; }
 
-        private RetryPolicy(Func<int, Task<T>> createAsyncOp)
+        RetryPolicy(Func<int, Task<T>> createAsyncOp)
         {
             CreateOperation = createAsyncOp;
         }
 
-        private RetryPolicy(Func<Task<T>> createAsyncOp)
+        RetryPolicy(Func<Task<T>> createAsyncOp)
         {
             CreateOperation = (int _) => createAsyncOp.Invoke();
         }
 
-        private static float AddJitter(float number, float magnitude)
+        static float AddJitter(float number, float magnitude)
         {
             return number + (UnityEngine.Random.value * magnitude);
         }
 
-        private static float Pow2(float exponent, float scale)
+        static float Pow2(float exponent, float scale)
         {
             return (float)(Math.Pow(2.0f, exponent) * scale);
         }
 
-        private static float CalculateDelay(int attemptNumber, float maxDelayTime, float delayScale,
+        static float CalculateDelay(int attemptNumber, float maxDelayTime, float delayScale,
             float jitterMagnitude)
         {
             float delayTime = Pow2(attemptNumber, delayScale);
@@ -211,14 +210,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
                 catch (Exception e)
                 {
                     // If we catch an exception, first check if it is one we are supposed to
-                    // handle. If so, we can retry, otherwise, we should throw.                    
+                    // handle. If so, we can retry, otherwise, we should throw.
                     if (!retryPolicyConfig.IsHandledException(e))
                     {
                         // Rethrow the exception
                         throw;
                     }
                 }
-                
+
                 // If RetryCondition is not null, invoke the RetryCondition and
                 // check if the CreateOperation succeeded. Also check if
                 // asyncOp is null, if it is that likely means we have thrown an

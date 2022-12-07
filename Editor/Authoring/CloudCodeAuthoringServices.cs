@@ -2,9 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using Unity.Services.CloudCode.Authoring.Client;
 using Unity.Services.CloudCode.Authoring.Client.Apis.Default;
-using Unity.Services.CloudCode.Authoring.Client.ErrorMitigation;
 using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
+using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Readers;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment;
@@ -19,7 +19,6 @@ using Unity.Services.CloudCode.Authoring.Editor.Projects.UI;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Chrono;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
 using Unity.Services.DeploymentApi.Editor;
@@ -27,8 +26,10 @@ using UnityEditor;
 using UnityEngine;
 using static Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion.Factories;
 using AccessTokens = Unity.Services.CloudCode.Authoring.Editor.AdminApi.Authentication.AccessTokens;
+using CurrentTime = Unity.Services.CloudCode.Authoring.Editor.Shared.Clients.CurrentTime;
 using IDeploymentEnvironmentProvider = Unity.Services.DeploymentApi.Editor.IEnvironmentProvider;
 using ICoreLogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
+using ICurrentTime = Unity.Services.CloudCode.Authoring.Editor.Shared.Clients.ICurrentTime;
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;
 using Logger = Unity.Services.CloudCode.Authoring.Editor.Logging.Logger;
 
@@ -59,7 +60,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IPackageVersionProvider, PackageVersionProvider>);
             collection.Register(Default<NodePackageManager>);
 
-            collection.Register(Default<InScriptParameters>);
+            collection.Register(Default<IInScriptParameters, InScriptParameters>);
             collection.Register(Default<ObservableCollection<IDeploymentItem>, ObservableCloudCodeScripts>);
             collection.RegisterStartupSingleton(Default<DuplicateNameValidator>);
 
@@ -90,6 +91,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IRetryPolicyProvider, RetryPolicyProvider>);
             collection.Register(Default<IHttpClient, HttpClient>);
             collection.Register(Default<IDefaultApiClient, DefaultApiClient>);
+            collection.Register(Default<IPreDeployValidator, EditorPreDeployValidator>);
             collection.Register(Default<ICloudCodeClient, CloudCodeClient>);
 
             collection.Register(Default<IEnvironmentProvider, EnvironmentProvider>);

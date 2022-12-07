@@ -9,6 +9,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Crypto
     {
         public string ComputeFileHash(IScript script)
         {
+            // No security risk here
+            // we hash the name of the file for user privacy
+            // ignoring here allows us to follow user journey instead of changing hash
+#pragma warning disable CA5351
             using var md5 = MD5.Create();
             using var fileStream = File.OpenRead(script.Path);
             var hashBytes = md5.ComputeHash(fileStream);
@@ -16,6 +20,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Crypto
                 .ToString(hashBytes)
                 .Replace("-", "")
                 .ToLowerInvariant();
+#pragma warning restore CA5351
         }
     }
 }

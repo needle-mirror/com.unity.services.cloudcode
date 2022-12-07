@@ -16,6 +16,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         float m_Progress;
         DeploymentStatus m_Status;
         string m_Path;
+        string m_Type;
         ScriptName m_Name;
         CoreLanguage? m_Language = CoreLanguage.JS;
 
@@ -35,13 +36,22 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         public CoreLanguage? Language
         {
             get => m_Language;
-            set => SetField(ref m_Language, value);
+            set
+            {
+                SetField(ref m_Language, value);
+            }
         }
 
         public string Path
         {
             get { return m_Path; }
             set { SetField(ref m_Path, value, OnPathChanged); }
+        }
+
+        public string Type
+        {
+            get => m_Type;
+            set => SetField(ref m_Type, value);
         }
 
         public float Progress

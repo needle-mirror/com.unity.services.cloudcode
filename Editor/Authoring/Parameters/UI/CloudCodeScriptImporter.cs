@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Threading;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Threading;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 
@@ -24,12 +25,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
             var jsScript = ScriptableObject.CreateInstance<CloudCodeScript>();
             Source = ParameterSource.Editor;
 
+            jsScript.Model = new Script(ctx.assetPath);
+
             if (CloudCodeProject.IsInitialized())
             {
                 LoadInScriptParameters(ctx);
             }
 
-            jsScript.Model = new Script(ctx.assetPath);
             var body = File.ReadAllText(ctx.assetPath);
             jsScript.Model.Body = body;
             jsScript.Model.Parameters = Parameters?.ToList() ?? new List<CloudCodeParameter>();
@@ -43,15 +45,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 
         void LoadInScriptParameters(AssetImportContext ctx)
         {
-            var loader = CloudCodeAuthoringServices.Instance.GetService<InScriptParameters>();
+            var loader = CloudCodeAuthoringServices.Instance.GetService<IInScriptParameters>();
 
             var path = ctx.assetPath; //getter must be called on the main thread
-            var inScriptParams = Sync.RunInBackgroundThread(() => loader.GetParametersFromPath(path));
 
-            if (inScriptParams != null)
+            try
             {
-                Parameters = inScriptParams;
-                Source = ParameterSource.InScript;
+                Task<List<CloudCodeParameter>> inScriptParams =
+                    Sync.RunInBackgroundThread(() => loader.GetParametersFromPath(path));
+
+                if (inScriptParams != null)
+                {
+                    Parameters = inScriptParams.Result;
+                    Source = ParameterSource.InScript;
+                }
+            }
+            catch
+            {
+                //We log the error in the loader
             }
         }
     }

@@ -1,30 +1,36 @@
-// WARNING: Auto generated code by Starbuck2. Modifications will be lost!
+// WARNING: Auto generated code. Modifications will be lost!
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Collections;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
 using UnityEditor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Assets
 {
-    sealed class ObservableAssets<T> : ObservableCollection<T>, IDisposable where T : UnityEngine.Object, IPath
+    class ObservableAssets<T> : ObservableCollection<T>, IDisposable where T : UnityEngine.Object, IPath
     {
         readonly AssetPostprocessorProxy m_Postprocessor = new AssetPostprocessorProxy();
-        readonly Dictionary<string, T> m_AssetPaths = new Dictionary<string, T>();
+        protected readonly Dictionary<string, T> m_AssetPaths = new Dictionary<string, T>();
 
-        public ObservableAssets()
+        public ObservableAssets() : this(true) {}
+
+        protected ObservableAssets(bool loadAssets)
         {
             m_Postprocessor.AllAssetsPostprocessed += AllAssetsPostprocessed;
-            LoadAllAssets();
+            if (loadAssets)
+            {
+                LoadAllAssets();
+            }
         }
 
         public void Dispose()
         {
-            m_Postprocessor.AllAssetsPostprocessed -= AllAssetsPostprocessed;
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        void LoadAllAssets()
+        protected void LoadAllAssets()
         {
             var assetPaths = AssetDatabase
                 .FindAssets($"t:{typeof(T).Name}")
@@ -48,9 +54,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Assets
             foreach (var imported in args.ImportedAssetPaths)
             {
                 var asset = AssetDatabase.LoadAssetAtPath<T>(imported);
-                if (asset != null && !Contains(asset))
+                if (asset != null)
                 {
-                    AddForPath(imported, asset);
+                    if (!Contains(asset))
+                    {
+                        AddForPath(imported, asset);
+                    }
+                    else
+                    {
+                        UpdateForPath(imported, asset);
+                    }
                 }
             }
 
@@ -67,20 +80,30 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Assets
             }
         }
 
-        void AddForPath(string path, T asset)
+        protected virtual void Dispose(bool disposing)
+        {
+            m_Postprocessor.AllAssetsPostprocessed -= AllAssetsPostprocessed;
+        }
+
+        protected virtual void AddForPath(string path, T asset)
         {
             m_AssetPaths.Add(path, asset);
             m_AssetPaths[path].Path = path;
             Add(asset);
         }
 
-        void RemoveForPath(string path, T asset)
+        protected virtual void UpdateForPath(string path, T asset)
+        {
+            m_AssetPaths[path] = asset;
+        }
+
+        protected virtual void RemoveForPath(string path, T asset)
         {
             m_AssetPaths.Remove(path);
             Remove(asset);
         }
 
-        void MovePath(string toPath, string fromPath)
+        protected virtual void MovePath(string toPath, string fromPath)
         {
             if (toPath != fromPath)
             {

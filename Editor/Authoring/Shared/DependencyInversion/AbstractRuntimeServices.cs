@@ -1,4 +1,4 @@
-// WARNING: Auto generated code by Starbuck2. Modifications will be lost!
+// WARNING: Auto generated code. Modifications will be lost!
 using System;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion
@@ -28,7 +28,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion
             if (s_Instance != null)
             {
                 throw new Exception(
-                    $"Runtime Services of type {typeof(T)} can only be instantiated once. Try using 'Instance' property.");
+                    $"Runtime Services of type {typeof(T)} can only be instantiated once. Try to using Instance property.");
             }
         }
 

@@ -1,7 +1,6 @@
-// WARNING: Auto generated code by Starbuck2. Modifications will be lost!
+// WARNING: Auto generated code. Modifications will be lost!
 using System;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Chrono;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Clients
 {
@@ -40,6 +39,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Clients
             }
 
             return m_GatewayToken;
+        }
+
+        public bool IsStaging()
+        {
+            return CloudEnvironmentConfigProvider.IsStaging();
         }
 
         static DateTime GetNextRefreshTime(string gatewayToken)

@@ -1,13 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
 using Unity.Services.DeploymentApi.Editor;
-using DeploymentSeverity = Unity.Services.DeploymentApi.Editor.SeverityLevel;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 {
@@ -17,8 +13,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             ICloudCodeClient client,
             IDeploymentAnalytics deploymentAnalytics,
             IScriptCache scriptCache,
-            ILogger logger) :
-            base(client, deploymentAnalytics, scriptCache, logger)
+            ILogger logger,
+            IPreDeployValidator validator) :
+            base(client, deploymentAnalytics, scriptCache, logger, validator)
         {
         }
 
@@ -27,7 +24,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             ((Script)script).Progress = progress;
         }
 
-        protected override void UpdateScriptStatus(IScript script, string message, string detail, StatusSeverityLevel level = StatusSeverityLevel.Error)
+        protected override void UpdateScriptStatus(IScript script,
+            string message,
+            string detail,
+            StatusSeverityLevel level = StatusSeverityLevel.None)
         {
             ((Script)script).Status = new DeploymentStatus(
                 message,
@@ -35,31 +35,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 ToDeploymentSeverityLevel(level));
         }
 
-        protected override bool OnPreDeploy(IReadOnlyList<IScript> scriptsEnumerated)
-        {
-            var scriptNames = scriptsEnumerated.Select(di => di.Name).ToList();
-
-            if (scriptNames.Count != scriptNames.Distinct().Count())
-            {
-                DuplicateNameValidator.DetectDuplicateNames(scriptsEnumerated.Cast<Script>().ToList());
-                m_Logger.LogError(DuplicateNamesError);
-                return false;
-            }
-
-            return true;
-        }
-
-        static DeploymentSeverity ToDeploymentSeverityLevel(StatusSeverityLevel level)
+        internal static SeverityLevel ToDeploymentSeverityLevel(StatusSeverityLevel level)
         {
             switch (level)
             {
+                case StatusSeverityLevel.None:
+                    return SeverityLevel.None;
                 case StatusSeverityLevel.Info:
-                    return DeploymentSeverity.Info;
+                    return SeverityLevel.Info;
+                case StatusSeverityLevel.Success:
+                    return SeverityLevel.Success;
                 case StatusSeverityLevel.Warning:
-                    return DeploymentSeverity.Warning;
+                    return SeverityLevel.Warning;
                 case StatusSeverityLevel.Error:
                 default:
-                    return DeploymentSeverity.Error;
+                    return SeverityLevel.Error;
             }
         }
     }

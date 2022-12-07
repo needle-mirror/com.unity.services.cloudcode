@@ -1,4 +1,4 @@
-﻿using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using SharedLogger = Unity.Services.CloudCode.Authoring.Editor.Shared.Logging.Logger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Logging

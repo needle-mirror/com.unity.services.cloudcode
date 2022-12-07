@@ -23,7 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 
         public string GetNameWithoutExtension()
         {
-            return GetFileNameWithoutSubExtension(m_Name);
+            return Path.GetFileNameWithoutExtension(m_Name);
         }
 
         bool Equals(ScriptName other)
@@ -46,17 +46,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         public override string ToString()
         {
             return m_Name;
-        }
-
-        static string GetFileNameWithoutSubExtension(string path)
-        {
-            var file = Path.GetFileName(path);
-            var separator = file.IndexOf(".");
-            if (separator != -1)
-            {
-                file = file.Substring(0, separator);
-            }
-            return file;
         }
     }
 }

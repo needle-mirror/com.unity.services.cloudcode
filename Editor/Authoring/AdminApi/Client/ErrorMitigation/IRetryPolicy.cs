@@ -1,13 +1,13 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
+namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation
 {
     /// <summary>
     /// Retry Policy Provider class for defining how exponential backoff and
     /// retry behaviour should work.
     /// </summary>
-    internal interface IRetryPolicyProvider
+    interface IRetryPolicyProvider
     {
         /// <summary>
         /// Constructs a RetryPolicy based on the passed in operations type.
@@ -38,7 +38,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
     /// behaviour should work.
     /// </summary>
     /// <typeparam name="T">The type of the operation.</typeparam>
-    internal interface IRetryPolicy<T>
+    interface IRetryPolicy<T>
     {
         /// <summary>
         /// Sets the Jitter Magnitude to help prevent a service from being

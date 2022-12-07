@@ -11,7 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Client.ErrorMitigation;
+using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation;
 using UnityEngine.Networking;
 
 namespace Unity.Services.CloudCode.Authoring.Client.Http

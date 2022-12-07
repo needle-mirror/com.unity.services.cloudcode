@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2022-12-07
+
+### Fixed
+- Duplicate file in the deployment window now appear as a warning instead of an error
+- Updated the com.unity.services.deployment.api version to be used for config as code
+
 ## [2.1.2] - 2022-10-27
 
 ### Fixed

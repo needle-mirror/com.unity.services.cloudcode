@@ -6,7 +6,7 @@ using UnityEngine;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
 using UnityEngine.UIElements;
 

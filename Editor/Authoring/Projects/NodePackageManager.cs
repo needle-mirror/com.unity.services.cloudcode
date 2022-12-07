@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.SystemEnvironment;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.SystemEnvironment;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {

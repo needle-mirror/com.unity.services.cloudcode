@@ -41,7 +41,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// Enum JS for value: JS
         /// </summary>
         [EnumMember(Value = "JS")]
-        JS = 1
+        JS = 1,
+
 
     }
 }

@@ -1,5 +1,5 @@
+using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Threading;
 using UnityEditor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics
@@ -17,7 +17,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics
                     AnalyticsConstants.k_VendorKey,
                     version);
 
-                Logger.LogVerbose($"Analytics: {eventName}.v{version} registered with result {result}");
+                Logger.LogVerbose($"Registered Analytics Event: {eventName}.v{version}. Result: {result}");
             });
         }
     }

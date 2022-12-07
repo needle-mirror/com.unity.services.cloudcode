@@ -24,6 +24,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
             {
                 script.PropertyChanged += ScriptOnPropertyChanged;
             }
+
             DetectDuplicateNames(m_Scripts);
         }
 
@@ -72,17 +73,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
             foreach (var script in scripts)
             {
                 var jsScript = script as Script;
+                var duplicateNameState = jsScript.States.FirstOrDefault(state => state.Description == DuplicateNameError);
 
                 if (nameCounts[script.Name] > 1)
                 {
                     var errorDetail = $"Cloud code script with name {script.Name} already exists";
-                    jsScript.Status = new DeploymentStatus(DuplicateNameError, errorDetail, SeverityLevel.Error);
+                    AddDuplicateNameAssetState(jsScript, errorDetail);
                 }
-                else if (jsScript?.Status.Message == DuplicateNameError)
+                else if (duplicateNameState.Description != null)
                 {
-                    jsScript.Status = new DeploymentStatus();
+                    jsScript.States.Remove(duplicateNameState);
                 }
             }
+        }
+
+        static void AddDuplicateNameAssetState(Script script, string errorDetail)
+        {
+            var containsDuplicateErrorName = script.States != null &&
+                script.States.Any(state => state.Description == DuplicateNameError);
+
+            if (containsDuplicateErrorName)
+            {
+                return;
+            }
+
+            var duplicateNameAssetState = new AssetState(DuplicateNameError, errorDetail, SeverityLevel.Warning);
+            script.States.Add(duplicateNameAssetState);
         }
 
         static void SetOrUpdate<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue, TValue> update, TValue initial)

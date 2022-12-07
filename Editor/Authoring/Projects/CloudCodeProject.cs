@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
@@ -29,6 +29,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             { "@unity-services/economy-2.1", $"file:{InternalEconomyPackage}-2.1.1.tgz" },
             { "@unity-services/remote-config", $"file:{InternalRemoteConfigPackage}-0.0.4.tgz" },
             { "@unity-services/remote-config-1.0", $"file:{InternalRemoteConfigPackage}-1.0.1.tgz" },
+            { "@unity-services/remote-config-1.1.0", $"file:{InternalRemoteConfigPackage}-1.1.0.tgz" },
+            { "@unity-services/remote-config-1.1.1", $"file:{InternalRemoteConfigPackage}-1.1.1.tgz" },
+            { "@unity-services/remote-config-1.1.2", $"file:{InternalRemoteConfigPackage}-1.1.2.tgz" },
             { "@unity-services/vivox-0.1", $"file:{InternalVivoxPackage}-0.1.6.tgz" },
             { "@unity-services/lobby-1.0", $"file:{InternalLobbyPackage}-1.0.1.tgz" },
         };

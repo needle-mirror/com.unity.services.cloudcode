@@ -1,8 +1,10 @@
 using System;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
+using UnityEngine.Analytics;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
 {
@@ -87,12 +89,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
 
         static void SendDeployEvent(DeploymentParameters deploymentParameters)
         {
-            EditorAnalytics.SendEventWithLimit(k_EventNameDeploy, deploymentParameters, k_VersionDeploy);
+            var res = EditorAnalytics.SendEventWithLimit(k_EventNameDeploy, deploymentParameters, k_VersionDeploy);
+            LogVerbose(k_EventNameDeploy, k_VersionDeploy, res);
         }
 
         static void SendPublishEvent(PublishParameters publishParameters)
         {
-            EditorAnalytics.SendEventWithLimit(k_EventNamePublish, publishParameters, k_VersionPublish);
+            var res = EditorAnalytics.SendEventWithLimit(k_EventNamePublish, publishParameters, k_VersionPublish);
+            LogVerbose(k_EventNamePublish, k_VersionPublish, res);
+        }
+
+        static void LogVerbose(string eventName, int version, AnalyticsResult result)
+        {
+            Logger.LogVerbose($"Sent Analytics Event: {eventName}.v{version}. Result: {result}");
         }
     }
 }

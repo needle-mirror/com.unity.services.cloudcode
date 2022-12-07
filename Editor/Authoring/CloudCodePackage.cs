@@ -1,4 +1,4 @@
-using Unity.Services.CloudCode.Authoring.Editor.Shared.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
 
 namespace Unity.Services.CloudCode.Authoring.Editor
 {

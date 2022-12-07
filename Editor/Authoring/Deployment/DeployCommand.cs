@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Collections;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -74,6 +74,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             {
                 i.Progress = 0f;
                 i.Status = new DeploymentStatus();
+                i.States.Clear();
             });
         }
     }

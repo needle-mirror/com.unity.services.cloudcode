@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
+namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation
 {
     internal delegate Exception ExceptionPredicate(Exception ex);
 
@@ -15,7 +15,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.ErrorMitigation
     {
         float _jitterMagnitude = 1.0f;
         float _delayScale = 1.0f;
-        float _maxDelayTime = 8.0f;        
+        float _maxDelayTime = 8.0f;
         List<ExceptionPredicate> _exceptionsToHandle = new List<ExceptionPredicate>();
 
         /// <summary>

@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
 {
-    class InScriptParameters
+    class InScriptParameters : IInScriptParameters
     {
         struct EvaluatedParam
         {
@@ -36,25 +36,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
         {
             var fullScriptPath = Path.GetFullPath(ScriptPaths.ScriptParameters);
             var output = await m_ScriptRunner.ExecNodeJs(new[] { fullScriptPath, path });
-            return ParseParameters(path, output);
+            if (TryParseParameters(path, output, out var parameters))
+            {
+                return parameters;
+            }
+
+            throw new InvalidOperationException(k_FailedToParseMessage);
         }
 
-        List<CloudCodeParameter> ParseParameters(string path, string output)
+        bool TryParseParameters(string path, string output, out List<CloudCodeParameter> result)
         {
+            result = null;
             if (output == string.Empty)
             {
-                return null;
+                return true;
             }
 
             try
             {
                 JObject parameters = JObject.Parse(output);
-
-                if (parameters == null)
-                {
-                    LogFailedToParse(path, k_FailedToParseMessage);
-                    return null;
-                }
 
                 var parsedParams = new List<CloudCodeParameter>();
                 foreach (var symbol in parameters)
@@ -72,22 +72,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
                             path,
                             string.Format(k_FailedToParseParameterMessageFormat, paramName)
                             + failureReason);
-                        return null;
+                        return false;
                     }
 
                     parsedParams.Add(cloudCodeParam);
                 }
-                return parsedParams;
+                result = parsedParams;
+                return true;
             }
             catch (JsonReaderException)
             {
                 LogFailedToParse(path, k_FailedToParseMessage);
-                return null;
+                return false;
             }
             catch (JsonSerializationException)
             {
                 LogFailedToParse(path, k_FailedToParseMessage);
-                return null;
+                return false;
             }
         }
 

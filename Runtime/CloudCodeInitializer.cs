@@ -25,7 +25,8 @@ namespace Unity.Services.CloudCode
                 .DependsOn<IPlayerId>()
                 .DependsOn<IAccessToken>()
                 .DependsOn<IInstallationId>()
-                .DependsOn<IProjectConfiguration>();
+                .DependsOn<IProjectConfiguration>()
+                .DependsOn<IExternalUserId>();
         }
 
         public Task Initialize(CoreRegistry registry)
@@ -35,23 +36,28 @@ namespace Unity.Services.CloudCode
             var playerId = registry.GetServiceComponent<IPlayerId>();
             var installationId = registry.GetServiceComponent<IInstallationId>();
             var projectConfiguration = registry.GetServiceComponent<IProjectConfiguration>();
+            var externalUserId = registry.GetServiceComponent<IExternalUserId>();
+
+
+            var configuration = new Configuration(GetHost(projectConfiguration), null, null, GetServiceHeaders(installationId, externalUserId));
+            externalUserId.UserIdChanged += id => UpdateExternalUserId(configuration, id);
 
             ICloudCodeApiClient cloudCodeApiClient = new CloudCodeApiClient(
                 new HttpClient(),
                 accessToken,
-                new Configuration(GetHost(projectConfiguration), null, null, GetServiceHeaders(installationId, projectConfiguration)));
+                configuration);
 
             CloudCodeService.Instance = new CloudCodeInternal(cloudProjectId, cloudCodeApiClient, playerId, accessToken);
 
             return Task.CompletedTask;
         }
 
-        static Dictionary<string, string> GetServiceHeaders(IInstallationId installationIdProvider, IProjectConfiguration projectConfiguration)
+        static Dictionary<string, string> GetServiceHeaders(IInstallationId installationIdProvider, IExternalUserId externalUserId)
         {
             var headers = new Dictionary<string, string>();
 
             var installationId = installationIdProvider.GetOrCreateIdentifier();
-            var analyticsUserId = projectConfiguration.GetString("com.unity.services.core.analytics-user-id");
+            var analyticsUserId = externalUserId.UserId;
 
             headers.Add("unity-installation-id", installationId);
 
@@ -61,6 +67,18 @@ namespace Unity.Services.CloudCode
             }
 
             return headers;
+        }
+
+        static void UpdateExternalUserId(Configuration configuration, string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                configuration.Headers.Remove("analytics-user-id");
+            }
+            else
+            {
+                configuration.Headers["analytics-user-id"] = userId;
+            }
         }
 
         static string GetHost(IProjectConfiguration projectConfiguration)

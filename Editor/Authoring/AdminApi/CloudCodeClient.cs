@@ -11,6 +11,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
+
 using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Language;
 using ApiLanguage = Unity.Services.CloudCode.Authoring.Client.Models.Language;
 
@@ -147,14 +148,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 
         static ScriptInfo ScriptInfoFromResponse(CloudCodeListScriptsResponseResults response)
         {
-            var language = response.Language;
             string ext = CloudCodeFileExtensions.Preferred();
+
             return new ScriptInfo(response.Name + ext, response.LastPublishedDate.ToString());
         }
 
         Task<Response> CreateScript(IScript script)
         {
-            var scriptParameters = script.Parameters?.Select(x => x.ToCloudCodeScriptParams()).ToList();
+            var scriptParameters = script.GetCloudCodeScriptParamsList();
+
             var createScript = new CloudCodeCreateScriptRequest(
                 script.Name.GetNameWithoutExtension(),
                 CloudCodeCreateScriptRequest.TypeOptions.API,
@@ -167,7 +169,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 
         Task<Response> UpdateScript(IScript script)
         {
-            var scriptParameters = script.Parameters?.Select(x => x.ToCloudCodeScriptParams()).ToList();
+            var scriptParameters = script.GetCloudCodeScriptParamsList();
             var updateScript = new CloudCodeUpdateScriptRequest(scriptParameters, script.Body);
             var request = new UpdateScriptRequest(m_ProjectIdProvider.ProjectId, m_EnvironmentProvider.Current, script.Name.GetNameWithoutExtension(), updateScript);
             return WrapRequest(m_Client.UpdateScriptAsync(request));
@@ -208,7 +210,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 {
                     return new ProblemJsonResponse<object>(e.response);
                 }
-                return new Response(e.response);
+                return new ProblemJsonDeserializationResponse<object>(e.response, e);
             }
         }
 
@@ -224,7 +226,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 {
                     return new ProblemJsonResponse<T>(e.response);
                 }
-                return new Response<T>(e.response, default);
+                return new ProblemJsonDeserializationResponse<T>(e.response, e);
             }
             catch (HttpException e)
             {
@@ -249,14 +251,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 
         static void EnsureSuccess(ScriptName scriptName, Response res)
         {
-            if (res.Status >= 200 && res.Status <= 299)
+            if (res is IProblemJsonDeserializationResponse problemJsonDeserializationResponse)
             {
-                return;
+                throw new ProblemJsonDeserializationException(scriptName, problemJsonDeserializationResponse);
             }
 
             if (res is IProblemJsonResponse problemJsonResponse)
             {
                 throw new ProblemJsonHttpException(scriptName, problemJsonResponse.ProblemJson, problemJsonResponse.HttpClientResponse);
+            }
+
+            if (res.Status >= 200 && res.Status <= 299)
+            {
+                return;
             }
 
             throw new UnexpectedRemoteStatusCodeException(res.Status);

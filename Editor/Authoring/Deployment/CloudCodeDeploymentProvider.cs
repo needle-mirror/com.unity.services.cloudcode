@@ -21,6 +21,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         {
             DeployCommand = deployCommand;
             OpenCommand = openCommand;
+
         }
 
         public void ValidateDeploymentStatus()
@@ -28,7 +29,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             foreach (var deploymentItem in DeploymentItems)
             {
                 var item = (Script)deploymentItem;
-                if (!IsInInvalidState(item))
+                if (!IsStateValid(item))
                 {
                     item.Progress = 0f;
                     item.Status = new DeploymentStatus();
@@ -36,7 +37,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             }
         }
 
-        static bool IsInInvalidState(Script script)
+        static bool IsStateValid(Script script)
         {
             return Mathf.Approximately(script.Progress, 100f)
                 || script.Status.MessageSeverity == SeverityLevel.Error

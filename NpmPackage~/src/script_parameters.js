@@ -3,7 +3,13 @@ const fs = require("fs");
 
 const infiniteProxy = () => {
     return new Proxy(function() {}, {
-        get: () => infiniteProxy(),
+        get: (_, p) => {
+            if (p === "toJSON") {
+                return () => { throw new Error("'required' resource might be used during script parsing") };
+            } else {
+                return infiniteProxy()
+            }
+        },
         apply: () => infiniteProxy(),
     });
 };
@@ -22,7 +28,7 @@ function withPatchedEnv(fn){
         fn();
     } catch (e) {
         tmpConsole.error(e);
-    } 
+    }
     finally {
         module = tmpModule;
         require = tmpRequire;

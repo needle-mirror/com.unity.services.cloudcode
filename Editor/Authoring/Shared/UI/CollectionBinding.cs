@@ -1,7 +1,7 @@
-// WARNING: Auto generated code by Starbuck2. Modifications will be lost!
+// WARNING: Auto generated code. Modifications will be lost!
 using System;
 using System.Collections.Specialized;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Collections;
+using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
 using UnityEngine.UIElements;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI
