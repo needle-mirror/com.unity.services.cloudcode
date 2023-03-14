@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -34,16 +35,40 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         public RunScriptResponse(object output = default)
         {
-            Output = output;
+            Output = (IDeserializable) JsonObject.GetNewJsonObjectResponse(output);
         }
 
         /// <summary>
-        /// 
+        /// Parameter output of RunScriptResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "output", EmitDefaultValue = false)]
-        public object Output{ get; }
+        public IDeserializable Output{ get; }
     
+        /// <summary>
+        /// Formats a RunScriptResponse into a string of key-value pairs for use as a path parameter.
+        /// </summary>
+        /// <returns>Returns a string representation of the key-value pairs.</returns>
+        internal string SerializeAsPathParam()
+        {
+            var serializedModel = "";
+
+            if (Output != null)
+            {
+                serializedModel += "output," + Output.ToString();
+            }
+            return serializedModel;
+        }
+
+        /// <summary>
+        /// Returns a RunScriptResponse as a dictionary of key-value pairs for use as a query parameter.
+        /// </summary>
+        /// <returns>Returns a dictionary of string key-value pairs.</returns>
+        internal Dictionary<string, string> GetAsQueryParam()
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            return dictionary;
+        }
     }
 }
-

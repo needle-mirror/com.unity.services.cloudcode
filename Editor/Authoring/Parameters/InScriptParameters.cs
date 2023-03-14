@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using UnityEditor;
-using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
 {
@@ -25,23 +28,54 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
 
         readonly INodeJsRunner m_ScriptRunner;
         readonly ILogger m_Logger;
+        readonly IScriptBundler m_Bundler;
+        readonly IFileReader m_FileReader;
 
-        public InScriptParameters(INodeJsRunner runner, ILogger logger)
+        public InScriptParameters(INodeJsRunner runner, ILogger logger, IScriptBundler scriptBundler, IFileReader fileReader)
         {
             m_ScriptRunner = runner;
             m_Logger = logger;
+            m_Bundler = scriptBundler;
+            m_FileReader = fileReader;
         }
 
-        public async Task<List<CloudCodeParameter>> GetParametersFromPath(string path)
+        public async Task<List<CloudCodeParameter>> GetParametersFromPath(
+            string path,
+            CancellationToken cancellationToken = default)
         {
-            var fullScriptPath = Path.GetFullPath(ScriptPaths.ScriptParameters);
-            var output = await m_ScriptRunner.ExecNodeJs(new[] { fullScriptPath, path });
-            if (TryParseParameters(path, output, out var parameters))
+            var shouldBundle = await m_Bundler.ShouldBeBundled(path, cancellationToken);
+            string scriptPath = path;
+            if (shouldBundle)
             {
-                return parameters;
+                var source = await m_Bundler.Bundle(path, cancellationToken);
+                scriptPath = Path.Combine(Path.GetTempPath(), Path.GetFileName(path));
+                await File.WriteAllTextAsync(scriptPath, source, cancellationToken);
             }
 
-            throw new InvalidOperationException(k_FailedToParseMessage);
+            try
+            {
+                var fullScriptPath = Path.GetFullPath(ScriptPaths.ScriptParameters);
+                var output = await m_ScriptRunner.ExecNodeJs(
+                    new[] { fullScriptPath, scriptPath },
+                    string.Empty,
+                    cancellationToken);
+
+                output = output.Trim();
+
+                if (TryParseParameters(path, output, out var parameters))
+                {
+                    return parameters;
+                }
+
+                throw new InvalidOperationException(k_FailedToParseMessage);
+            }
+            finally
+            {
+                if (shouldBundle)
+                {
+                    File.Delete(scriptPath);
+                }
+            }
         }
 
         bool TryParseParameters(string path, string output, out List<CloudCodeParameter> result)
@@ -65,8 +99,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
                         Name = paramName
                     };
 
-                    string failureReason;
-                    if (!TryParseParameter(symbol.Value, cloudCodeParam, out failureReason))
+                    if (!TryParseParameter(symbol.Value, cloudCodeParam, out var failureReason))
                     {
                         LogFailedToParse(
                             path,
@@ -92,7 +125,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
             }
         }
 
-        bool TryParseParameter(JToken param, CloudCodeParameter result, out string failureReason)
+        static bool TryParseParameter(JToken param, CloudCodeParameter result, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -147,7 +180,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
 
         void LogFailedToParse(string path, string message)
         {
-            m_Logger.LogError(path, message);
+            m_Logger.LogError($"Failed to parse at '{path}': {message}");
         }
     }
 }

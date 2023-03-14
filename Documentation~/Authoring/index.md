@@ -27,3 +27,5 @@ Cloud Code offers Javascript as a development language.
 In order to provide the expected toolset for Javascript development, this package contains some specific Javascript tooling.
 
 For more information about Javascript projects, refer to the Javascript Project [documentation](./javascript_project.md).
+
+For the best experience please make sure that you have NodeJS installed and that you configure it as per the documentation. 

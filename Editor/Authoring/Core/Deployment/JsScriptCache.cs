@@ -33,20 +33,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return hasChanged;
         }
 
-        public void Cache(IReadOnlyList<IScript> scripts)
+        public void Cache(IScript script)
         {
-            foreach (var script in scripts)
+            var cacheKey = GetCacheKey(script);
+            if (script.LastPublishedDate == null)
             {
-                if (string.IsNullOrEmpty(script.LastPublishedDate))
-                {
-                    continue;
-                }
-
-                var cacheKey = GetCacheKey(script);
+                m_Cache.Remove(cacheKey);
+            }
+            else
+            {
                 m_Cache[cacheKey] = GetCacheValue(script);
             }
-
-            ClearRemovedScriptsFromCache(scripts);
         }
 
         CacheKey GetCacheKey(IScript script)
@@ -61,18 +58,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return new CacheValue(
                 script,
                 m_HashComputer.ComputeFileHash(script));
-        }
-
-        void ClearRemovedScriptsFromCache(IEnumerable<IScript> scripts)
-        {
-            var cacheKeysToRemove = scripts
-                .Where(s => s.LastPublishedDate == null)
-                .Select(GetCacheKey);
-
-            foreach (var key in cacheKeysToRemove)
-            {
-                m_Cache.Remove(key);
-            }
         }
 
         readonly struct CacheKey

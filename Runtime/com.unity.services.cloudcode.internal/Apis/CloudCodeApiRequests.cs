@@ -32,7 +32,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
         public static string SerializeToString<T>(T obj)
         {
-            return JsonConvert.SerializeObject(obj);
+            return JsonConvert.SerializeObject(obj, new JsonSerializerSettings{ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore});
         }
     }
 
@@ -91,6 +91,25 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
                 }
                 paramString = paramString.Remove(paramString.Length - 1);
                 queryParams.Add(paramString);
+            }
+
+            return queryParams;
+        }
+
+        /// <summary>
+        /// Helper function to add a provided map of keys and values, representing a model, to the
+        /// provided query params.
+        /// </summary>
+        /// <param name="queryParams">A `List/<string/>` of the query parameters.</param>
+        /// <param name="modelVars">A `Dictionary` representing the vars of the model</param>
+        /// <returns>Returns a `List/<string/>`</returns>
+        [Preserve]
+        public List<string> AddParamsToQueryParams(List<string> queryParams, Dictionary<string, string> modelVars)
+        {
+            foreach(var key in modelVars.Keys)
+            {
+                string escapedValue = UnityWebRequest.EscapeURL(modelVars[key]);
+                queryParams.Add($"{UnityWebRequest.EscapeURL(key)}={escapedValue}");
             }
 
             return queryParams;
@@ -250,6 +269,132 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
     }
 
     /// <summary>
+    /// RunModuleRequest
+    /// Run Module Function
+    /// </summary>
+    [Preserve]
+    internal class RunModuleRequest : CloudCodeApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for moduleName </summary>
+        [Preserve]
+        public string ModuleName { get; }
+        /// <summary>Accessor for functionName </summary>
+        [Preserve]
+        public string FunctionName { get; }
+        /// <summary>Accessor for runScriptArguments </summary>
+        [Preserve]
+        public Unity.Services.CloudCode.Internal.Models.RunScriptArguments RunScriptArguments { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// RunModule Request Object.
+        /// Run Module Function
+        /// </summary>
+        /// <param name="projectId">ID of the project.</param>
+        /// <param name="moduleName">Name of the module.</param>
+        /// <param name="functionName">Name of the function inside a module.</param>
+        /// <param name="runScriptArguments">A JSON object containing the script run arguments.</param>
+        [Preserve]
+        public RunModuleRequest(string projectId, string moduleName, string functionName, Unity.Services.CloudCode.Internal.Models.RunScriptArguments runScriptArguments = default(Unity.Services.CloudCode.Internal.Models.RunScriptArguments))
+        {
+            ProjectId = projectId;
+
+            ModuleName = moduleName;
+
+            FunctionName = functionName;
+
+            RunScriptArguments = runScriptArguments;
+            PathAndQueryParams = $"/v1/projects/{projectId}/modules/{moduleName}/{functionName}";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            if(RunScriptArguments != null)
+            {
+                return ConstructBody(RunScriptArguments);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="accessToken">The auth access token to use.</param>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(IAccessToken accessToken,
+            Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+            if(!string.IsNullOrEmpty(accessToken.AccessToken))
+            {
+                headers.Add("authorization", "Bearer " + accessToken.AccessToken);
+            }
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+                "application/json"
+            };
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "POST";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
     /// RunScriptRequest
     /// Run Script
     /// </summary>
@@ -258,16 +403,13 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
     {
         /// <summary>Accessor for projectId </summary>
         [Preserve]
-        
         public string ProjectId { get; }
         /// <summary>Accessor for scriptName </summary>
         [Preserve]
-        
         public string ScriptName { get; }
         /// <summary>Accessor for runScriptArguments </summary>
         [Preserve]
         public Unity.Services.CloudCode.Internal.Models.RunScriptArguments RunScriptArguments { get; }
-        
         string PathAndQueryParams;
 
         /// <summary>
@@ -280,21 +422,14 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
         [Preserve]
         public RunScriptRequest(string projectId, string scriptName, Unity.Services.CloudCode.Internal.Models.RunScriptArguments runScriptArguments = default(Unity.Services.CloudCode.Internal.Models.RunScriptArguments))
         {
-            
             ProjectId = projectId;
-            
-            ScriptName = scriptName;
-            RunScriptArguments = runScriptArguments;
-            
 
+            ScriptName = scriptName;
+
+            RunScriptArguments = runScriptArguments;
             PathAndQueryParams = $"/v1/projects/{projectId}/scripts/{scriptName}";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>

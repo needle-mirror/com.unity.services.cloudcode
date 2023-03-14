@@ -6,6 +6,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Parameters;
+using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -35,19 +36,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
                 }
                 catch (InvalidOperationException e)
                 {
-                    invalidScripts.Add(script, e);
-                    var concreteScript = (Script)script;
-                    concreteScript.Status = DeploymentStatus.FailedToDeploy;
-                    var state = new AssetState(e.Message, string.Empty, level: SeverityLevel.Error);
-                    concreteScript.States.Add(state);
+                    OnFailedToGetParametersFromPath(invalidScripts, script, e);
                 }
-            }
-
-            foreach (var(invalidScript, exception) in validationInfo.InvalidScripts)
-            {
-                var concreteScript = (Script)invalidScript;
-                concreteScript.Status = DeploymentStatus.FailedToDeploy;
-                concreteScript.SetStatusDetail(exception.Message);
+                catch (NpmCommandFailedException e)
+                {
+                    OnFailedToGetParametersFromPath(invalidScripts, script, e);
+                }
             }
 
             return new ValidationInfo(
@@ -55,9 +49,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
                 invalidScripts);
         }
 
+        static void OnFailedToGetParametersFromPath(
+            IDictionary<IScript, Exception> invalidScripts,
+            IScript script,
+            Exception e)
+        {
+            invalidScripts.Add(script, e);
+            var concreteScript = (Script)script;
+            concreteScript.Status = DeploymentStatus.FailedToDeploy;
+            var state = new AssetState(
+                "Failed to parse in-script parameters.",
+                e.Message,
+                level: SeverityLevel.Error);
+            concreteScript.States.Add(state);
+        }
+
         protected override void NotifyDuplicateScriptError(IReadOnlyList<IScript> scripts, IReadOnlyList<IScript> duplicateScripts)
         {
-            base.NotifyDuplicateScriptError(scripts, duplicateScripts);
+            m_Logger.LogError(DuplicateNameConsoleError);
 
             DuplicateNameValidator.DetectDuplicateNames(scripts.Cast<IDeploymentItem>().ToList());
         }

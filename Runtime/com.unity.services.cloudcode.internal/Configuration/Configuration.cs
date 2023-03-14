@@ -9,6 +9,7 @@
 
 
 using System.Collections.Generic;
+using Unity.Services.CloudCode.Internal.ErrorMitigation;
 
 namespace Unity.Services.CloudCode.Internal
 {
@@ -19,26 +20,43 @@ namespace Unity.Services.CloudCode.Internal
     {
         /// <summary>The base service path which is overridable. Should be set to a valid URL.</summary>
         public string BasePath;
+
         /// <summary>The configuration request timeout.</summary>
         public int? RequestTimeout;
+
         /// <summary>Number of retries to attempt the operation.</summary>
         public int? NumberOfRetries;
+
         /// <summary>Headers for the operation.</summary>
         public IDictionary<string, string> Headers;
 
+        /// <summary>Configuration object used to specify which status codes should be automatically retried.</summary>
+        public StatusCodePolicyConfig StatusCodePolicyConfiguration;
+
+        /// <summary>Retry policy configuration information for back-off retry</summary>
+        public RetryPolicyConfig RetryPolicyConfiguration;
 
         /// <summary>
         /// Configuration constructor.
         /// </summary>
         /// <param name="basePath">The base service path which is overridable. Should be set to a valid URL.</param>
         /// <param name="requestTimeout">Request timeout for the configuration.</param>
-        /// <param name="numRetries">Number of retries for the configuration.</param>        
+        /// <param name="numRetries">Number of retries for the configuration.</param>
         /// <param name="headers">Headers for the configuration.</param>
-        public Configuration(string basePath, int? requestTimeout, int? numRetries, IDictionary<string, string> headers)
+        /// <param name="retryPolicyConfig">The policy for backoff and retry.</param>
+        /// <param name="statusCodePolicyConfig">The policy for which status codes we should or should not retry with.</param>
+        public Configuration(
+            string basePath,
+            int? requestTimeout,
+            int? numRetries,
+            IDictionary<string, string> headers,
+            RetryPolicyConfig retryPolicyConfig = null,
+            StatusCodePolicyConfig statusCodePolicyConfig = null)
         {
             BasePath = basePath;
             RequestTimeout = requestTimeout;
             NumberOfRetries = numRetries;
+
             if(headers == null)
             {
                 Headers = headers;
@@ -46,6 +64,24 @@ namespace Unity.Services.CloudCode.Internal
             else
             {
                 Headers = new Dictionary<string, string>(headers);
+            }
+
+            if (retryPolicyConfig == null)
+            {
+                RetryPolicyConfiguration = new RetryPolicyConfig();
+            }
+            else
+            {
+                RetryPolicyConfiguration = retryPolicyConfig;
+            }
+
+            if (statusCodePolicyConfig == null)
+            {
+                StatusCodePolicyConfiguration = new StatusCodePolicyConfig();
+            }
+            else
+            {
+                StatusCodePolicyConfiguration = statusCodePolicyConfig;
             }
         }
 
@@ -68,7 +104,13 @@ namespace Unity.Services.CloudCode.Internal
                 return a ?? b;
             }
 
-            Configuration mergedConfig = new Configuration(a.BasePath, a.RequestTimeout, a.NumberOfRetries, a.Headers);
+            Configuration mergedConfig = new Configuration(
+                a.BasePath,
+                a.RequestTimeout,
+                a.NumberOfRetries,
+                a.Headers,
+                a.RetryPolicyConfiguration,
+                a.StatusCodePolicyConfiguration);
 
             if(mergedConfig.BasePath == null)
             {
@@ -96,7 +138,6 @@ namespace Unity.Services.CloudCode.Internal
             mergedConfig.Headers = headers;
             mergedConfig.RequestTimeout = mergedConfig.RequestTimeout ?? b.RequestTimeout;
             mergedConfig.NumberOfRetries = mergedConfig.NumberOfRetries ?? b.NumberOfRetries;
-
 
             return mergedConfig;
         }

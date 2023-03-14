@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -34,17 +35,40 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         public RunScriptArguments(object @params)
         {
-            Params = new JsonObject(@params);
+            Params = (IDeserializable) JsonObject.GetNewJsonObjectResponse(@params);
         }
 
         /// <summary>
         /// Object containing Key-Value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition.
         /// </summary>
-        [Preserve]
-        [JsonConverter(typeof(JsonObjectConverter))]
+        [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]
-        public JsonObject Params{ get; }
+        public IDeserializable Params{ get; }
     
+        /// <summary>
+        /// Formats a RunScriptArguments into a string of key-value pairs for use as a path parameter.
+        /// </summary>
+        /// <returns>Returns a string representation of the key-value pairs.</returns>
+        internal string SerializeAsPathParam()
+        {
+            var serializedModel = "";
+
+            if (Params != null)
+            {
+                serializedModel += "params," + Params.ToString();
+            }
+            return serializedModel;
+        }
+
+        /// <summary>
+        /// Returns a RunScriptArguments as a dictionary of key-value pairs for use as a query parameter.
+        /// </summary>
+        /// <returns>Returns a dictionary of string key-value pairs.</returns>
+        internal Dictionary<string, string> GetAsQueryParam()
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            return dictionary;
+        }
     }
 }
-

@@ -35,6 +35,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 ToDeploymentSeverityLevel(level));
         }
 
+        protected override void UpdateValidationStatus(
+            ValidationInfo validationInfo)
+        {
+            foreach (var(invalidScript, exception) in validationInfo.InvalidScripts)
+            {
+                UpdateScriptStatus(
+                    invalidScript,
+                    DeploymentStatuses.DeployFailed,
+                    exception.Message,
+                    StatusSeverityLevel.Error);
+            }
+        }
+
         internal static SeverityLevel ToDeploymentSeverityLevel(StatusSeverityLevel level)
         {
             switch (level)

@@ -6,6 +6,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
+using Unity.Services.CloudCode.Authoring.Editor.UI;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 
@@ -14,11 +15,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
     [CustomEditor(typeof(CloudCodeScriptImporter))]
     class CloudCodeParameterImporterEditor : ScriptedImporterEditor
     {
-        static readonly string k_UsingInScript = L10n.Tr("In-Script parameters have been detected. Editor parameters are read only.");
-        static readonly string k_InScriptWithoutProject = L10n.Tr("This script has been imported using In-Script parameters but the project is not initialized correctly. Please re-initialize the project for parameters to update correctly.");
         static readonly string k_BreakingChangeWarning = L10n.Tr("The script parameters are incompatible with the parameters currently deployed. Deploying this version will break all existing clients.");
 
         ICloudCodeClient m_Client;
+        InScriptParamsUIHandler m_UIHandler;
 
         Task m_LoadScriptTask;
         Script m_RemoteScript;
@@ -28,6 +28,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
         {
             base.OnEnable();
             CloudCodeAuthoringServices.Instance.InitializeInstance(this);
+            m_UIHandler = CloudCodeAuthoringServices.Instance.GetService<InScriptParamsUIHandler>();
         }
 
         public void Initialize(ICloudCodeClient client)
@@ -44,26 +45,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 
 
             var source =  (ParameterSource)sourceProperty.enumValueIndex;
-            var projectInitialized = CloudCodeProject.IsInitialized();
+            var isProjectInitialized = CloudCodeProject.IsInitialized();
 
-            if (!projectInitialized && source == ParameterSource.InScript)
-            {
-                EditorGUILayout.HelpBox(k_InScriptWithoutProject, MessageType.Warning);
-            }
-
-            var isDisabled = source == ParameterSource.InScript && projectInitialized;
-            if (isDisabled)
-            {
-                EditorGUILayout.HelpBox(k_UsingInScript, MessageType.Info);
-                EditorGUI.BeginDisabledGroup(true);
-            }
-
-            EditorGUILayout.PropertyField(parameters);
-
-            if (isDisabled)
-            {
-                EditorGUI.EndDisabledGroup();
-            }
+            m_UIHandler.Handle(parameters, source, isProjectInitialized);
 
             CheckForBreakingChanges();
 

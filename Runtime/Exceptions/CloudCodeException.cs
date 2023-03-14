@@ -161,7 +161,7 @@ namespace Unity.Services.CloudCode
                 {
                     foreach (var errorMessage in err.ActualError.Details)
                     {
-                        sb.AppendLine(errorMessage.ToString());
+                        sb.AppendLine(errorMessage.GetAsString());
                     }
                 }
             }

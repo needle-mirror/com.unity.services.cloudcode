@@ -8,10 +8,13 @@ using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Readers;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Crypto;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Package;
 using Unity.Services.CloudCode.Authoring.Editor.Parameters;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
@@ -21,6 +24,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
+using Unity.Services.CloudCode.Authoring.Editor.UI;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -93,10 +97,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IDefaultApiClient, DefaultApiClient>);
             collection.Register(Default<IPreDeployValidator, EditorPreDeployValidator>);
             collection.Register(Default<ICloudCodeClient, CloudCodeClient>);
+            collection.Register(Default<IFileReader, FileReader>);
 
             collection.Register(Default<IEnvironmentProvider, EnvironmentProvider>);
             collection.Register(Default<IProjectIdProvider, ProjectIdProvider>);
             collection.Register(_ => new Lazy<IDeploymentEnvironmentProvider>(() => Deployments.Instance.EnvironmentProvider));
+
+            collection.Register(Default<IScriptBundler, EditorScriptBundler>);
+
+            collection.Register(Default<IEditorGUIUtils, EditorGUIUtils>);
+            collection.Register(Default<InScriptParamsUIHandler>);
         }
     }
 }

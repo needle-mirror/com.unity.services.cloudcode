@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -42,24 +43,76 @@ namespace Unity.Services.CloudCode.Internal.Models
         }
 
         /// <summary>
-        /// 
+        /// Parameter name of InvocationErrorResponseDetails
         /// </summary>
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
+        
         /// <summary>
-        /// 
+        /// Parameter message of InvocationErrorResponseDetails
         /// </summary>
         [Preserve]
         [DataMember(Name = "message", IsRequired = true, EmitDefaultValue = true)]
         public string Message{ get; }
+        
         /// <summary>
-        /// 
+        /// Parameter stackTrace of InvocationErrorResponseDetails
         /// </summary>
         [Preserve]
         [DataMember(Name = "stackTrace", IsRequired = true, EmitDefaultValue = true)]
         public List<string> StackTrace{ get; }
     
+        /// <summary>
+        /// Formats a InvocationErrorResponseDetails into a string of key-value pairs for use as a path parameter.
+        /// </summary>
+        /// <returns>Returns a string representation of the key-value pairs.</returns>
+        internal string SerializeAsPathParam()
+        {
+            var serializedModel = "";
+
+            if (Name != null)
+            {
+                serializedModel += "name," + Name + ",";
+            }
+            if (Message != null)
+            {
+                serializedModel += "message," + Message + ",";
+            }
+            if (StackTrace != null)
+            {
+                serializedModel += "stackTrace," + StackTrace.ToString();
+            }
+            return serializedModel;
+        }
+
+        /// <summary>
+        /// Returns a InvocationErrorResponseDetails as a dictionary of key-value pairs for use as a query parameter.
+        /// </summary>
+        /// <returns>Returns a dictionary of string key-value pairs.</returns>
+        internal Dictionary<string, string> GetAsQueryParam()
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            if (Name != null)
+            {
+                var nameStringValue = Name.ToString();
+                dictionary.Add("name", nameStringValue);
+            }
+            
+            if (Message != null)
+            {
+                var messageStringValue = Message.ToString();
+                dictionary.Add("message", messageStringValue);
+            }
+            
+            if (StackTrace != null)
+            {
+                var stackTraceStringValue = StackTrace.ToString();
+                dictionary.Add("stackTrace", stackTraceStringValue);
+            }
+            
+            return dictionary;
+        }
     }
 }
-

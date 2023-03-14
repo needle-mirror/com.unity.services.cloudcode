@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine.Networking;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Internal.ErrorMitigation;
 using Unity.Services.CloudCode.Internal.Helpers;
 using Unity.Services.CloudCode.Internal.Scheduler;
 using Task = System.Threading.Tasks.Task;
@@ -26,29 +27,57 @@ namespace Unity.Services.CloudCode.Internal.Http
     /// </summary>
     internal class HttpClient : IHttpClient
     {
+        private IRetryPolicyProvider _retryPolicy;
+
         /// <summary>Default Constructor.</summary>
-        public HttpClient()
+        /// <param name="retryPolicy">The policy provider for backoff and retry.</param>
+        public HttpClient(IRetryPolicyProvider retryPolicy = null)
         {
+            _retryPolicy = retryPolicy;
         }
 
         /// <inheritdoc/>
         public async Task<HttpClientResponse> MakeRequestAsync(string method, string url, byte[] body,
-            Dictionary<string, string> headers, int requestTimeout)
+            Dictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig, StatusCodePolicyConfig statusCodesToRetry)
         {
-            return await CreateWebRequestAsync(method.ToUpper(), url, body, headers, requestTimeout);
+            return await CreateWebRequestAsync(method.ToUpper(), url, body, headers, requestTimeout, retryPolicyConfig, statusCodesToRetry);
         }
 
         /// <inheritdoc/>
         public async Task<HttpClientResponse> MakeRequestAsync(string method, string url,
             List<IMultipartFormSection> body,
-            Dictionary<string, string> headers, int requestTimeout, string boundary = null)
+            Dictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig, StatusCodePolicyConfig statusCodesToRetry, string boundary = null)
         {
-            return await CreateWebRequestAsync(method.ToUpper(), url, body, headers, requestTimeout, boundary);
+            return await CreateWebRequestAsync(method.ToUpper(), url, body, headers, requestTimeout, retryPolicyConfig, statusCodesToRetry, boundary);
         }
 
         // Create and make an asynchronous UnityWebRequest
         private async Task<HttpClientResponse> CreateWebRequestAsync(string method, string url, byte[] body,
-            IDictionary<string, string> headers, int requestTimeout)
+            IDictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig, StatusCodePolicyConfig statusCodesToRetry)
+        {
+            if (_retryPolicy != null)
+            {
+                return await _retryPolicy
+                    .ForOperation(CreateWebRequestFunction(method, url, body, headers, requestTimeout))
+                    .WithRetryCondition(ShouldRetry(statusCodesToRetry))
+                    .RunAsync(retryPolicyConfig);
+            }
+            else
+            {
+                return await CreateHttpClientResponse(method, url, body, headers, requestTimeout);
+            }
+        }
+
+        private Func<int, Task<HttpClientResponse>> CreateWebRequestFunction(string method, string url, byte[] body, IDictionary<string, string> headers, int requestTimeout)
+        {
+            return async (attemptNumber) =>
+            {
+                return await CreateHttpClientResponse(method, url, body, headers, requestTimeout);
+            };
+        }
+
+        private async Task<HttpClientResponse> CreateHttpClientResponse(string method, string url, byte[] body, IDictionary<string, string> headers,
+            int requestTimeout)
         {
             var result = await await Task.Factory.StartNew(async () =>
                 {
@@ -61,8 +90,8 @@ namespace Unity.Services.CloudCode.Internal.Http
 
                         request.timeout = requestTimeout;
                         if (body != null && (method == UnityWebRequest.kHttpVerbPOST ||
-                                            method == UnityWebRequest.kHttpVerbPUT ||
-                                            method == "PATCH"))
+                                             method == UnityWebRequest.kHttpVerbPUT ||
+                                             method == "PATCH"))
                         {
                             request.uploadHandler = new UploadHandlerRaw(body);
                         }
@@ -70,16 +99,27 @@ namespace Unity.Services.CloudCode.Internal.Http
                         request.downloadHandler = new DownloadHandlerBuffer();
                         return await SendWebRequest(request);
                     }
-
                 }, CancellationToken.None, TaskCreationOptions.None,
                 Scheduler.ThreadHelper.TaskScheduler);
             return result;
         }
 
+        private static Func<HttpClientResponse, Task<bool>> ShouldRetry(StatusCodePolicyConfig statusCodesToRetry)
+        {
+            return (httpClientResponse)=>
+            {
+                if (statusCodesToRetry != null)
+                {
+                    return Task.FromResult(statusCodesToRetry.IsHandledStatusCode(httpClientResponse.StatusCode));
+                }
+                return Task.FromResult(false);
+            };
+        }
+
         // Create and make an asynchronous UnityWebRequest for a multipart body
         private async Task<HttpClientResponse> CreateWebRequestAsync(string method, string url,
             List<IMultipartFormSection> body,
-            IDictionary<string, string> headers, int requestTimeout, string boundary = null)
+            IDictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig, StatusCodePolicyConfig statusCodesToRetry, string boundary = null)
         {
             var result = await await Task.Factory.StartNew(async () =>
                 {

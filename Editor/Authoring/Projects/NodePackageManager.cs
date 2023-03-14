@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.SystemEnvironment;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
@@ -13,40 +15,43 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
         const string k_Install = "install";
         const string k_Ci = "ci";
         const string k_Test = "test";
+        const string k_LoggerTag = nameof(NodePackageManager);
         readonly IEnumerable<string> k_Init = new[] { "init", "-y" };
         readonly IEnumerable<string> k_Run = new[] { "run", "--silent" };
 
         readonly IProcessRunner m_ProcessRunner;
         readonly string m_NodeJsPath;
         readonly string m_NpmPath;
+        readonly ILogger m_Logger;
 
         public string WorkingDirectory { get; set; } = Directory.GetCurrentDirectory();
 
-        public NodePackageManager(IProcessRunner processRunner, IProjectSettings settings)
+        public NodePackageManager(IProcessRunner processRunner, IProjectSettings settings, ILogger logger)
         {
             m_ProcessRunner = processRunner;
             m_NodeJsPath = settings.NodeJsPath;
             m_NpmPath = settings.NpmPath;
+            m_Logger = logger;
         }
 
         public Task Init(CancellationToken cancellationToken = default)
         {
-            return NpmRun(k_Init, cancellationToken);
+            return NpmRun(k_Init, default, cancellationToken);
         }
 
         public Task Install(CancellationToken cancellationToken = default)
         {
-            return NpmRun(new[] {k_Install}, cancellationToken);
+            return NpmRun(new[] {k_Install}, default, cancellationToken);
         }
 
         public Task Ci(CancellationToken cancellationToken = default)
         {
-            return NpmRun(new[] {k_Ci}, cancellationToken);
+            return NpmRun(new[] {k_Ci}, default, cancellationToken);
         }
 
         public Task Test(CancellationToken cancellationToken = default)
         {
-            return NpmRun(new[] {k_Test}, cancellationToken);
+            return NpmRun(new[] {k_Test}, default, cancellationToken);
         }
 
         public bool CanRunScript(string script)
@@ -61,22 +66,33 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             return false;
         }
 
-        public Task<string> RunScript(string script, IEnumerable<string> arguments = default, CancellationToken cancellationToken = default)
+        public Task<string> RunScript(
+            string script,
+            IEnumerable<string> arguments = default,
+            string stdIn = default,
+            CancellationToken cancellationToken = default)
         {
             var npmArguments = new List<string>(k_Run) { script, "--" };
             if (arguments != null)
             {
                 npmArguments.AddRange(arguments);
             }
-            return NpmRun(npmArguments, cancellationToken);
+            return NpmRun(npmArguments, stdIn, cancellationToken);
         }
 
-        public async Task<string> ExecNodeJs(IEnumerable<string> arguments = default, CancellationToken cancellationToken = default)
+        public async Task<string> ExecNodeJs(
+            IEnumerable<string> arguments = default,
+            string stdIn = default,
+            CancellationToken cancellationToken = default)
         {
-            var startInfo = new ProcessStartInfo(m_NodeJsPath, ProcessArguments.Join(arguments))
+            var joinedArgs = ProcessArguments.Join(arguments);
+            m_Logger.LogVerbose($"[{k_LoggerTag}] Running \"{m_NodeJsPath}\" {joinedArgs}");
+
+            var startInfo = new ProcessStartInfo(m_NodeJsPath, joinedArgs)
             {
                 WorkingDirectory = WorkingDirectory,
                 UseShellExecute = false,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
@@ -86,25 +102,33 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             {
                 EnsurePathContainsNodeAndNpm();
 
-                var output = await m_ProcessRunner.RunAsync(startInfo, cancellationToken);
+                var output = await m_ProcessRunner.RunAsync(startInfo, stdIn, cancellationToken);
                 if (output.ExitCode != 0)
                 {
                     throw new NpmCommandFailedException(startInfo, output);
                 }
+
                 return output.StdOut;
             }
-            catch (Win32Exception)
+            catch (Win32Exception e)
             {
+                m_Logger.LogVerbose($"[{k_LoggerTag}] Error {e}");
                 throw new NpmNotFoundException(m_NodeJsPath, m_NpmPath);
+            }
+            catch (Exception e)
+            {
+                m_Logger.LogVerbose($"[{k_LoggerTag}] Error {e}");
+                Console.Write(e.Message);
+                throw;
             }
         }
 
-        Task<string> NpmRun(IEnumerable<string> arguments, CancellationToken cancellationToken)
+        Task<string> NpmRun(IEnumerable<string> arguments, string stdIn, CancellationToken cancellationToken)
         {
             var nodeArguments = new List<string> { m_NpmPath };
             nodeArguments.AddRange(arguments);
 
-            return ExecNodeJs(nodeArguments, cancellationToken);
+            return ExecNodeJs(nodeArguments, stdIn, cancellationToken);
         }
 
         void EnsurePathContainsNodeAndNpm()

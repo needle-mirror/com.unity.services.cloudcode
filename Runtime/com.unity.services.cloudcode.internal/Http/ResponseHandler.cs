@@ -22,6 +22,18 @@ namespace Unity.Services.CloudCode.Internal.Http
     /// </summary>
     internal static class ResponseHandler
     {
+        private static List<IDeserializable> DeserializeListOfJsonObjects(List<object> objectList)
+        {
+            List<IDeserializable> jsonObjectList = new List<IDeserializable>();
+
+            foreach (var o in objectList)
+            {
+                jsonObjectList.Add(new JsonObject(o));
+            }
+
+            return (List<IDeserializable>) (object) jsonObjectList;
+        }
+
         /// <summary>
         /// Function for attempting to deserialize a response data to a given
         /// type.
@@ -33,20 +45,19 @@ namespace Unity.Services.CloudCode.Internal.Http
         {
             var settings = new JsonSerializerSettings
             {
-                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore
+                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore,
+                ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             };
 
-            var deserializedJson = GetDeserializedJson(response.Data);
-            
-            // If we are deserializing a JsonObject we need to construct a new
-            // one since JsonObjects are just used to encapsulate other types.
-            if (typeof(T) == typeof(JsonObject))
+            try
             {
-                object jObject = new JsonObject(JsonConvert.DeserializeObject(deserializedJson, settings));
-                return (T)jObject;
+                var deserializedJson = GetDeserializedJson(response.Data);
+                return JsonConvert.DeserializeObject<T>(deserializedJson, settings);
             }
-            
-            return JsonConvert.DeserializeObject<T>(deserializedJson, settings) ;
+            catch(Exception e)
+            {
+                throw new ResponseDeserializationException(response, e, e.Message);
+            }
         }
 
         /// <summary>
@@ -60,10 +71,18 @@ namespace Unity.Services.CloudCode.Internal.Http
         {
             var settings = new JsonSerializerSettings
             {
-                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore
+                MissingMemberHandling = Newtonsoft.Json.MissingMemberHandling.Ignore,
+                ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             };
 
-            return JsonConvert.DeserializeObject(GetDeserializedJson(response.Data), type, settings);
+            try
+            {
+                return JsonConvert.DeserializeObject(GetDeserializedJson(response.Data), type, settings);
+            }
+            catch(Exception e)
+            {
+                throw new ResponseDeserializationException(response, e, e.Message);
+            }
         }
 
         private static string GetDeserializedJson(byte[] data)
@@ -102,6 +121,12 @@ namespace Unity.Services.CloudCode.Internal.Http
             }
         }
 
+        /// <summary>
+        /// Function for converting a OneOf exception to an HttpException, or throwing an error if the
+        /// response cannot be correctly deserialized.
+        /// </summary>
+        /// <param name="response">The HTTP response.</param>
+        /// <param name="responseType">The Type of the response.</param>
         private static HttpException CreateOneOfException(HttpClientResponse response, Type responseType)
         {
             try
@@ -120,6 +145,13 @@ namespace Unity.Services.CloudCode.Internal.Http
             }
             catch (ResponseDeserializationException e)
             {
+                // To match the old behaviour for now, handle a
+                // MissingFieldException specially.
+                if (e.InnerException.GetType() == typeof(MissingFieldException))
+                {
+                    throw new ResponseDeserializationException(response, e.InnerException,
+                        "Discriminator field not found in the parsed json response.");
+                }
                 if (e.response == null)
                 {
                     throw new ResponseDeserializationException(response, e.Message);
@@ -132,6 +164,12 @@ namespace Unity.Services.CloudCode.Internal.Http
             }
         }
 
+        /// <summary>
+        /// Function for converting a response to an HttpException, or throwing an error if the
+        /// response cannot be correctly deserialized.
+        /// </summary>
+        /// <param name="response">The HTTP response.</param>
+        /// <param name="responseType">The Type of the response.</param>
         private static HttpException CreateHttpException(HttpClientResponse response, Type responseType)
         {
             Type exceptionType = typeof(HttpException<>);
@@ -139,6 +177,7 @@ namespace Unity.Services.CloudCode.Internal.Http
 
             try
             {
+                // If the responseType is a stream, create an instance of it to return
                 if (responseType == typeof(System.IO.Stream))
                 {
                     var streamObject = (object)(response.Data == null ? new MemoryStream() : new MemoryStream(response.Data));
@@ -146,6 +185,7 @@ namespace Unity.Services.CloudCode.Internal.Http
                     return (HttpException) streamObjectInstance;
                 }
 
+                // Otherwise, try to deserialize the object.
                 var dataObject = ResponseHandler.TryDeserializeResponse(response, responseType);
                 var instance = Activator.CreateInstance(genericException, new object[] {response, dataObject});
                 return (HttpException) instance;

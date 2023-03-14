@@ -77,7 +77,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
 
                 if (nameCounts[script.Name] > 1)
                 {
-                    var errorDetail = $"Cloud code script with name {script.Name} already exists";
+                    var errorDetail = $"Cloud code script with name '{script.Name}' already exists";
                     AddDuplicateNameAssetState(jsScript, errorDetail);
                 }
                 else if (duplicateNameState.Description != null)

@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Scripting;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -19,7 +20,6 @@ using Unity.Services.CloudCode.Internal.Http;
 
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace Unity.Services.CloudCode.Internal.Models

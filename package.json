@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -23,17 +23,19 @@
       "PC",
       "Windows 8 Universal",
       "Windows 10 Universal"
-    ]
+    ],
+    "changelog": "### Added\n- Added the ability to bundle JS scripts that are deployed from the editor.\n- Added CallModuleEndpointAsync to the Cloud Code Service for calling C# Modules"
   },
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.2.4"
+    "com.unity.services.cloudcode.tests": "2.3.0"
   },
   "upmCi": {
-    "footprint": "edf602d245f5665abec4e86195d5082854dd5e00"
+    "footprint": "ed755d9d2d14e14947cd07caa26b7cb29b97e126"
   },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.3/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "10ab9620355637d633467b52e64c7db82c7954c5"
+    "revision": "6fe7c8fdcc12dc4913ed2a5b754b8760cfffbbc5"
   }
 }

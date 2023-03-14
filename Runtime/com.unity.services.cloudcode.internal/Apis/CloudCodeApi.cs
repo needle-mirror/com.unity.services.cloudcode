@@ -22,16 +22,25 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
     /// </summary>
     internal interface ICloudCodeApiClient
     {
-            /// <summary>
-            /// Async Operation.
-            /// Run Script.
-            /// </summary>
-            /// <param name="request">Request object for RunScript.</param>
-            /// <param name="operationConfiguration">Configuration for RunScript.</param>
-            /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
-            /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-            Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request, Configuration operationConfiguration = null);
+        /// <summary>
+        /// Async Operation.
+        /// Run Module Function.
+        /// </summary>
+        /// <param name="request">Request object for RunModule.</param>
+        /// <param name="operationConfiguration">Configuration for RunModule.</param>
+        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        Task<Response<Models.RunScriptResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request, Configuration operationConfiguration = null);
 
+        /// <summary>
+        /// Async Operation.
+        /// Run Script.
+        /// </summary>
+        /// <param name="request">Request object for RunScript.</param>
+        /// <param name="operationConfiguration">Configuration for RunScript.</param>
+        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request, Configuration operationConfiguration = null);
     }
 
     ///<inheritdoc cref="ICloudCodeApiClient"/>
@@ -53,6 +62,10 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).
                 Configuration globalConfiguration = new Configuration("https://cloud-code.services.api.unity.com", 10, 4, null);
+                if (CloudCodeService.Instance != null)
+                {
+                    globalConfiguration = CloudCodeService.Instance.Configuration;
+                }
                 return Configuration.MergeConfigurations(_configuration, globalConfiguration);
             }
             set { _configuration = value; }
@@ -75,6 +88,33 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
             _accessToken = accessToken;
         }
 
+        /// <summary>
+        /// Async Operation.
+        /// Run Module Function.
+        /// </summary>
+        /// <param name="request">Request object for RunModule.</param>
+        /// <param name="operationConfiguration">Configuration for RunModule.</param>
+        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<Models.RunScriptResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunModule400OneOf)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(_accessToken, finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<Models.RunScriptResponse>(response, statusCodeToTypeMap);
+            return new Response<Models.RunScriptResponse>(response, handledResponse);
+        }
 
         /// <summary>
         /// Async Operation.
@@ -96,7 +136,9 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
                 request.ConstructUrl(finalConfiguration.BasePath),
                 request.ConstructBody(),
                 request.ConstructHeaders(_accessToken, finalConfiguration),
-                finalConfiguration.RequestTimeout ?? _baseTimeout);
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
 
             var handledResponse = ResponseHandler.HandleAsyncResponse<Models.RunScriptResponse>(response, statusCodeToTypeMap);
             return new Response<Models.RunScriptResponse>(response, handledResponse);

@@ -18,6 +18,9 @@ The possible parameter types are:
 
 More details can be found in the [Cloud Code Documentation](https://docs.unity.com/cloud-code/types-of-scripts.html).
 
+> [!NOTE]
+> The [Inspector](https://docs.unity3d.com/Manual/UsingTheInspector.html) has limited support for editing parameters; the UGS CLI can't read these parameters. If you want to use both the Editor and the CLI, use [in-script parameters](#in-script-parameters).
+
 ## In-Script Parameters
 
 To allow a more seamless experience in your Cloud Code Scripts, you may declare 

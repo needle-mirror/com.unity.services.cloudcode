@@ -1,9 +1,19 @@
 const { scriptParameters } = require("./script_parameters");
 
 describe("scriptParameters", () => {
+    beforeEach(() => {
+        jest.spyOn(process.stderr, "write").mockImplementation((_, cb) => cb());
+        jest.spyOn(process, "exit").mockImplementation();
+    });
+
+    afterEach(() => {
+        process.stderr.write.mockRestore();
+        process.exit.mockRestore();
+    });
+
     describe("when the script is empty", () => {
         let parameters;
-        beforeEach(() => parameters = scriptParameters(""));
+        beforeEach(() => (parameters = scriptParameters("")));
 
         it("has undefined parameters", () => {
             expect(parameters).toBeUndefined();
@@ -12,7 +22,9 @@ describe("scriptParameters", () => {
 
     describe("when the script exports only a function", () => {
         let parameters;
-        beforeEach(() => parameters = scriptParameters("module.exports = () => {}"));
+        beforeEach(
+            () => (parameters = scriptParameters("module.exports = () => {}"))
+        );
 
         it("has undefined parameters", () => {
             expect(parameters).toBeUndefined();
@@ -22,12 +34,7 @@ describe("scriptParameters", () => {
     describe("when the script is invalid", () => {
         let parameters;
         beforeEach(() => {
-            jest.spyOn(global.console, 'error').mockImplementation();
-            parameters = scriptParameters("not.valid.js")
-        });
-
-        afterEach(() => {
-            global.console.error.mockRestore();
+            parameters = scriptParameters("not.valid.js");
         });
 
         it("has undefined parameters", () => {
@@ -35,29 +42,29 @@ describe("scriptParameters", () => {
         });
 
         it("logs the error", () => {
-            expect(console.error).toBeCalled()
+            expect(process.stderr.write).toBeCalled();
+        });
+
+        it("exits the app", () => {
+            expect(process.exit).toBeCalledWith(1);
         });
     });
 
     describe("when the script loads dependencies", () => {
-        let parameters;
         beforeEach(() => {
-            jest.spyOn(global.console, 'error').mockImplementation();
-            parameters = scriptParameters("require('tmp')")
-        });
-
-        afterEach(() => {
-            global.console.error.mockRestore();
+            scriptParameters("require('tmp')");
         });
 
         it("does not log errors", () => {
-            expect(console.error).not.toBeCalled()
+            expect(process.stderr.write).not.toBeCalled();
         });
     });
 
     describe("when the script exports parameters", () => {
         let parameters;
-        beforeEach(() => parameters = scriptParameters("module.exports.params = {}"));
+        beforeEach(
+            () => (parameters = scriptParameters("module.exports.params = {}"))
+        );
 
         it("return those params", () => {
             expect(parameters).toMatchObject({});

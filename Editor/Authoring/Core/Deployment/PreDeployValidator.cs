@@ -10,8 +10,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     class PreDeployValidator : IPreDeployValidator
     {
-        readonly ILogger m_Logger;
-        protected internal string DuplicateNameConsoleError = "Cannot deploy cloud code scripts with the same name.";
+        internal static string DuplicateNameConsoleError = "Cannot deploy cloud code scripts with the same name.";
+
+        protected readonly ILogger m_Logger;
 
         public PreDeployValidator(ILogger logger)
         {
@@ -30,7 +31,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 duplicateScripts
                     .ToDictionary(invalidScript =>
                     invalidScript,
-                    invalidScript => new Exception($"Multiple scripts with the name {invalidScript.Name} were found. Only a single script for a given name may be deployed at the same time. Give all scripts unique names or deploy them separately to proceed.")));
+                    script => (Exception) new DuplicateScriptException(script, duplicateScripts)));
 
             return Task.FromResult<ValidationInfo>(new ValidationInfo(validScripts, invalidScriptsDictionary));
         }
@@ -55,7 +56,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             IReadOnlyList<IScript> scripts,
             IReadOnlyList<IScript> duplicateScripts)
         {
-            m_Logger.LogError(DuplicateNameConsoleError);
         }
     }
 }

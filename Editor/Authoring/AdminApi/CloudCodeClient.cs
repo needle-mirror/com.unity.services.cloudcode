@@ -1,14 +1,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Client;
 using Unity.Services.CloudCode.Authoring.Client.Apis.Default;
 using Unity.Services.CloudCode.Authoring.Client.Default;
 using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Client.Models;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
 
@@ -27,17 +30,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         readonly IDefaultApiClient m_Client;
         readonly IEnvironmentProvider m_EnvironmentProvider;
         readonly IProjectIdProvider m_ProjectIdProvider;
+        readonly IScriptBundler m_Bundler;
+        readonly IFileReader m_FileReader;
 
         public CloudCodeClient(
             IGatewayTokenProvider tokenProvider,
             IEnvironmentProvider environmentProvider,
             IProjectIdProvider projectIdProvider,
-            IDefaultApiClient client)
+            IDefaultApiClient client,
+            IScriptBundler bundler,
+            IFileReader fileReader)
         {
             m_TokenProvider = tokenProvider;
             m_Client = client;
             m_EnvironmentProvider = environmentProvider;
             m_ProjectIdProvider = projectIdProvider;
+            m_Bundler = bundler;
+            m_FileReader = fileReader;
         }
 
         public async Task<ScriptName> UploadFromFile(IScript script)
@@ -149,30 +158,45 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         static ScriptInfo ScriptInfoFromResponse(CloudCodeListScriptsResponseResults response)
         {
             string ext = CloudCodeFileExtensions.Preferred();
-
-            return new ScriptInfo(response.Name + ext, response.LastPublishedDate.ToString());
+            return new ScriptInfo(response.Name,
+                CloudCodeFileExtensions.Preferred(),
+                response.LastPublishedDate.ToString(),
+                (CoreLanguage)response.Language);
         }
 
-        Task<Response> CreateScript(IScript script)
+        async Task<Response> CreateScript(IScript script)
         {
-            var scriptParameters = script.GetCloudCodeScriptParamsList();
+            var (source, scriptParameters) = await GetScriptSource(script);
 
             var createScript = new CloudCodeCreateScriptRequest(
                 script.Name.GetNameWithoutExtension(),
                 CloudCodeCreateScriptRequest.TypeOptions.API,
-                script.Body,
+                source,
                 script.Language.ToCloudScriptLanguage(),
                 scriptParameters);
             var request = new CreateScriptRequest(m_ProjectIdProvider.ProjectId, m_EnvironmentProvider.Current, createScript);
-            return WrapRequest(m_Client.CreateScriptAsync(request));
+            return await WrapRequest(m_Client.CreateScriptAsync(request));
         }
 
-        Task<Response> UpdateScript(IScript script)
+        async Task<Response> UpdateScript(IScript script)
         {
-            var scriptParameters = script.GetCloudCodeScriptParamsList();
-            var updateScript = new CloudCodeUpdateScriptRequest(scriptParameters, script.Body);
+            var (source, scriptParameters) = await GetScriptSource(script);
+            
+            var updateScript = new CloudCodeUpdateScriptRequest(
+                scriptParameters,
+                source);
             var request = new UpdateScriptRequest(m_ProjectIdProvider.ProjectId, m_EnvironmentProvider.Current, script.Name.GetNameWithoutExtension(), updateScript);
-            return WrapRequest(m_Client.UpdateScriptAsync(request));
+            return await WrapRequest(m_Client.UpdateScriptAsync(request));
+        }
+
+        async Task<(string, List<CloudCodeScriptParams>)> GetScriptSource(IScript script)
+        {
+            var source = await m_Bundler.ShouldBeBundled(script.Path, CancellationToken.None)
+                ? await m_Bundler.Bundle(script.Path, CancellationToken.None)
+                : await m_FileReader.ReadAllTextAsync(script.Path, CancellationToken.None);
+
+            List<CloudCodeScriptParams> scriptParameters = script.GetCloudCodeScriptParamsList();
+            return (source, scriptParameters);
         }
 
         async Task<bool> ScriptExists(ScriptName scriptName)

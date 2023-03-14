@@ -1,18 +1,6 @@
 #!/usr/bin/env node
 const fs = require("fs");
-
-const infiniteProxy = () => {
-    return new Proxy(function() {}, {
-        get: (_, p) => {
-            if (p === "toJSON") {
-                return () => { throw new Error("'required' resource might be used during script parsing") };
-            } else {
-                return infiniteProxy()
-            }
-        },
-        apply: () => infiniteProxy(),
-    });
-};
+const { infiniteProxy, handleError } = require("./proxy_env");
 
 function withPatchedEnv(fn){
     const tmpModule = module;
@@ -27,7 +15,7 @@ function withPatchedEnv(fn){
 
         fn();
     } catch (e) {
-        tmpConsole.error(e);
+        handleError(e);
     }
     finally {
         module = tmpModule;
@@ -51,7 +39,8 @@ if (require.main === module) {
 
     if(args[0] && fs.existsSync(args[0])){
         const source = fs.readFileSync(args[0])?.toString();
-        const serialized = JSON.stringify(scriptParameters(source));
+        const bundling = scriptParameters(source);
+        const serialized = JSON.stringify(bundling);
         if(serialized){
             console.log(serialized);
         }

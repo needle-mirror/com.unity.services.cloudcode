@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using Unity.Services.Authentication.Internal;
 using Unity.Services.CloudCode.Internal;
 using Unity.Services.CloudCode.Internal.Apis.CloudCode;
@@ -34,7 +32,7 @@ namespace Unity.Services.CloudCode
         {
             var result = await GetRunScriptResponse(function, args);
 
-            var output = result?.Result?.Output;
+            var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
 
@@ -45,29 +43,24 @@ namespace Unity.Services.CloudCode
             return DeserializeOutput<TResult>(result);
         }
 
+        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args)
+        {
+            var result = await GetRunModuleScriptResponse(module, function, args);
+
+            var output = result?.Result?.Output.GetAs<object>();
+            return output?.ToString();
+        }
+
+        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args)
+        {
+            var result = await GetRunModuleScriptResponse(module, function, args);
+
+            return DeserializeOutput<TResult>(result);
+        }
+
         static TResult DeserializeOutput<TResult>(Response<RunScriptResponse> result)
         {
-            var output = result.Result.Output;
-
-            var expectedType = typeof(TResult);
-            if (expectedType == typeof(short)) return (TResult)(object)Convert.ToInt16(output);
-            if (expectedType == typeof(int)) return (TResult)(object)Convert.ToInt32(output);
-            if (expectedType == typeof(long)) return (TResult)(object)Convert.ToInt64(output);
-            if (expectedType == typeof(float)) return (TResult)(object)Convert.ToSingle(output);
-            if (expectedType == typeof(double)) return (TResult)(object)Convert.ToDouble(output);
-            if (expectedType == typeof(char)) return (TResult)(object)Convert.ToChar(output);
-            if (expectedType == typeof(string)) return (TResult)(object)Convert.ToString(output);
-            if (expectedType == typeof(bool)) return (TResult)(object)Convert.ToBoolean(output);
-            if (expectedType == typeof(DateTime)) return (TResult)(object)Convert.ToDateTime(output);
-            if (expectedType == typeof(byte)) return (TResult)(object)Convert.ToByte(output);
-            if (expectedType == typeof(decimal)) return (TResult)(object)Convert.ToDecimal(output);
-            if (expectedType == typeof(sbyte)) return (TResult)(object)Convert.ToSByte(output);
-            if (expectedType == typeof(ushort)) return (TResult)(object)Convert.ToUInt16(output);
-            if (expectedType == typeof(uint)) return (TResult)(object)Convert.ToUInt32(output);
-            if (expectedType == typeof(ulong)) return (TResult)(object)Convert.ToUInt64(output);
-
-            var jobj = (JObject)result.Result.Output;
-            return jobj.ToObject<TResult>();
+            return result.Result.Output.GetAs<TResult>();
         }
 
         async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, Dictionary<string, object> args)
@@ -77,6 +70,36 @@ namespace Unity.Services.CloudCode
             try
             {
                 return await GetResponseAsync(function, args);
+            }
+            catch (HttpException<BasicErrorResponse> e)
+            {
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+            }
+            catch (HttpException<ValidationErrorResponse> e)
+            {
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+            }
+            catch (HttpException<InvocationErrorResponse> e)
+            {
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+            }
+            catch (HttpException e)
+            {
+                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, (int)e.Response.StatusCode, e.Message, e);
+            }
+            catch (Exception e)
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.Unknown, CommonErrorCodes.Unknown, e.Message, e);
+            }
+        }
+
+        async Task<Response<RunScriptResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args)
+        {
+            ValidateRequiredDependencies();
+
+            try
+            {
+                return await GetModuleResponseAsync(module, function, args);
             }
             catch (HttpException<BasicErrorResponse> e)
             {
@@ -172,6 +195,15 @@ namespace Unity.Services.CloudCode
             var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>());
             var runScript = new RunScriptRequest(m_CloudProjectId.GetCloudProjectId(), function, runArgs);
             var task = m_ApiClient.RunScriptAsync(runScript);
+
+            return await task;
+        }
+
+        async Task<Response<RunScriptResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args)
+        {
+            var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>());
+            var runScript = new RunModuleRequest(m_CloudProjectId.GetCloudProjectId(), module, function, runArgs);
+            var task = m_ApiClient.RunModuleAsync(runScript);
 
             return await task;
         }

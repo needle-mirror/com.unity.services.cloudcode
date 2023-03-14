@@ -31,6 +31,29 @@ namespace Unity.Services.CloudCode
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
         Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args = null);
+
+        /// <summary>
+        /// Calls a Cloud Code function.
+        /// </summary>
+        /// <param name="module">Cloud Code Module to call</param>
+        /// <param name="function">Cloud Code function to call.</param>
+        /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
+        /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
+        Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null);
+
+        /// <summary>
+        /// Calls a Cloud Code function.
+        /// </summary>
+        /// <param name="module">Cloud Code Module to call</param>
+        /// <param name="function">Cloud Code function to call.</param>
+        /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
+        /// <typeparam name="TResult">Serialized from JSON returned by Cloud Code.</typeparam>
+        /// <returns>Serialized output from the called function.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
+        Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null);
     }
 
     public class CloudCodeService

@@ -6,6 +6,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
     interface INodeJsRunner
     {
-        Task<string> ExecNodeJs(IEnumerable<string> arguments = default, CancellationToken cancellationToken = default);
+        Task<string> ExecNodeJs(
+            IEnumerable<string> arguments = default,
+            string stdIn = default,
+            CancellationToken cancellationToken = default);
     }
 }

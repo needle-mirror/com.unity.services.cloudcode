@@ -6,7 +6,6 @@ using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -18,6 +17,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
         readonly IScriptReader m_ScriptReader;
 
+        bool m_reconcile;
+        bool m_dryRun;
         public override string Name => L10n.Tr("Deploy");
 
         public DeployCommand(
@@ -28,6 +29,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
             m_DeploymentAnalytics = deploymentAnalytics;
             m_ScriptReader = scriptReader;
+
+            m_reconcile = false;
+            m_dryRun = false;
         }
 
         public override async Task ExecuteAsync(IEnumerable<IDeploymentItem> items, CancellationToken cancellationToken = default)
@@ -40,13 +44,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             {
                 try
                 {
-                    await m_EditorCloudCodeDeploymentHandler.DeployAsync(scripts);
+                    await m_EditorCloudCodeDeploymentHandler.DeployAsync(scripts, m_reconcile, m_dryRun);
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError($"An error occurred during 'CloudCode' deployment: {e}");
-                    Logger.LogException(e);
-                    m_DeploymentAnalytics.SendFailureDeploymentEvent($"{e.GetType()}: {e.Message}");
+                    m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
                     throw;
                 }
                 finally

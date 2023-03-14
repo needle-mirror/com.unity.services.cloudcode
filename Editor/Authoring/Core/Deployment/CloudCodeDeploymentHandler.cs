@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.DeploymentTask;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 
@@ -14,8 +15,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         readonly IPreDeployValidator m_PreDeployValidator;
         readonly ICloudCodeClient m_Client;
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
-        readonly List<Task<IScript>> m_UploadTasks;
-        readonly List<Task> m_PublishTasks;
         readonly IScriptCache m_ScriptCache;
 
         internal enum StatusSeverityLevel
@@ -27,15 +26,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             Error
         }
 
-        protected CloudCodeDeploymentHandler(
+        public CloudCodeDeploymentHandler(
             ICloudCodeClient client,
             IDeploymentAnalytics deploymentAnalytics,
             IScriptCache scriptCache,
             ILogger logger,
             IPreDeployValidator preDeployValidator)
         {
-            m_UploadTasks = new List<Task<IScript>>();
-            m_PublishTasks = new List<Task>();
             m_Client = client;
             m_DeploymentAnalytics = deploymentAnalytics;
             m_ScriptCache = scriptCache;
@@ -43,74 +40,179 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             m_PreDeployValidator = preDeployValidator;
         }
 
-        public async Task DeployAsync(IEnumerable<IScript> scripts)
+        public async Task<DeployResult> DeployAsync(IEnumerable<IScript> scripts, bool reconcile = false, bool dryRun = false)
         {
-            ClearTasks();
-
             var scriptsEnumerated = scripts as IReadOnlyList<IScript> ?? scripts.ToList();
+
+            foreach (var script in scriptsEnumerated)
+                UpdateScriptProgress(script, 0f);
 
             var validationInfo = await m_PreDeployValidator.Validate(scriptsEnumerated);
 
-            await DeployAndPublishFiles(validationInfo.ValidScripts);
+            var validLocalScripts = validationInfo.ValidScripts;
+
+            var remoteScripts = await UpdateLastPublishedDate(validLocalScripts);
+
+            var remoteScriptNames = remoteScripts.Select(s => s.Name).ToHashSet();
+
+            var toCreate = scriptsEnumerated
+                .Where(s => !remoteScriptNames.Contains(s.Name))
+                .ToList();
+
+            var toUpdate = scriptsEnumerated
+                .Where(s => remoteScriptNames.Contains(s.Name))
+                .ToList();
+
+            var toDelete = !reconcile
+                ? new List<IScript>()
+                : remoteScripts
+                    .Where(scriptInfo => toUpdate.All(s => !s.Name.Equals(scriptInfo.Name)))
+                    .Select(s => s as IScript)
+                    .ToList();
+
+            var res = new DeployResult(
+                toCreate,
+                toUpdate,
+                toDelete,
+                Array.Empty<IScript>(),
+                validationInfo.InvalidScripts.Select(s => s.Key).ToList()
+            );
+
+            if (dryRun)
+            {
+                return res;
+            }
+
+            return await DeployFiles(validLocalScripts, toDelete, res, validationInfo);
         }
 
-        async Task DeployAndPublishFiles(IReadOnlyList<IScript> scripts)
+        async Task<DeployResult> DeployFiles(
+            IReadOnlyList<IScript> scriptsToPublish,
+            IReadOnlyList<IScript> scriptsToDelete,
+            DeployResult dryRunResult,
+            ValidationInfo validationInfo)
         {
-            if (!scripts.Any())
-                return;
+            UpdateValidationStatus(validationInfo);
 
-            foreach (var script in scripts)
-                UpdateScriptProgress(script, 0f);
+            if (!scriptsToPublish.Any())
+                return dryRunResult;
 
-            await UpdateLastPublishedDate(scripts);
-            await UploadFiles(scripts);
-            await PublishFiles();
+            var publishedFiles = await UploadAndPublishWithCache(scriptsToPublish);
+            var deletedFiles = await DeleteFiles(scriptsToDelete);
 
-            m_ScriptCache.Cache(scripts);
+            var deployed = publishedFiles
+                .Where(dt => dt.Task.IsCompletedSuccessfully && dt.Task.Exception == null)
+                .Select(dt => dt.Script)
+                .ToList();
 
-            var uploadExceptions = m_UploadTasks
-                .Where(t => t.IsFaulted && t.Exception != null)
-                .SelectMany(t => t.Exception.InnerExceptions);
-            var publishExceptions = m_PublishTasks
-                .Where(t => t.IsFaulted && t.Exception != null)
-                .SelectMany(t => t.Exception.InnerExceptions);
+            var failedToDelete = deletedFiles
+                .Where(dt => dt.Task.IsFaulted)
+                .Select(dt => dt.Script)
+                .ToList();
 
-            var exceptions = uploadExceptions.Concat(publishExceptions).ToList();
+            var failed = publishedFiles
+                .Where(dt => dt.Task.IsFaulted)
+                .Select(dt => dt.Script)
+                .ToList();
+
+            failed.AddRange(failedToDelete);
+
+            var exceptions = publishedFiles
+                .Where(dt => dt.Task.IsFaulted && dt.Task.Exception != null)
+                .SelectMany(dt => dt.Task.Exception.InnerExceptions)
+                .ToList();
+
+            exceptions.AddRange(deletedFiles
+                .Where(dt => dt.Task.IsFaulted && dt.Task.Exception != null)
+                .SelectMany(dt => dt.Task.Exception.InnerExceptions)
+                .ToList());
+
+            var res = new DeployResult(
+                dryRunResult.Created.Except(failed).ToList(),
+                dryRunResult.Updated.Except(failed).ToList(),
+                dryRunResult.Deleted.Except(failedToDelete).ToList(),
+                deployed,
+                dryRunResult.Failed.Concat(failed).ToList());
+
             if (exceptions.Any())
             {
-                throw new AggregateException(exceptions);
+                throw new DeploymentException(exceptions, res);
             }
+
+            return res;
         }
 
-        async Task UploadFiles(IReadOnlyList<IScript> scripts)
+        async Task<List<DeployTask>> UploadAndPublish(IReadOnlyList<IScript> scripts)
+        {
+            var uploadFiles = await UploadFiles(scripts);
+            var publishFiles = await PublishFiles(uploadFiles);
+            return publishFiles;
+        }
+
+        async Task<List<DeployTask>> UploadFiles(IReadOnlyList<IScript> scripts)
         {
             m_Logger.LogVerbose($"Uploading Scripts");
+            var uploadTasks = new List<DeployTask>();
+            foreach (var script in scripts)
+            {
+                var deploymentTask = UploadFile(script);
+                uploadTasks.Add(new DeployTask
+                {
+                    Script = script,
+                    Task = deploymentTask
+                });
+            }
+
+            await WaitForTasksWithoutThrowing(uploadTasks.ToList(), "Uploading");
+            return uploadTasks;
+        }
+
+        async Task<List<DeployTask>> UploadAndPublishWithCache(IReadOnlyList<IScript> scripts)
+        {
+            var cacheMisses = new List<IScript>();
             foreach (var script in scripts)
             {
                 if (!m_ScriptCache.HasItemChanged(script))
                 {
-                    m_Logger.LogVerbose($"[Upload] Script {script.Name} was cached");
+                    m_Logger.LogVerbose($"Script {script.Name} was cached and will not be deployed");
                     UpdateScriptProgress(script, 100f);
                     UpdateScriptStatus(script,
                         "Up to date",
                         string.Empty,
                         StatusSeverityLevel.Success);
-
-                    continue;
                 }
-
-                var deploymentTask = UploadFile(script);
-                m_UploadTasks.Add(deploymentTask);
+                else
+                {
+                    cacheMisses.Add(script);
+                }
             }
 
-            try
+            var result = await UploadAndPublish(cacheMisses);
+            await UpdateLastPublishedDate(scripts);
+
+            foreach (var r in result)
             {
-                await Task.WhenAll(m_UploadTasks);
+                if (r.Task.IsCompletedSuccessfully)
+                {
+                    m_ScriptCache.Cache(await r.Task);
+                }
             }
-            catch (Exception e)
+
+            return result;
+        }
+
+        protected virtual void UpdateValidationStatus(ValidationInfo validationInfo)
+        {
+            foreach (var invalidScript in validationInfo.InvalidScripts)
             {
-                m_Logger.LogVerbose($"[Upload] An error ocurred on upload: {e}");
-                //we will use the task.Exceptions instead
+                if (invalidScript.Value is DuplicateScriptException exception)
+                {
+                    UpdateScriptStatus(
+                        invalidScript.Key,
+                        DeploymentStatuses.DeployFailed,
+                        exception.ShortMessage,
+                        StatusSeverityLevel.Error);
+                }
             }
         }
 
@@ -121,7 +223,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             string detail,
             StatusSeverityLevel level = StatusSeverityLevel.None) {}
 
-        protected virtual void OnPublishFailed(IScript script, Exception e)
+        void OnPublishFailed(IScript script, Exception e)
         {
             UpdateScriptStatus(script,
                 DeploymentStatuses.PublishFailed,
@@ -135,7 +237,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             {
                 m_Logger.LogVerbose($"[Upload] Uploading {script.Name}");
                 var sendTimer = m_DeploymentAnalytics.BeginDeploySend(GetFileSize(script.Path));
+
                 await m_Client.UploadFromFile(script);
+
                 //Only dispose the timer if the upload was successful
                 sendTimer?.Dispose();
 
@@ -155,32 +259,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return script;
         }
 
-        async Task PublishFiles()
+        async Task<List<DeployTask>> PublishFiles(List<DeployTask> uploadTasks)
         {
-            foreach (var activeTask in m_UploadTasks)
+            m_Logger.LogVerbose($"Publishing Scripts");
+            var publishTasks = new List<DeployTask>();
+            foreach (var activeTask in uploadTasks)
             {
-                if (activeTask.IsFaulted)
+                var publishFile = PublishFile(activeTask.Task);
+                publishTasks.Add(new DeployTask()
                 {
-                    continue;
-                }
-
-                var publishTask = PublishFile(activeTask.Result);
-                m_PublishTasks.Add(publishTask);
+                    Script = activeTask.Script,
+                    Task = publishFile
+                });
             }
 
-            try
-            {
-                await Task.WhenAll(m_PublishTasks);
-            }
-            catch (Exception e)
-            {
-                m_Logger.LogVerbose($"[Publishing] An error occurred on publishing: {e}");
-                //we will use the task.Exceptions instead
-            }
+            await WaitForTasksWithoutThrowing(publishTasks.ToList(), "Publishing");
+            return publishTasks;
         }
 
-        async Task PublishFile(IScript script)
+        async Task<IScript> PublishFile(Task<IScript> uploadTask)
         {
+            var script = await uploadTask;
             try
             {
                 m_Logger.LogVerbose($"[Publishing] Publishing {script.Name}");
@@ -199,16 +298,67 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 OnPublishFailed(script, e);
                 throw;
             }
+
+            return script;
         }
 
-        async Task UpdateLastPublishedDate(IReadOnlyList<IScript> localScripts)
+        async Task<List<DeployTask>> DeleteFiles(IReadOnlyList<IScript> scriptsToDelete)
         {
-            m_Logger.LogVerbose($"Updating LastPublishedDate");
-            var remoteScriptInfos = await m_Client.ListScripts();
+            var deleteTasks = new List<DeployTask>();
+            foreach (var script in scriptsToDelete)
+            {
+                var deleteFile = DeleteFile(script);
+                deleteTasks.Add(new DeployTask()
+                {
+                    Script = script,
+                    Task = deleteFile
+                });
+            }
+
+            await WaitForTasksWithoutThrowing(deleteTasks.ToList(), "Deleting");
+            return deleteTasks;
+        }
+
+        async Task<IScript> DeleteFile(IScript scriptToDelete)
+        {
+            try
+            {
+                await m_Client.Delete(scriptToDelete.Name);
+            }
+            catch (Exception e)
+            {
+                m_Logger.LogError(e.Message ?? e.InnerException?.Message);
+                throw;
+            }
+
+            return scriptToDelete;
+        }
+
+        async Task<List<ScriptInfo>> UpdateLastPublishedDate(IReadOnlyList<IScript> localScripts)
+        {
+            List<ScriptInfo> remoteScriptInfos;
+            try
+            {
+                m_Logger.LogVerbose($"Updating LastPublishedDate");
+                remoteScriptInfos = await m_Client.ListScripts();
+            }
+            catch (Exception e)
+            {
+                m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().Name);
+                foreach (var script in localScripts)
+                {
+                    UpdateScriptStatus(
+                        script,
+                        DeploymentStatuses.DeployFailed,
+                        e.Message,
+                        StatusSeverityLevel.Error);
+                }
+                throw;
+            }
 
             foreach (var scriptInfo in remoteScriptInfos)
             {
-                var matchingScript = localScripts.FirstOrDefault(s => s.Name.ToString() == scriptInfo.ScriptName);
+                var matchingScript = localScripts.FirstOrDefault(s => s.Name.Equals(scriptInfo.Name));
                 if (matchingScript != null)
                 {
                     matchingScript.LastPublishedDate = scriptInfo.LastPublishedDate;
@@ -217,18 +367,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
             var removedScripts = GetRemovedScripts(remoteScriptInfos, localScripts);
             removedScripts.ForEach(s => s.LastPublishedDate = null);
+            return remoteScriptInfos;
         }
 
         static List<IScript> GetRemovedScripts(List<ScriptInfo> remoteScriptInfos, IReadOnlyList<IScript> localScripts)
         {
-            var scriptNames = remoteScriptInfos.Select(s => s.ScriptName);
-            return localScripts.Where(script => !scriptNames.Contains(script.Name.ToString())).ToList();
+            var scriptNames = remoteScriptInfos.Select(s => s.Name);
+            return localScripts.Where(script => !scriptNames.Contains(script.Name)).ToList();
         }
 
-        void ClearTasks()
+        async Task WaitForTasksWithoutThrowing(IList<DeployTask> tasks, string step)
         {
-            m_UploadTasks.Clear();
-            m_PublishTasks.Clear();
+            try
+            {
+                await Task.WhenAll(tasks.Select(t => t.Task).ToArray());
+            }
+            catch (Exception e)
+            {
+                m_Logger.LogVerbose($"[{step}] An error occurred on publishing: {e}");
+            }
         }
 
         static int GetFileSize(string filePath)

@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Internal.ErrorMitigation;
 using UnityEngine.Networking;
 
 namespace Unity.Services.CloudCode.Internal.Http
@@ -26,8 +27,10 @@ namespace Unity.Services.CloudCode.Internal.Http
         /// <param name="body">Byte array representing the request body.</param>
         /// <param name="headers">Dictionary of headers for the request.</param>
         /// <param name="requestTimeout">Request timeout value.</param>
+        /// <param name="retryPolicyConfig">The policy for backoff and retry.</param>
+        /// <param name="statusCodesToRetry">The policy for status code retries.</param>
         /// <returns> </returns>
-        Task<HttpClientResponse> MakeRequestAsync(string method, string url, byte[] body, Dictionary<string, string> headers, int requestTimeout);
+        Task<HttpClientResponse> MakeRequestAsync(string method, string url, byte[] body, Dictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig, StatusCodePolicyConfig statusCodesToRetry);
 
         /// <summary>Performs an asynchronous Http request for multipart uploads</summary>
         /// <param name="method">The HTTP method.</param>
@@ -35,8 +38,10 @@ namespace Unity.Services.CloudCode.Internal.Http
         /// <param name="body">Byte array representing the request body.</param>
         /// <param name="headers">Dictionary of headers for the request.</param>
         /// <param name="requestTimeout">Request timeout value.</param>
+        /// <param name="retryPolicyConfig">The policy for backoff and retry.</param>
+        /// <param name="statusCodesToRetry">The policy for status code retries.</param>
         /// <param name="boundary">The string delimiter for each multipart section.</param>
         /// <returns> </returns>
-        Task<HttpClientResponse> MakeRequestAsync(string method, string url, List<IMultipartFormSection> body, Dictionary<string, string> headers, int requestTimeout, string boundary = null);
+        Task<HttpClientResponse> MakeRequestAsync(string method, string url, List<IMultipartFormSection> body, Dictionary<string, string> headers, int requestTimeout, RetryPolicyConfig retryPolicyConfig = null, StatusCodePolicyConfig statusCodesToRetry = null, string boundary = null);
     }
 }

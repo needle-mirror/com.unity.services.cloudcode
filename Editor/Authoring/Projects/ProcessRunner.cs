@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
@@ -7,7 +8,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
     interface IProcessRunner
     {
-        Task<ProcessOutput> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default);
+        Task<ProcessOutput> RunAsync(
+            ProcessStartInfo startInfo,
+            string stdIn = default,
+            CancellationToken cancellationToken = default);
         bool Start(ProcessStartInfo startInfo);
     }
 
@@ -20,9 +24,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
     class ProcessRunner : IProcessRunner
     {
-        public async Task<ProcessOutput> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
+        public async Task<ProcessOutput> RunAsync(
+            ProcessStartInfo startInfo,
+            string stdIn = default,
+            CancellationToken cancellationToken = default)
         {
             startInfo.UseShellExecute = false;
+            startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.CreateNoWindow = true;
@@ -31,10 +39,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             var stdOutBuilder = new StringBuilder();
             var stdErrBuilder = new StringBuilder();
 
-            process.OutputDataReceived += (_, args) => stdOutBuilder.Append(args.Data);
-            process.ErrorDataReceived += (_, args) => stdErrBuilder.Append(args.Data);
+            process.OutputDataReceived += (_, args) => stdOutBuilder.AppendLine(args.Data);
+            process.ErrorDataReceived += (_, args) => stdErrBuilder.AppendLine(args.Data);
+
+            process.Start();
+            if (!string.IsNullOrEmpty(stdIn))
+            {
+                await process.StandardInput.WriteAsync(stdIn);
+                process.StandardInput.Close();
+            }
 
             await WaitForExitAsync(process, cancellationToken);
+
+            RemoveLastNewLineIfNecessary(stdOutBuilder);
+            RemoveLastNewLineIfNecessary(stdErrBuilder);
 
             return new ProcessOutput
             {
@@ -50,6 +68,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             return process.Start();
         }
 
+        static void RemoveLastNewLineIfNecessary(StringBuilder stringBuilder)
+        {
+            if (stringBuilder.Length != 0)
+            {
+                stringBuilder.Remove(stringBuilder.Length - Environment.NewLine.Length, Environment.NewLine.Length);
+            }
+        }
+
         static Task WaitForExitAsync(Process process, CancellationToken cancellationToken = default)
         {
             var tcs = new TaskCompletionSource<object>();
@@ -58,7 +84,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             if (cancellationToken != default)
                 cancellationToken.Register(() => tcs.SetCanceled());
 
-            process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 

@@ -45,7 +45,9 @@ namespace Unity.Services.CloudCode
 
     public interface ICloudCodeService
     {
-        public abstract System.Threading.Tasks.Task<string> CallEndpointAsync(string function, System.Collections.Generic.Dictionary<string, object> args);
-        public abstract System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, System.Collections.Generic.Dictionary<string, object> args);
+        public abstract System.Threading.Tasks.Task<string> CallEndpointAsync(string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
+        public abstract System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
+        public abstract System.Threading.Tasks.Task<string> CallModuleEndpointAsync(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
+        public abstract System.Threading.Tasks.Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
     }
 }
