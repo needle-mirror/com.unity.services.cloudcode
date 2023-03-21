@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
 {
@@ -31,7 +32,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
             if (targets.Length == 1)
             {
                 body.visible = true;
-                body.value = ReadScriptBody((CloudCodeScript)targets[0]);
+                body.value = ReadScriptBody(targets[0]);
             }
             else
             {
@@ -39,9 +40,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
             }
         }
 
-        static string ReadScriptBody(CloudCodeScript script)
+        static string ReadScriptBody(Object script)
         {
-            var path = script.Path;
+            var path = AssetDatabase.GetAssetPath(script);
             var lines = File.ReadLines(path).Take(k_MaxLines).ToList();
             if (lines.Count == k_MaxLines)
             {
