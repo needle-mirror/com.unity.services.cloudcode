@@ -35,7 +35,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// <param name="version">The version id of the active version of the Script</param>
         /// <param name="datePublished">Date time in ISO 8601 format. Null if there is no associated value.</param>
         [Preserve]
-        public CloudCodeGetScriptResponseActiveScript(string code, int version, DateTime datePublished)
+        public CloudCodeGetScriptResponseActiveScript(string code, int version, DateTime? datePublished)
         {
             Code = code;
             Version = version;
@@ -61,7 +61,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// </summary>
         [Preserve]
         [DataMember(Name = "datePublished", IsRequired = true, EmitDefaultValue = true)]
-        public DateTime DatePublished{ get; }
+        public DateTime? DatePublished{ get; }
     
         /// <summary>
         /// Formats a CloudCodeGetScriptResponseActiveScript into a string of key-value pairs for use as a path parameter.

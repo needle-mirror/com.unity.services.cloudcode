@@ -22,14 +22,14 @@ using Unity.Services.CloudCode.Internal.Http;
 namespace Unity.Services.CloudCode.Internal.Models
 {
     /// <summary>
-    /// Single error in the Validation Error Response.
+    /// Single error in the validation error response.
     /// </summary>
     [Preserve]
     [DataContract(Name = "ValidationErrorBody")]
     internal class ValidationErrorBody
     {
         /// <summary>
-        /// Single error in the Validation Error Response.
+        /// Single error in the validation error response.
         /// </summary>
         /// <param name="field">field param</param>
         /// <param name="messages">messages param</param>

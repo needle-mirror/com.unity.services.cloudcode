@@ -4,6 +4,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2023-03-24
+
+### Changed
+- Increased timeout from 10 seconds to 25 seconds.
+- Scripts are no longer cached, which would previously prevent deployments without a local change.
+
+### Fixed
+- When using JS Bundling, modifying an imported file will enable re-deployment for the main script.
+- Selecting multiple .js files using in-script parameters, the inspector will now remain disabled for editing.
+- When selecting multiple .js files or deployment definitions, the inspector will now properly refer to their actual types.
+- Deployable assets (.js) not appearing on load in the Deployment Window with Unity 2022+.
+
 ## [2.3.1] - 2023-03-21
 
 ### Fixed

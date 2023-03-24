@@ -106,7 +106,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 throw new InvalidDataException("Failed to lookup discriminator value for " + discriminatorValue + ". Possible values: " + possibleValues);
             }
 
-            actualObject = JsonConvert.DeserializeObject(jsonString, concreteType);
+            actualObject = IsolatedJsonConvert.DeserializeObject(jsonString, concreteType);
 
             return new TestScript422OneOf(actualObject, concreteType);
         }
@@ -118,7 +118,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
             {
                 try
                 {
-                    var deserializedClass = JsonConvert.DeserializeObject(jsonString, t);
+                    var deserializedClass = IsolatedJsonConvert.DeserializeObject(jsonString, t);
                     results.Add((deserializedClass, t));
                 }
                 catch (Exception)

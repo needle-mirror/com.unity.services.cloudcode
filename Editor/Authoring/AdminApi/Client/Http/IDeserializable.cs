@@ -23,7 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
     /// </summary>
     [Preserve]
     [JsonConverter(typeof(JsonObjectConverter))]
-     interface IDeserializable
+    internal interface IDeserializable
     {
         /// <summary>
         /// Returns the internal object as a string.

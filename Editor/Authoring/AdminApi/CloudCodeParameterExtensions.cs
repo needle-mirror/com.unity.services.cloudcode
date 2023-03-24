@@ -3,7 +3,6 @@ using System.Linq;
 using Unity.Services.CloudCode.Authoring.Client.Models;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Language;
-using Language = Unity.Services.CloudCode.Authoring.Client.Models.Language;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 {
@@ -32,18 +31,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         {
             var scriptParameters = script
                 .Parameters
-                ?.Select(x => x.ToCloudCodeScriptParams(script.Language))
+                ?.Select(x => x.ToCloudCodeScriptParams())
                     .ToList();
             return scriptParameters;
         }
 
         public static CloudCodeScriptParams ToCloudCodeScriptParams(
-            this CloudCodeParameter parameter,
-            CoreLanguage? language = CoreLanguage.JS)
+            this CloudCodeParameter parameter)
         {
             return new CloudCodeScriptParams(
                 parameter.Name,
-                ToCloudScriptLanguage(language),
                 ConvertParamTypeToTypeOptions(parameter.ParameterType),
                 parameter.Required);
         }
@@ -67,7 +64,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             return default;
         }
 
-        public static Language? ToCloudScriptLanguage(this CoreLanguage? language)
+        public static Language ToCloudScriptLanguage(this CoreLanguage? language)
         {
             if (!language.HasValue)
                 return Language.JS;

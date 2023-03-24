@@ -270,7 +270,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
     /// <summary>
     /// RunModuleRequest
-    /// Run Module Function
+    /// Run module function
     /// </summary>
     [Preserve]
     internal class RunModuleRequest : CloudCodeApiBaseRequest
@@ -284,21 +284,21 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
         /// <summary>Accessor for functionName </summary>
         [Preserve]
         public string FunctionName { get; }
-        /// <summary>Accessor for runScriptArguments </summary>
+        /// <summary>Accessor for runModuleArguments </summary>
         [Preserve]
-        public Unity.Services.CloudCode.Internal.Models.RunScriptArguments RunScriptArguments { get; }
+        public Unity.Services.CloudCode.Internal.Models.RunModuleArguments RunModuleArguments { get; }
         string PathAndQueryParams;
 
         /// <summary>
         /// RunModule Request Object.
-        /// Run Module Function
+        /// Run module function
         /// </summary>
         /// <param name="projectId">ID of the project.</param>
-        /// <param name="moduleName">Name of the module.</param>
-        /// <param name="functionName">Name of the function inside a module.</param>
-        /// <param name="runScriptArguments">A JSON object containing the script run arguments.</param>
+        /// <param name="moduleName">Name of the Cloud Code module.</param>
+        /// <param name="functionName">Name of the function to invoke from the given module.</param>
+        /// <param name="runModuleArguments">A JSON object containing the parameters to pass to the function.</param>
         [Preserve]
-        public RunModuleRequest(string projectId, string moduleName, string functionName, Unity.Services.CloudCode.Internal.Models.RunScriptArguments runScriptArguments = default(Unity.Services.CloudCode.Internal.Models.RunScriptArguments))
+        public RunModuleRequest(string projectId, string moduleName, string functionName, Unity.Services.CloudCode.Internal.Models.RunModuleArguments runModuleArguments = default(Unity.Services.CloudCode.Internal.Models.RunModuleArguments))
         {
             ProjectId = projectId;
 
@@ -306,7 +306,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
             FunctionName = functionName;
 
-            RunScriptArguments = runScriptArguments;
+            RunModuleArguments = runModuleArguments;
             PathAndQueryParams = $"/v1/projects/{projectId}/modules/{moduleName}/{functionName}";
 
 
@@ -329,9 +329,9 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
         /// <returns>A list of IMultipartFormSection representing the request body.</returns>
         public byte[] ConstructBody()
         {
-            if(RunScriptArguments != null)
+            if(RunModuleArguments != null)
             {
-                return ConstructBody(RunScriptArguments);
+                return ConstructBody(RunModuleArguments);
             }
             return null;
         }
@@ -396,7 +396,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
     }
     /// <summary>
     /// RunScriptRequest
-    /// Run Script
+    /// Run script
     /// </summary>
     [Preserve]
     internal class RunScriptRequest : CloudCodeApiBaseRequest
@@ -414,7 +414,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
         /// <summary>
         /// RunScript Request Object.
-        /// Run Script
+        /// Run script
         /// </summary>
         /// <param name="projectId">ID of the project.</param>
         /// <param name="scriptName">Name of the script.</param>

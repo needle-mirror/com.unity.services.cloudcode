@@ -28,14 +28,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi.Readers
 
         static Language GetLanguage(string path)
         {
-            return
-                Language.JS;
+            return Language.JS;
         }
 
         static List<CloudCodeParameter> GetParams(string path)
         {
-            return
-                GetParametersFromPath(path);
+            return GetParametersFromPath(path);
         }
 
         string ReadSource(string path)

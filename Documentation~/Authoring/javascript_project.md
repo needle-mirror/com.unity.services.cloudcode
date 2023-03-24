@@ -49,9 +49,21 @@ To opt-in a script for bundling, simply export the `bundling` value.
 The `module.exports` property must have been assigned before setting the parameters.
 By default, the script will not be bundled.
 
-Example:
-
+_lib.js_
+```js
+export const helloWorld = "Hello world!";
 ```
+
+_scriptToBundle.js_
+```js
+const lib = require("./lib.js");
+
+module.exports = async ({ params, context, logger }) => {
+    return {
+    "value": lib.helloWorld
+    };
+};
+
 module.exports.bundling = true;
 ```
 
@@ -60,12 +72,12 @@ module.exports.bundling = true;
 The addition of bundling allows the use of ES Modules when authoring JS scripts from the editor.
 If you plan on using ES Modules to write your scripts, we recommend this signature to make the bundler result as lean as possible.
 
-**lib.js**
+_lib.js_
 ```js
 export const someNumber = 42;
 ```
 
-**cloudCodeScript.js**
+_cloudCodeScript.js_
 ```js
 import { someNumber } from './lib.js'
 
@@ -75,6 +87,8 @@ function handler(params, context, logger) {
       'value': someNumber, /*example use of the someNumber from the lib.js script*/
   };
 }
+
+handler.bundling = true
 
 handler.params = {
   /*your params here*/

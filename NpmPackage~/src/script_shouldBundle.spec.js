@@ -15,8 +15,8 @@ describe("shouldBundle", () => {
         let should;
         beforeEach(() => should = shouldBundle(""));
 
-        it("has undefined parameters", () => {
-            expect(should).toBeUndefined();
+        it("has no bundling", () => {
+            expect(should).toBe(false);
         });
     });
 
@@ -25,7 +25,7 @@ describe("shouldBundle", () => {
         beforeEach(() => should = shouldBundle("module.exports = () => {}"));
 
         it("has undefined shouldBundle", () => {
-            expect(should).toBeUndefined();
+            expect(should).toBe(false);
         });
     });
 
@@ -35,8 +35,8 @@ describe("shouldBundle", () => {
             should = shouldBundle("not.valid.js")
         });
 
-        it("has undefined parameters", () => {
-            expect(should).toBeUndefined();
+        it("has false bundling", () => {
+            expect(should).toBe(false);
         });
 
         it("logs the error", () => {
@@ -61,6 +61,15 @@ describe("shouldBundle", () => {
 
         it("shouldBundle", () => {
             expect(should).toBe(true);
+        });
+    });
+
+    describe("when the uses ES Modules", () => {
+        let should;
+        beforeEach(() => should = shouldBundle("export const helloWorld = \"Hello world!\";"));
+
+        it("does not bundle", () => {
+            expect(should).toBe(false);
         });
     });
 });

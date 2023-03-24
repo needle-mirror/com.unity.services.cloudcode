@@ -4,6 +4,7 @@ const _path = require("path");
 globalThis.__fs__realpath = _fs.realpathSync;
 globalThis.__fs__stat = _fs.statSync;
 globalThis.__fs__readFile = _fs.readFileSync;
+globalThis.__fs__exists = _fs.existsSync;
 globalThis.__path__parse = _path.parse;
 globalThis.__path__resolve = _path.resolve;
 globalThis.__path__join = _path.join;
@@ -19,7 +20,7 @@ if (require.main === module)
 {
     require("./bundler.cjs")
         .bundle(process.argv[2])
-        .then((output) => console.log(output))
+        .then((output) => console.log(JSON.stringify(output)))
         .catch(e => {
             console.error(e);
             process.exit(1);

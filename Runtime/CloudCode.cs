@@ -63,6 +63,11 @@ namespace Unity.Services.CloudCode
             return result.Result.Output.GetAs<TResult>();
         }
 
+        static TResult DeserializeOutput<TResult>(Response<RunModuleResponse> result)
+        {
+            return result.Result.Output.GetAs<TResult>();
+        }
+
         async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, Dictionary<string, object> args)
         {
             ValidateRequiredDependencies();
@@ -93,7 +98,7 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        async Task<Response<RunScriptResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args)
+        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args)
         {
             ValidateRequiredDependencies();
 
@@ -199,9 +204,9 @@ namespace Unity.Services.CloudCode
             return await task;
         }
 
-        async Task<Response<RunScriptResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args)
+        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args)
         {
-            var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>());
+            var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>());
             var runScript = new RunModuleRequest(m_CloudProjectId.GetCloudProjectId(), module, function, runArgs);
             var task = m_ApiClient.RunModuleAsync(runScript);
 

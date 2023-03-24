@@ -2,8 +2,6 @@ using System.Collections.ObjectModel;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using UnityEditor;
 using UnityEngine;
-
-
 using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
@@ -21,7 +19,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         {
             DeployCommand = deployCommand;
             OpenCommand = openCommand;
-
         }
 
         public void ValidateDeploymentStatus()

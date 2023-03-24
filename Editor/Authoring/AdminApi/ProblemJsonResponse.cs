@@ -20,7 +20,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             : base(clientResponse, default)
         {
             var text = Encoding.UTF8.GetString(clientResponse.Data);
-            ProblemJson = JsonConvert.DeserializeObject<ProblemJson>(text);
+            ProblemJson = IsolatedJsonConvert.DeserializeObject<ProblemJson>(text, new JsonSerializerSettings());
             HttpClientResponse = clientResponse;
         }
     }

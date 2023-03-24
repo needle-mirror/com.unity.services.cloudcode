@@ -20,8 +20,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         ScriptName m_Name;
         CoreLanguage? m_Language = CoreLanguage.JS;
 
-        public string Body { get; internal set;}
-        public List<CloudCodeParameter> Parameters { get; internal set;}
+        public string Body { get; set; }
+        public List<CloudCodeParameter> Parameters { get; internal set; }
 
         string IDeploymentItem.Name => Name.ToString();
 
@@ -39,6 +39,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             set
             {
                 SetField(ref m_Language, value);
+                Type = "JavaScript";
             }
         }
 
@@ -73,16 +74,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         protected Script()
         {
             m_Progress = 0;
-            m_Status = new DeploymentStatus(string.Empty, string.Empty, SeverityLevel.Info);
+            m_Status = DeploymentStatus.Empty;
             States = new ObservableCollection<AssetState>();
         }
 
-        public Script(string path) : this()
+        public Script(string path)
+            : this()
         {
             Path = path.Replace(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
         }
 
-        public Script(ScriptName name, string body, List<CloudCodeParameter> parameters) : this()
+        public Script(ScriptName name, string body, List<CloudCodeParameter> parameters)
+            : this()
         {
             Name = name;
             Body = body;

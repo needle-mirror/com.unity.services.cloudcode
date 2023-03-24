@@ -56,8 +56,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
                 {
                     return obj.ToString();
                 }
-
-                return JsonConvert.SerializeObject(obj);
+                
+                return IsolatedJsonConvert.SerializeObject(obj);
             }
             catch (System.Exception)
             {
@@ -83,7 +83,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
             };
             try
             {
-                var returnObject = JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(obj), jsonSettings);
+                var returnObject = IsolatedJsonConvert.DeserializeObject<T>(IsolatedJsonConvert.SerializeObject(obj), jsonSettings);
                 var errors = ValidateObject(returnObject);
                 if (errors.Count > 0)
                 {
@@ -209,15 +209,29 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
         private void ValidatePropertyInfos<T>(T objectToCheck, List<string> errors)
         {
             var propertyInfos = objectToCheck.GetType().GetProperties();
+            
             foreach (var propertyInfo in propertyInfos)
             {
-                var value = propertyInfo.GetValue(objectToCheck);
-                var memberName = propertyInfo.Name;
-                var objectName = objectToCheck.GetType().Name;
-                ValidateValue(value, objectName, "Property", memberName, errors);
-            }
+                if (propertyInfo.GetIndexParameters().Length > 0)
+                {
+                    for (int index = 0; index < propertyInfo.GetIndexParameters().Length; index++)
+                    {
+                        var value = propertyInfo.GetValue(objectToCheck, new object[] { index });
+                        var memberName = propertyInfo.Name;
+                        var objectName = objectToCheck.GetType().Name;
+                        ValidateValue(value, objectName, "Property", memberName, errors);
+                    }
+                }
+                else
+                { 
+                    var value = propertyInfo.GetValue(objectToCheck);
+                    var memberName = propertyInfo.Name;
+                    var objectName = objectToCheck.GetType().Name;
+                    ValidateValue(value, objectName, "Property", memberName, errors);
+                }
+            } 
         }
-
+                                        
         private void ValidateFieldInfos<T>(T objectToCheck, List<string> errors)
         {
             var fieldInfos = objectToCheck.GetType().GetFields();

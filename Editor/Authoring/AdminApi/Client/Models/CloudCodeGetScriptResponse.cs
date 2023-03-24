@@ -33,12 +33,12 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// </summary>
         /// <param name="name">The name of the Script</param>
         /// <param name="type">The type of the Script</param>
-        /// <param name="language">language param</param>
+        /// <param name="language">The language of the Script</param>
         /// <param name="activeScript">activeScript param</param>
         /// <param name="versions">A list of versions of the Script</param>
         /// <param name="@params">The current list of parameters that are used by the Script</param>
         [Preserve]
-        public CloudCodeGetScriptResponse(string name, TypeOptions type, Language? language, CloudCodeGetScriptResponseActiveScript activeScript, List<CloudCodeGetScriptResponseVersions> versions, List<CloudCodeScriptParams> @params = default)
+        public CloudCodeGetScriptResponse(string name, TypeOptions type, LanguageOptions language, CloudCodeGetScriptResponseActiveScript activeScript, List<CloudCodeGetScriptResponseVersions> versions, List<CloudCodeScriptParams> @params = default)
         {
             Name = name;
             Type = type;
@@ -54,7 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-
+        
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -62,35 +62,36 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", IsRequired = true, EmitDefaultValue = true)]
         public TypeOptions Type{ get; }
-
+        
         /// <summary>
-        /// Parameter language of CloudCodeGetScriptResponse
+        /// The language of the Script
         /// </summary>
         [Preserve]
+        [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "language", IsRequired = true, EmitDefaultValue = true)]
-        public Language? Language{ get; }
-
+        public LanguageOptions Language{ get; }
+        
         /// <summary>
         /// Parameter activeScript of CloudCodeGetScriptResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "activeScript", IsRequired = true, EmitDefaultValue = true)]
         public CloudCodeGetScriptResponseActiveScript ActiveScript{ get; }
-
+        
         /// <summary>
         /// A list of versions of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "versions", IsRequired = true, EmitDefaultValue = true)]
         public List<CloudCodeGetScriptResponseVersions> Versions{ get; }
-
+        
         /// <summary>
         /// The current list of parameters that are used by the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public List<CloudCodeScriptParams> Params{ get; }
-
+    
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -112,6 +113,21 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         }
 
         /// <summary>
+        /// The language of the Script
+        /// </summary>
+        /// <value>The language of the Script</value>
+        [Preserve]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum LanguageOptions
+        {
+            /// <summary>
+            /// Enum JS for value: JS
+            /// </summary>
+            [EnumMember(Value = "JS")]
+            JS = 1
+        }
+
+        /// <summary>
         /// Formats a CloudCodeGetScriptResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
         /// <returns>Returns a string representation of the key-value pairs.</returns>
@@ -124,10 +140,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 serializedModel += "name," + Name + ",";
             }
             serializedModel += "type," + Type + ",";
-            if (Language != null)
-            {
-                serializedModel += "language," + Language.ToString() + ",";
-            }
+            serializedModel += "language," + Language + ",";
             if (ActiveScript != null)
             {
                 serializedModel += "activeScript," + ActiveScript.ToString() + ",";
@@ -156,10 +169,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-
+            
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-
+            
+            var languageStringValue = Language.ToString();
+            dictionary.Add("language", languageStringValue);
+            
             return dictionary;
         }
     }

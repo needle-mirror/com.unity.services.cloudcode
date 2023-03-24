@@ -36,7 +36,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// <param name="isDraft">A flag indicating if the Script is a draft Script</param>
         /// <param name="dateUpdated">Date time in ISO 8601 format. Null if there is no associated value.</param>
         [Preserve]
-        public CloudCodeGetScriptResponseVersions(string code, int? version, bool isDraft, DateTime dateUpdated)
+        public CloudCodeGetScriptResponseVersions(string code, int? version, bool isDraft, DateTime? dateUpdated)
         {
             Code = code;
             Version = version;
@@ -70,7 +70,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// </summary>
         [Preserve]
         [DataMember(Name = "dateUpdated", IsRequired = true, EmitDefaultValue = true)]
-        public DateTime DateUpdated{ get; }
+        public DateTime? DateUpdated{ get; }
     
         /// <summary>
         /// Formats a CloudCodeGetScriptResponseVersions into a string of key-value pairs for use as a path parameter.

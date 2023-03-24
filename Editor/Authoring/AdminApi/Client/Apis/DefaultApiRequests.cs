@@ -19,6 +19,7 @@ using UnityEngine.Networking;
 using UnityEngine.Scripting;
 using Unity.Services.CloudCode.Authoring.Client.Models;
 using Unity.Services.CloudCode.Authoring.Client.Scheduler;
+using Unity.Services.CloudCode.Authoring.Client.Http;
 
 
 namespace Unity.Services.CloudCode.Authoring.Client.Default
@@ -32,7 +33,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
         public static string SerializeToString<T>(T obj)
         {
-            return JsonConvert.SerializeObject(obj, new JsonSerializerSettings{ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore});
+            return IsolatedJsonConvert.SerializeObject(obj, new JsonSerializerSettings{ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore});
         }
     }
 
@@ -298,12 +299,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/players/anonymous";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -412,12 +408,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             CloudCodeCreateScriptRequest = cloudCodeCreateScriptRequest;
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -531,12 +522,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -645,12 +631,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -771,15 +752,12 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             List<string> queryParams = new List<string>();
 
-            
             if(!string.IsNullOrEmpty(Type))
             {
                 queryParams = AddParamsToQueryParams(queryParams, "type", Type);
             }
-                        
             var offsetStringValue = Offset.ToString();
             queryParams = AddParamsToQueryParams(queryParams, "offset", offsetStringValue);
-            
             var limitStringValue = Limit.ToString();
             queryParams = AddParamsToQueryParams(queryParams, "limit", limitStringValue);
             if (queryParams.Count > 0)
@@ -900,12 +878,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             Body = body;
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}/publish";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -1025,12 +998,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             CloudCodeTestScriptRequest = cloudCodeTestScriptRequest;
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}/test";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>
@@ -1150,12 +1118,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             CloudCodeUpdateScriptRequest = cloudCodeUpdateScriptRequest;
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}";
 
-            List<string> queryParams = new List<string>();
 
-            if (queryParams.Count > 0)
-            {
-                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
-            }
         }
 
         /// <summary>

@@ -15,27 +15,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         readonly IPreDeployValidator m_PreDeployValidator;
         readonly ICloudCodeClient m_Client;
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
-        readonly IScriptCache m_ScriptCache;
-
-        internal enum StatusSeverityLevel
-        {
-            None,
-            Info,
-            Success,
-            Warning,
-            Error
-        }
 
         public CloudCodeDeploymentHandler(
             ICloudCodeClient client,
             IDeploymentAnalytics deploymentAnalytics,
-            IScriptCache scriptCache,
             ILogger logger,
             IPreDeployValidator preDeployValidator)
         {
             m_Client = client;
             m_DeploymentAnalytics = deploymentAnalytics;
-            m_ScriptCache = scriptCache;
             m_Logger = logger;
             m_PreDeployValidator = preDeployValidator;
         }
@@ -51,7 +39,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
             var validLocalScripts = validationInfo.ValidScripts;
 
-            var remoteScripts = await UpdateLastPublishedDate(validLocalScripts);
+            var remoteScripts = await GetRemoteScripts(validLocalScripts);
 
             var remoteScriptNames = remoteScripts.Select(s => s.Name).ToHashSet();
 
@@ -94,10 +82,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         {
             UpdateValidationStatus(validationInfo);
 
-            if (!scriptsToPublish.Any())
-                return dryRunResult;
-
-            var publishedFiles = await UploadAndPublishWithCache(scriptsToPublish);
+            var publishedFiles = await UploadAndPublish(scriptsToPublish);
             var deletedFiles = await DeleteFiles(scriptsToDelete);
 
             var deployed = publishedFiles
@@ -165,40 +150,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
             await WaitForTasksWithoutThrowing(uploadTasks.ToList(), "Uploading");
             return uploadTasks;
-        }
-
-        async Task<List<DeployTask>> UploadAndPublishWithCache(IReadOnlyList<IScript> scripts)
-        {
-            var cacheMisses = new List<IScript>();
-            foreach (var script in scripts)
-            {
-                if (!m_ScriptCache.HasItemChanged(script))
-                {
-                    m_Logger.LogVerbose($"Script {script.Name} was cached and will not be deployed");
-                    UpdateScriptProgress(script, 100f);
-                    UpdateScriptStatus(script,
-                        "Up to date",
-                        string.Empty,
-                        StatusSeverityLevel.Success);
-                }
-                else
-                {
-                    cacheMisses.Add(script);
-                }
-            }
-
-            var result = await UploadAndPublish(cacheMisses);
-            await UpdateLastPublishedDate(scripts);
-
-            foreach (var r in result)
-            {
-                if (r.Task.IsCompletedSuccessfully)
-                {
-                    m_ScriptCache.Cache(await r.Task);
-                }
-            }
-
-            return result;
         }
 
         protected virtual void UpdateValidationStatus(ValidationInfo validationInfo)
@@ -334,7 +285,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return scriptToDelete;
         }
 
-        async Task<List<ScriptInfo>> UpdateLastPublishedDate(IReadOnlyList<IScript> localScripts)
+        async Task<List<ScriptInfo>> GetRemoteScripts(IReadOnlyList<IScript> localScripts)
         {
             List<ScriptInfo> remoteScriptInfos;
             try
@@ -356,24 +307,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 throw;
             }
 
-            foreach (var scriptInfo in remoteScriptInfos)
-            {
-                var matchingScript = localScripts.FirstOrDefault(s => s.Name.Equals(scriptInfo.Name));
-                if (matchingScript != null)
-                {
-                    matchingScript.LastPublishedDate = scriptInfo.LastPublishedDate;
-                }
-            }
-
-            var removedScripts = GetRemovedScripts(remoteScriptInfos, localScripts);
-            removedScripts.ForEach(s => s.LastPublishedDate = null);
             return remoteScriptInfos;
-        }
-
-        static List<IScript> GetRemovedScripts(List<ScriptInfo> remoteScriptInfos, IReadOnlyList<IScript> localScripts)
-        {
-            var scriptNames = remoteScriptInfos.Select(s => s.Name);
-            return localScripts.Where(script => !scriptNames.Contains(script.Name)).ToList();
         }
 
         async Task WaitForTasksWithoutThrowing(IList<DeployTask> tasks, string step)

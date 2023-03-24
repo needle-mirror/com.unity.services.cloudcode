@@ -32,16 +32,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// Creates an instance of CloudCodeScriptParams.
         /// </summary>
         /// <param name="name">The name of the parameter</param>
-        /// <param name="language">language param</param>
         /// <param name="type">The type of the parameter</param>
         /// <param name="required">A flag indicating if the parameter is required when running a Script</param>
         [Preserve]
-        public CloudCodeScriptParams(string name, Language? language, TypeOptions type = TypeOptions.ANY, bool required = default)
+        public CloudCodeScriptParams(string name, TypeOptions type = TypeOptions.ANY, bool required = default)
         {
             Name = name;
             Type = type;
             Required = required;
-            Language = language;
         }
 
         /// <summary>
@@ -50,7 +48,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-
+        
         /// <summary>
         /// The type of the parameter
         /// </summary>
@@ -58,21 +56,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", EmitDefaultValue = false)]
         public TypeOptions Type{ get; }
-
+        
         /// <summary>
         /// A flag indicating if the parameter is required when running a Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "required", EmitDefaultValue = true)]
         public bool Required{ get; }
-
-        /// <summary>
-        /// Parameter language of CloudCodeScriptParams
-        /// </summary>
-        [Preserve]
-        [DataMember(Name = "language", IsRequired = true, EmitDefaultValue = true)]
-        public Language? Language{ get; }
-
+    
         /// <summary>
         /// The type of the parameter
         /// </summary>
@@ -121,11 +112,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 serializedModel += "name," + Name + ",";
             }
             serializedModel += "type," + Type + ",";
-            serializedModel += "required," + Required.ToString() + ",";
-            if (Language != null)
-            {
-                serializedModel += "language," + Language.ToString();
-            }
+            serializedModel += "required," + Required.ToString();
             return serializedModel;
         }
 
@@ -142,13 +129,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-
+            
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-
+            
             var requiredStringValue = Required.ToString();
             dictionary.Add("required", requiredStringValue);
-
+            
             return dictionary;
         }
     }

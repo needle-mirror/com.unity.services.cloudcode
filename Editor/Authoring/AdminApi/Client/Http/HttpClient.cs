@@ -15,9 +15,9 @@ using System.Text;
 using System.Threading;
 using UnityEngine.Networking;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Client.ErrorMitigation;
 using Unity.Services.CloudCode.Authoring.Client.Helpers;
 using Unity.Services.CloudCode.Authoring.Client.Scheduler;
-using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation;
 using Task = System.Threading.Tasks.Task;
 
 namespace Unity.Services.CloudCode.Authoring.Client.Http

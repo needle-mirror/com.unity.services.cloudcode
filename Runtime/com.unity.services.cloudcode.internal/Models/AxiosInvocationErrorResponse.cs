@@ -22,14 +22,14 @@ using Unity.Services.CloudCode.Internal.Http;
 namespace Unity.Services.CloudCode.Internal.Models
 {
     /// <summary>
-    /// An invocation error from the execution backend in an axios request. Describes the error and provides details about the request and response.  Most common cause is an unhandled error from one of the Cloud Code SDKs for other Unity services (ex. Cloud Save). 
+    /// An invocation error from the execution backend in an axios request. Describes the error and provides details about the request and response. Most common cause is an unhandled error from one of the Cloud Code SDKs for other Unity services (ex. Cloud Save). 
     /// </summary>
     [Preserve]
     [DataContract(Name = "AxiosInvocationErrorResponse")]
     internal class AxiosInvocationErrorResponse
     {
         /// <summary>
-        /// An invocation error from the execution backend in an axios request. Describes the error and provides details about the request and response.  Most common cause is an unhandled error from one of the Cloud Code SDKs for other Unity services (ex. Cloud Save). 
+        /// An invocation error from the execution backend in an axios request. Describes the error and provides details about the request and response. Most common cause is an unhandled error from one of the Cloud Code SDKs for other Unity services (ex. Cloud Save). 
         /// </summary>
         /// <param name="type">type param</param>
         /// <param name="title">title param</param>

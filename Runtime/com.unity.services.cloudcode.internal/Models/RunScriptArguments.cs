@@ -31,7 +31,7 @@ namespace Unity.Services.CloudCode.Internal.Models
         /// <summary>
         /// Creates an instance of RunScriptArguments.
         /// </summary>
-        /// <param name="@params">Object containing Key-Value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition.</param>
+        /// <param name="@params">Object containing key-value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition. </param>
         [Preserve]
         public RunScriptArguments(object @params)
         {
@@ -39,7 +39,7 @@ namespace Unity.Services.CloudCode.Internal.Models
         }
 
         /// <summary>
-        /// Object containing Key-Value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition.
+        /// Object containing key-value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition. 
         /// </summary>
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]

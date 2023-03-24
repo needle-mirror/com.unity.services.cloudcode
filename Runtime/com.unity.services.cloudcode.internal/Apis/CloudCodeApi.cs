@@ -22,32 +22,33 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
     /// </summary>
     internal interface ICloudCodeApiClient
     {
-        /// <summary>
-        /// Async Operation.
-        /// Run Module Function.
-        /// </summary>
-        /// <param name="request">Request object for RunModule.</param>
-        /// <param name="operationConfiguration">Configuration for RunModule.</param>
-        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
-        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-        Task<Response<Models.RunScriptResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request, Configuration operationConfiguration = null);
+            /// <summary>
+            /// Async Operation.
+            /// Run module function.
+            /// </summary>
+            /// <param name="request">Request object for RunModule.</param>
+            /// <param name="operationConfiguration">Configuration for RunModule.</param>
+            /// <returns>Task for a Response object containing status code, headers, and Models.RunModuleResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<Models.RunModuleResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request, Configuration operationConfiguration = null);
 
-        /// <summary>
-        /// Async Operation.
-        /// Run Script.
-        /// </summary>
-        /// <param name="request">Request object for RunScript.</param>
-        /// <param name="operationConfiguration">Configuration for RunScript.</param>
-        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
-        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-        Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request, Configuration operationConfiguration = null);
+            /// <summary>
+            /// Async Operation.
+            /// Run script.
+            /// </summary>
+            /// <param name="request">Request object for RunScript.</param>
+            /// <param name="operationConfiguration">Configuration for RunScript.</param>
+            /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request, Configuration operationConfiguration = null);
+
     }
 
     ///<inheritdoc cref="ICloudCodeApiClient"/>
     internal class CloudCodeApiClient : BaseApiClient, ICloudCodeApiClient
     {
         private IAccessToken _accessToken;
-        private const int _baseTimeout = 10;
+        private const int _baseTimeout = 25;
         private Configuration _configuration;
         /// <summary>
         /// Accessor for the client configuration object. This returns a merge
@@ -88,18 +89,19 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
             _accessToken = accessToken;
         }
 
+
         /// <summary>
         /// Async Operation.
-        /// Run Module Function.
+        /// Run module function.
         /// </summary>
         /// <param name="request">Request object for RunModule.</param>
         /// <param name="operationConfiguration">Configuration for RunModule.</param>
-        /// <returns>Task for a Response object containing status code, headers, and Models.RunScriptResponse object.</returns>
+        /// <returns>Task for a Response object containing status code, headers, and Models.RunModuleResponse object.</returns>
         /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
-        public async Task<Response<Models.RunScriptResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request,
+        public async Task<Response<Models.RunModuleResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunModule400OneOf)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunModuleResponse)   },{"400", typeof(Models.BasicErrorResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -112,13 +114,14 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
                 finalConfiguration.RetryPolicyConfiguration,
                 finalConfiguration.StatusCodePolicyConfiguration);
 
-            var handledResponse = ResponseHandler.HandleAsyncResponse<Models.RunScriptResponse>(response, statusCodeToTypeMap);
-            return new Response<Models.RunScriptResponse>(response, handledResponse);
+            var handledResponse = ResponseHandler.HandleAsyncResponse<Models.RunModuleResponse>(response, statusCodeToTypeMap);
+            return new Response<Models.RunModuleResponse>(response, handledResponse);
         }
+
 
         /// <summary>
         /// Async Operation.
-        /// Run Script.
+        /// Run script.
         /// </summary>
         /// <param name="request">Request object for RunScript.</param>
         /// <param name="operationConfiguration">Configuration for RunScript.</param>
@@ -127,7 +130,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunScript400OneOf)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunScript400OneOf)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);

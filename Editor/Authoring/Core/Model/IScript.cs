@@ -12,9 +12,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 
         string Path { get; }
 
-        string Body { get; }
-
-        string LastPublishedDate { get; set; }
+        string Body { get; set; }
     }
 
 

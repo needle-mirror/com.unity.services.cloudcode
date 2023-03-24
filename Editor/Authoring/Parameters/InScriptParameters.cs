@@ -47,9 +47,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
             string scriptPath = path;
             if (shouldBundle)
             {
-                var source = await m_Bundler.Bundle(path, cancellationToken);
+                var bundle = await m_Bundler.Bundle(path, cancellationToken);
                 scriptPath = Path.Combine(Path.GetTempPath(), Path.GetFileName(path));
-                await File.WriteAllTextAsync(scriptPath, source, cancellationToken);
+                await File.WriteAllTextAsync(scriptPath, bundle.Source, cancellationToken);
             }
 
             try

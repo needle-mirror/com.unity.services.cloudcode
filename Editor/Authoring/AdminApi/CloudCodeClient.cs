@@ -14,9 +14,8 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
-
+using Unity.Services.Core.Editor;
 using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Language;
-using ApiLanguage = Unity.Services.CloudCode.Authoring.Client.Models.Language;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 {
@@ -26,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         const string k_ProblemJson = "application/problem+json";
         const int k_DuplicatePublishCode = 9018;
 
-        readonly IGatewayTokenProvider m_TokenProvider;
+        readonly IAccessTokens m_TokenProvider;
         readonly IDefaultApiClient m_Client;
         readonly IEnvironmentProvider m_EnvironmentProvider;
         readonly IProjectIdProvider m_ProjectIdProvider;
@@ -34,7 +33,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         readonly IFileReader m_FileReader;
 
         public CloudCodeClient(
-            IGatewayTokenProvider tokenProvider,
+            IAccessTokens tokenProvider,
             IEnvironmentProvider environmentProvider,
             IProjectIdProvider projectIdProvider,
             IDefaultApiClient client,
@@ -146,7 +145,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             if (client == null)
                 return;
 
-            string token = await m_TokenProvider.FetchGatewayToken();
+            string token = await m_TokenProvider.GetServicesGatewayTokenAsync();
             var headers = new AdminApiHeaders<CloudCodeClient>(token);
             client.Configuration = new Configuration(
                 null,
@@ -157,22 +156,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 
         static ScriptInfo ScriptInfoFromResponse(CloudCodeListScriptsResponseResults response)
         {
-            string ext = CloudCodeFileExtensions.Preferred();
-            return new ScriptInfo(response.Name,
+            return new ScriptInfo(
+                response.Name,
                 CloudCodeFileExtensions.Preferred(),
-                response.LastPublishedDate.ToString(),
                 (CoreLanguage)response.Language);
         }
 
         async Task<Response> CreateScript(IScript script)
         {
-            var (source, scriptParameters) = await GetScriptSource(script);
+            var(source, scriptParameters) = await GetScriptSource(script);
 
             var createScript = new CloudCodeCreateScriptRequest(
                 script.Name.GetNameWithoutExtension(),
                 CloudCodeCreateScriptRequest.TypeOptions.API,
                 source,
-                script.Language.ToCloudScriptLanguage(),
                 scriptParameters);
             var request = new CreateScriptRequest(m_ProjectIdProvider.ProjectId, m_EnvironmentProvider.Current, createScript);
             return await WrapRequest(m_Client.CreateScriptAsync(request));
@@ -180,8 +177,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 
         async Task<Response> UpdateScript(IScript script)
         {
-            var (source, scriptParameters) = await GetScriptSource(script);
-            
+            var(source, scriptParameters) = await GetScriptSource(script);
+
             var updateScript = new CloudCodeUpdateScriptRequest(
                 scriptParameters,
                 source);
@@ -192,7 +189,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         async Task<(string, List<CloudCodeScriptParams>)> GetScriptSource(IScript script)
         {
             var source = await m_Bundler.ShouldBeBundled(script.Path, CancellationToken.None)
-                ? await m_Bundler.Bundle(script.Path, CancellationToken.None)
+                ? (await m_Bundler.Bundle(script.Path, CancellationToken.None)).Source
                 : await m_FileReader.ReadAllTextAsync(script.Path, CancellationToken.None);
 
             List<CloudCodeScriptParams> scriptParameters = script.GetCloudCodeScriptParamsList();

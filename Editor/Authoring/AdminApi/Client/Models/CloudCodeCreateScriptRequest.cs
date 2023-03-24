@@ -34,10 +34,10 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// <param name="name">The name of the Script. Serves as a unique identifier</param>
         /// <param name="type">The type of the Script</param>
         /// <param name="code">The code of the Script</param>
-        /// <param name="language">language param</param>
         /// <param name="@params">The parameters of the Script</param>
+        /// <param name="language">The language of the Script</param>
         [Preserve]
-        public CloudCodeCreateScriptRequest(string name, TypeOptions type, string code, Language? language, List<CloudCodeScriptParams> @params = default)
+        public CloudCodeCreateScriptRequest(string name, TypeOptions type, string code, List<CloudCodeScriptParams> @params = default, LanguageOptions language = LanguageOptions.JS)
         {
             Name = name;
             Type = type;
@@ -52,7 +52,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-
+        
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -60,28 +60,29 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", IsRequired = true, EmitDefaultValue = true)]
         public TypeOptions Type{ get; }
-
+        
         /// <summary>
         /// The parameters of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public List<CloudCodeScriptParams> Params{ get; }
-
+        
         /// <summary>
         /// The code of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "code", IsRequired = true, EmitDefaultValue = true)]
         public string Code{ get; }
-
+        
         /// <summary>
-        /// Parameter language of CloudCodeCreateScriptRequest
+        /// The language of the Script
         /// </summary>
         [Preserve]
-        [DataMember(Name = "language", IsRequired = true, EmitDefaultValue = true)]
-        public Language? Language{ get; }
-
+        [JsonConverter(typeof(StringEnumConverter))]
+        [DataMember(Name = "language", EmitDefaultValue = false)]
+        public LanguageOptions Language{ get; }
+    
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -100,6 +101,21 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
             /// </summary>
             [EnumMember(Value = "MODULE")]
             MODULE = 2
+        }
+
+        /// <summary>
+        /// The language of the Script
+        /// </summary>
+        /// <value>The language of the Script</value>
+        [Preserve]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum LanguageOptions
+        {
+            /// <summary>
+            /// Enum JS for value: JS
+            /// </summary>
+            [EnumMember(Value = "JS")]
+            JS = 1
         }
 
         /// <summary>
@@ -123,10 +139,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
             {
                 serializedModel += "code," + Code + ",";
             }
-            if (Language != null)
-            {
-                serializedModel += "language," + Language.ToString();
-            }
+            serializedModel += "language," + Language;
             return serializedModel;
         }
 
@@ -143,16 +156,19 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-
+            
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-
+            
             if (Code != null)
             {
                 var codeStringValue = Code.ToString();
                 dictionary.Add("code", codeStringValue);
             }
-
+            
+            var languageStringValue = Language.ToString();
+            dictionary.Add("language", languageStringValue);
+            
             return dictionary;
         }
     }

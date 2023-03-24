@@ -9,7 +9,7 @@
 
 
 using System.Collections.Generic;
-using Unity.Services.CloudCode.Authoring.Editor.AdminApi.Client.ErrorMitigation;
+using Unity.Services.CloudCode.Authoring.Client.ErrorMitigation;
 
 namespace Unity.Services.CloudCode.Authoring.Client
 {

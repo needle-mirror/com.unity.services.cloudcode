@@ -13,6 +13,7 @@ using UnityEditor.AssetImporters;
 namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 {
     [CustomEditor(typeof(CloudCodeScriptImporter))]
+    [CanEditMultipleObjects]
     class CloudCodeParameterImporterEditor : ScriptedImporterEditor
     {
         static readonly string k_BreakingChangeWarning = L10n.Tr("The script parameters are incompatible with the parameters currently deployed. Deploying this version will break all existing clients.");
@@ -40,19 +41,36 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
         {
             serializedObject.UpdateIfRequiredOrScript();
 
-            var sourceProperty = serializedObject.FindProperty(nameof(CloudCodeScriptImporter.Source));
             var parameters = serializedObject.FindProperty(nameof(CloudCodeScriptImporter.Parameters));
+            var source = GetMultiObjectParameterSource();
 
-
-            var source =  (ParameterSource)sourceProperty.enumValueIndex;
             var isProjectInitialized = CloudCodeProject.IsInitialized();
 
             m_UIHandler.Handle(parameters, source, isProjectInitialized);
 
-            CheckForBreakingChanges();
+            if (serializedObject.targetObjects.Length == 1)
+            {
+                CheckForBreakingChanges();
+            }
 
             serializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
+        }
+
+        ParameterSource GetMultiObjectParameterSource()
+        {
+            var source = ParameterSource.Editor;
+            foreach (var targetObject in serializedObject.targetObjects)
+            {
+                var targetSerializedObject = new SerializedObject(targetObject);
+                var sourceProperty = targetSerializedObject.FindProperty(nameof(CloudCodeScriptImporter.Source));
+                if ((ParameterSource)sourceProperty.enumValueIndex == ParameterSource.InScript)
+                {
+                    source = ParameterSource.InScript;
+                }
+            }
+
+            return source;
         }
 
         void CheckForBreakingChanges()

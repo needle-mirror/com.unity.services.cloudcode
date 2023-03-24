@@ -80,6 +80,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             return NpmRun(npmArguments, stdIn, cancellationToken);
         }
 
+        public async Task<bool> IsNodeJsAvailable()
+        {
+            try
+            {
+                await NpmRun(new List<string> { "--version" }, null, CancellationToken.None);
+                return true;
+            }
+            catch (NpmCommandFailedException)
+            {
+                return false;
+            }
+        }
+
         public async Task<string> ExecNodeJs(
             IEnumerable<string> arguments = default,
             string stdIn = default,

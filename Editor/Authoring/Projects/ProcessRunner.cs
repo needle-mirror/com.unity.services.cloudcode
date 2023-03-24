@@ -42,14 +42,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             process.OutputDataReceived += (_, args) => stdOutBuilder.AppendLine(args.Data);
             process.ErrorDataReceived += (_, args) => stdErrBuilder.AppendLine(args.Data);
 
+            var exitTask = WrapProcessInTask(process, cancellationToken);
             process.Start();
+
             if (!string.IsNullOrEmpty(stdIn))
             {
                 await process.StandardInput.WriteAsync(stdIn);
                 process.StandardInput.Close();
             }
 
-            await WaitForExitAsync(process, cancellationToken);
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            await exitTask;
 
             RemoveLastNewLineIfNecessary(stdOutBuilder);
             RemoveLastNewLineIfNecessary(stdErrBuilder);
@@ -76,16 +81,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             }
         }
 
-        static Task WaitForExitAsync(Process process, CancellationToken cancellationToken = default)
+        static Task WrapProcessInTask(Process process, CancellationToken cancellationToken = default)
         {
             var tcs = new TaskCompletionSource<object>();
             process.Exited += (s, e) => tcs.TrySetResult(null);
 
             if (cancellationToken != default)
                 cancellationToken.Register(() => tcs.SetCanceled());
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
 
             return tcs.Task;
         }

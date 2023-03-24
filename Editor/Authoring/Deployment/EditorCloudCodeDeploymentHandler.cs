@@ -12,10 +12,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public EditorCloudCodeDeploymentHandler(
             ICloudCodeClient client,
             IDeploymentAnalytics deploymentAnalytics,
-            IScriptCache scriptCache,
             ILogger logger,
             IPreDeployValidator validator) :
-            base(client, deploymentAnalytics, scriptCache, logger, validator)
+            base(client, deploymentAnalytics, logger, validator)
         {
         }
 
