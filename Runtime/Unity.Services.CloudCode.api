@@ -26,6 +26,7 @@ namespace Unity.Services.CloudCode
         public const Unity.Services.CloudCode.CloudCodeExceptionReason ProjectIdMissing = 2;
         public const Unity.Services.CloudCode.CloudCodeExceptionReason ScriptError = 10;
         public const Unity.Services.CloudCode.CloudCodeExceptionReason ServiceUnavailable = 9;
+        public const Unity.Services.CloudCode.CloudCodeExceptionReason SubscriptionError = 11;
         public const Unity.Services.CloudCode.CloudCodeExceptionReason TooManyRequests = 8;
         public const Unity.Services.CloudCode.CloudCodeExceptionReason Unauthorized = 6;
         public const Unity.Services.CloudCode.CloudCodeExceptionReason Unknown = 0;
@@ -49,5 +50,51 @@ namespace Unity.Services.CloudCode
         public abstract System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
         public abstract System.Threading.Tasks.Task<string> CallModuleEndpointAsync(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
         public abstract System.Threading.Tasks.Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
+        public abstract System.Threading.Tasks.Task<Unity.Services.CloudCode.Subscriptions.ISubscriptionEvents> SubscribeToPlayerMessagesAsync(Unity.Services.CloudCode.Subscriptions.SubscriptionEventCallbacks callbacks);
+        public abstract System.Threading.Tasks.Task<Unity.Services.CloudCode.Subscriptions.ISubscriptionEvents> SubscribeToProjectMessagesAsync(Unity.Services.CloudCode.Subscriptions.SubscriptionEventCallbacks callbacks);
+    }
+}
+
+namespace Unity.Services.CloudCode.Subscriptions
+{
+    public enum EventConnectionState
+    {
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Error = 5;
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Subscribed = 3;
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Subscribing = 2;
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Unknown = 0;
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Unsubscribed = 1;
+        public const Unity.Services.CloudCode.Subscriptions.EventConnectionState Unsynced = 4;
+        public int value__;
+    }
+
+    public interface IMessageReceivedEvent
+    {
+        public abstract string CorrelationId { get; }
+        public abstract string EnvironmentId { get; }
+        public abstract string Id { get; }
+        public abstract string Message { get; }
+        public abstract string MessageType { get; }
+        public abstract string ProjectId { get; }
+        public abstract string Source { get; }
+        public abstract string SpecVersion { get; }
+        public abstract System.DateTime Time { get; }
+        public abstract string Type { get; }
+    }
+
+    public interface ISubscriptionEvents
+    {
+        public abstract Unity.Services.CloudCode.Subscriptions.SubscriptionEventCallbacks Callbacks { get; }
+        public abstract System.Threading.Tasks.Task SubscribeAsync();
+        public abstract System.Threading.Tasks.Task UnsubscribeAsync();
+    }
+
+    public class SubscriptionEventCallbacks
+    {
+        public event System.Action<Unity.Services.CloudCode.Subscriptions.EventConnectionState> ConnectionStateChanged;
+        public event System.Action<string> Error;
+        public event System.Action Kicked;
+        public event System.Action<Unity.Services.CloudCode.Subscriptions.IMessageReceivedEvent> MessageReceived;
+        public SubscriptionEventCallbacks() {}
     }
 }

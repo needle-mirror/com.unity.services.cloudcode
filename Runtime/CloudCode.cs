@@ -7,8 +7,10 @@ using Unity.Services.CloudCode.Internal.Apis.CloudCode;
 using Unity.Services.CloudCode.Internal.CloudCode;
 using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.CloudCode.Internal.Models;
+using Unity.Services.CloudCode.Subscriptions;
 using Unity.Services.Core;
 using Unity.Services.Core.Configuration.Internal;
+using Unity.Services.Wire.Internal;
 using UnityEngine;
 
 namespace Unity.Services.CloudCode
@@ -19,13 +21,15 @@ namespace Unity.Services.CloudCode
         private readonly ICloudProjectId m_CloudProjectId;
         private readonly IPlayerId m_PlayerId;
         private readonly IAccessToken m_AccessToken;
+        private readonly IWire m_Wire;
 
-        internal CloudCodeInternal(ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
+        internal CloudCodeInternal(IWire wire, ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
         {
             m_CloudProjectId = cloudProjectId;
             m_ApiClient = cloudCodeApiClient;
             m_PlayerId = playerId;
             m_AccessToken = accessToken;
+            m_Wire = wire;
         }
 
         public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args)
@@ -56,6 +60,32 @@ namespace Unity.Services.CloudCode
             var result = await GetRunModuleScriptResponse(module, function, args);
 
             return DeserializeOutput<TResult>(result);
+        }
+
+        public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks)
+        {
+            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
+        }
+
+        public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks)
+        {
+            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
+        }
+
+        async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, TokenProvider.TokenProviderMode mode)
+        {
+            if (m_Wire == null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot subscribe to Cloud Code messages without the wire SDK dependency.");
+            }
+
+            ValidateRequiredDependencies();
+
+            var channel = m_Wire.CreateChannel(new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
+            var subscriptionsChannel = new SubscriptionChannel(channel, callbacks);
+            await subscriptionsChannel.SubscribeAsync();
+            return subscriptionsChannel;
         }
 
         static TResult DeserializeOutput<TResult>(Response<RunScriptResponse> result)

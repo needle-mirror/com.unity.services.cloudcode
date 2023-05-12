@@ -39,7 +39,7 @@ namespace Unity.Services.CloudCode.Internal.Http
                 return;
             }
 
-            JToken t = JToken.FromObject(jobj.obj);
+            JToken t = JToken.FromObject(jobj.obj, serializer);
             t.WriteTo(writer);
         }
 

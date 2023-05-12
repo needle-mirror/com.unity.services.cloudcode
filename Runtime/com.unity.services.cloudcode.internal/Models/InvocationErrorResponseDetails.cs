@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Internal.Models
     /// InvocationErrorResponseDetails model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "InvocationErrorResponse_details")]
+    [DataContract(Name = "InvocationErrorResponseDetails")]
     internal class InvocationErrorResponseDetails
     {
         /// <summary>

@@ -42,6 +42,26 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
             /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
             Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request, Configuration operationConfiguration = null);
 
+            /// <summary>
+            /// Async Operation.
+            /// Create a player subscription token..
+            /// </summary>
+            /// <param name="request">Request object for SubscriptionTokenPlayer.</param>
+            /// <param name="operationConfiguration">Configuration for SubscriptionTokenPlayer.</param>
+            /// <returns>Task for a Response object containing status code, headers, and Models.SubscriptionTokenResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenPlayerAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenPlayerRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
+            /// Create a project subscription token..
+            /// </summary>
+            /// <param name="request">Request object for SubscriptionTokenProject.</param>
+            /// <param name="operationConfiguration">Configuration for SubscriptionTokenProject.</param>
+            /// <returns>Task for a Response object containing status code, headers, and Models.SubscriptionTokenResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenProjectAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenProjectRequest request, Configuration operationConfiguration = null);
+
     }
 
     ///<inheritdoc cref="ICloudCodeApiClient"/>
@@ -101,7 +121,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.RunModuleResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunModuleResponse)   },{"400", typeof(Models.BasicErrorResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunModuleResponse)   },{"400", typeof(Models.BasicErrorResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunModule422Response)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -130,7 +150,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunScript400OneOf)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunScript422OneOf)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunScript400Response)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunModule422Response)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -145,6 +165,64 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
 
             var handledResponse = ResponseHandler.HandleAsyncResponse<Models.RunScriptResponse>(response, statusCodeToTypeMap);
             return new Response<Models.RunScriptResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Create a player subscription token..
+        /// </summary>
+        /// <param name="request">Request object for SubscriptionTokenPlayer.</param>
+        /// <param name="operationConfiguration">Configuration for SubscriptionTokenPlayer.</param>
+        /// <returns>Task for a Response object containing status code, headers, and Models.SubscriptionTokenResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenPlayerAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenPlayerRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.SubscriptionTokenResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(_accessToken, finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<Models.SubscriptionTokenResponse>(response, statusCodeToTypeMap);
+            return new Response<Models.SubscriptionTokenResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Create a project subscription token..
+        /// </summary>
+        /// <param name="request">Request object for SubscriptionTokenProject.</param>
+        /// <param name="operationConfiguration">Configuration for SubscriptionTokenProject.</param>
+        /// <returns>Task for a Response object containing status code, headers, and Models.SubscriptionTokenResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenProjectAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenProjectRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.SubscriptionTokenResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(_accessToken, finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<Models.SubscriptionTokenResponse>(response, statusCodeToTypeMap);
+            return new Response<Models.SubscriptionTokenResponse>(response, handledResponse);
         }
 
     }

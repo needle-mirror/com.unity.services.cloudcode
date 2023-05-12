@@ -56,8 +56,8 @@ namespace Unity.Services.CloudCode.Internal.Http
                 {
                     return obj.ToString();
                 }
-
-                return JsonConvert.SerializeObject(obj);
+                
+                return IsolatedJsonConvert.SerializeObject(obj);
             }
             catch (System.Exception)
             {
@@ -67,10 +67,13 @@ namespace Unity.Services.CloudCode.Internal.Http
 
         /// <summary>
         /// Returns the object as a defined type.
+        /// Previously this function restricted use of `object` or `dynamic`
+        /// types but validation for these has been removed. As such, be
+        /// careful when passing or exposing objects of these types.
         /// </summary>
         /// <typeparam name="T">The type to cast internal object to.</typeparam>
         /// <param name="deserializationSettings">Deserialization settings for how to handle properties like missing members.</param>
-        /// <returns>The internal object case to type T.</returns>
+        /// <returns>The internal object cast to type T.</returns>
         public T GetAs<T>(DeserializationSettings deserializationSettings = null)
         {
             // Check if deserializationSettings is null so we can use the default value.
@@ -83,12 +86,8 @@ namespace Unity.Services.CloudCode.Internal.Http
             };
             try
             {
-                var returnObject = JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(obj), jsonSettings);
+                var returnObject = IsolatedJsonConvert.DeserializeObject<T>(IsolatedJsonConvert.SerializeObject(obj), jsonSettings);
                 return returnObject;
-            }
-            catch (DeserializationException)
-            {
-                throw;
             }
             catch (JsonSerializationException e)
             {

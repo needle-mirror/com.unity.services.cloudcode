@@ -11,9 +11,9 @@
 using System;
 
 namespace Unity.Services.CloudCode.Internal.Http
-{   
+{
     /// <summary>Enum for how handling missing members when deserializing.</summary>
-    public enum MissingMemberHandling
+    enum MissingMemberHandling
     {
         /// <summary>Throw an error when a member is missing</summary>
         Error,
@@ -24,10 +24,10 @@ namespace Unity.Services.CloudCode.Internal.Http
     /// <summary>
     /// DeserializationSettings class.
     /// </summary>
-    public class DeserializationSettings
+    class DeserializationSettings
     {
         /// <summary>MissingMemberHandling is set to Error by default.</summary>
         public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
     }
-    
+
 }

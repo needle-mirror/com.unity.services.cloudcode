@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Subscriptions;
 
 namespace Unity.Services.CloudCode
 {
@@ -54,6 +55,22 @@ namespace Unity.Services.CloudCode
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
         Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null);
+
+        /// <summary>
+        /// Subscribe to push messages from the Cloud Code service for the currently logged in player.
+        /// </summary>
+        /// <param name="callbacks">The event callbacks to be invoked when messages are received from Cloud Code</param>
+        /// <returns>SubscriptionEvents object that can be used to unsubscribe from messages.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks);
+
+        /// <summary>
+        /// Subscribe to push messages from the Cloud Code service for all project-wide messages.
+        /// </summary>
+        /// <param name="callbacks">The event callbacks to be invoked when messages are received from Cloud Code</param>
+        /// <returns>SubscriptionEvents object that can be used to unsubscribe from messages.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks);
     }
 
     public class CloudCodeService

@@ -52,7 +52,7 @@ namespace Unity.Services.CloudCode.Internal.Http
             try
             {
                 var deserializedJson = GetDeserializedJson(response.Data);
-                return JsonConvert.DeserializeObject<T>(deserializedJson, settings);
+                return IsolatedJsonConvert.DeserializeObject<T>(deserializedJson, settings);
             }
             catch(Exception e)
             {
@@ -77,7 +77,7 @@ namespace Unity.Services.CloudCode.Internal.Http
 
             try
             {
-                return JsonConvert.DeserializeObject(GetDeserializedJson(response.Data), type, settings);
+                return IsolatedJsonConvert.DeserializeObject(GetDeserializedJson(response.Data), type, settings);
             }
             catch(Exception e)
             {

@@ -25,12 +25,12 @@ using Newtonsoft.Json.Linq;
 namespace Unity.Services.CloudCode.Internal.Models
 {
     /// <summary>
-    /// RunScript400OneOf model
+    /// RunModule422ResponseOneOf model
     /// </summary>
     [Preserve]
-    [JsonConverter(typeof(RunScript400OneOfJsonConverter))]
-    [DataContract(Name = "RunScript400OneOf")]
-    internal class RunScript400OneOf : IOneOf
+    [JsonConverter(typeof(RunModule422ResponseOneOfJsonConverter))]
+    [DataContract(Name = "RunModule422ResponseOneOf")]
+    internal class RunModule422ResponseOneOf : IOneOf
     {
         /// <summary> Value </summary>
         public object Value { get; }
@@ -38,10 +38,10 @@ namespace Unity.Services.CloudCode.Internal.Models
         public Type Type { get; }
         private const string DiscriminatorKey = "type";
 
-        /// <summary>RunScript400OneOf Constructor</summary>
-        /// <param name="value">The value as an object for RunScript400OneOf</param>
-        /// <param name="type">The type for RunScript400OneOf</param>
-        public RunScript400OneOf(object value, Type type)
+        /// <summary>RunModule422ResponseOneOf Constructor</summary>
+        /// <param name="value">The value as an object for RunModule422ResponseOneOf</param>
+        /// <param name="type">The type for RunModule422ResponseOneOf</param>
+        public RunModule422ResponseOneOf(object value, Type type)
         {
             this.Value = value;
             this.Type = type;
@@ -50,12 +50,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         private static Dictionary<string, Type> TypeLookup = new Dictionary<string, Type>()
         {
             { "problems/basic", typeof(BasicErrorResponse) },
-            { "problems/validation", typeof(ValidationErrorResponse) },
+            { "problems/invocation", typeof(InvocationErrorResponse) },
+            { "problems/invocation/axios", typeof(AxiosInvocationErrorResponse) },
             { "BasicErrorResponse", typeof(BasicErrorResponse) }, 
-            { "ValidationErrorResponse", typeof(ValidationErrorResponse) }
+            { "InvocationErrorResponse", typeof(InvocationErrorResponse) }
             
         };
-        private static List<Type> PossibleTypes = new List<Type>(){ typeof(BasicErrorResponse) , typeof(ValidationErrorResponse)  };
+        private static List<Type> PossibleTypes = new List<Type>(){ typeof(BasicErrorResponse) , typeof(InvocationErrorResponse)  };
 
         private static Type GetConcreteType(string type)
         {
@@ -71,11 +72,11 @@ namespace Unity.Services.CloudCode.Internal.Models
         }
 
         /// <summary>
-        /// Converts the JSON string into an instance of RunScript400OneOf
+        /// Converts the JSON string into an instance of RunModule422ResponseOneOf
         /// </summary>
         /// <param name="jsonString">JSON string</param>
-        /// <returns>An instance of RunScript400OneOf</returns>
-        public static RunScript400OneOf FromJson(string jsonString)
+        /// <returns>An instance of RunModule422ResponseOneOf</returns>
+        public static RunModule422ResponseOneOf FromJson(string jsonString)
         {
             if (jsonString == null)
             {
@@ -91,7 +92,7 @@ namespace Unity.Services.CloudCode.Internal.Models
                 var parsedJson = JObject.Parse(jsonString);
                 if (!parsedJson.ContainsKey(DiscriminatorKey))
                 {
-                    throw new MissingFieldException("RunScript400OneOf", DiscriminatorKey);
+                    throw new MissingFieldException("RunModule422ResponseOneOf", DiscriminatorKey);
                 }
                 string discriminatorValue = parsedJson[DiscriminatorKey].ToString();
 
@@ -99,7 +100,7 @@ namespace Unity.Services.CloudCode.Internal.Models
             }
         }
 
-        private static RunScript400OneOf DeserializeIntoActualObject(string discriminatorValue, string jsonString)
+        private static RunModule422ResponseOneOf DeserializeIntoActualObject(string discriminatorValue, string jsonString)
         {
             object actualObject = null;
             Type concreteType = GetConcreteType(discriminatorValue);
@@ -110,19 +111,19 @@ namespace Unity.Services.CloudCode.Internal.Models
                 throw new InvalidDataException("Failed to lookup discriminator value for " + discriminatorValue + ". Possible values: " + possibleValues);
             }
 
-            actualObject = JsonConvert.DeserializeObject(jsonString, concreteType);
+            actualObject = IsolatedJsonConvert.DeserializeObject(jsonString, concreteType);
 
-            return new RunScript400OneOf(actualObject, concreteType);
+            return new RunModule422ResponseOneOf(actualObject, concreteType);
         }
 
-        private static RunScript400OneOf DeserializeIntoActualObject(string jsonString)
+        private static RunModule422ResponseOneOf DeserializeIntoActualObject(string jsonString)
         {
             var results = new List<(object ActualObject, Type ActualType)>();
             foreach (Type t in PossibleTypes)
             {
                 try
                 {
-                    var deserializedClass = JsonConvert.DeserializeObject(jsonString, t);
+                    var deserializedClass = IsolatedJsonConvert.DeserializeObject(jsonString, t);
                     results.Add((deserializedClass, t));
                 }
                 catch (Exception)
@@ -143,15 +144,15 @@ namespace Unity.Services.CloudCode.Internal.Models
                 throw new ResponseDeserializationException(message);
             }
 
-            return new RunScript400OneOf(results.First().ActualObject, results.First().ActualType);
+            return new RunModule422ResponseOneOf(results.First().ActualObject, results.First().ActualType);
         }
     }
 
     /// <summary>
-    /// Custom JSON converter for RunScript400OneOf to allow for deserialization into OneOf type
+    /// Custom JSON converter for RunModule422ResponseOneOf to allow for deserialization into OneOf type
     /// </summary>
     [Preserve]
-    internal class RunScript400OneOfJsonConverter : JsonConverter
+    internal class RunModule422ResponseOneOfJsonConverter : JsonConverter
     {
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
@@ -162,7 +163,7 @@ namespace Unity.Services.CloudCode.Internal.Models
         {
             if(reader.TokenType != JsonToken.Null)
             {
-                return RunScript400OneOf.FromJson(JObject.Load(reader).ToString(Formatting.None));
+                return RunModule422ResponseOneOf.FromJson(JObject.Load(reader).ToString(Formatting.None));
             }
             return null;
         }

@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Internal.Models
     /// AxiosInvocationErrorResponseDetails model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "AxiosInvocationErrorResponse_details")]
+    [DataContract(Name = "AxiosInvocationErrorResponseDetails")]
     internal class AxiosInvocationErrorResponseDetails
     {
         /// <summary>

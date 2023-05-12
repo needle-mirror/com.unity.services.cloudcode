@@ -24,7 +24,9 @@ namespace Unity.Services.CloudCode
         TooManyRequests = 8,
         ServiceUnavailable = 9,
 
-        ScriptError = 10
+        ScriptError = 10,
+
+        SubscriptionError = 11
     }
 
     /// <summary>

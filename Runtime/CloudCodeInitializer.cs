@@ -8,6 +8,7 @@ using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.Core.Configuration.Internal;
 using Unity.Services.Core.Device.Internal;
 using Unity.Services.Core.Internal;
+using Unity.Services.Wire.Internal;
 using UnityEngine;
 
 namespace Unity.Services.CloudCode
@@ -26,7 +27,8 @@ namespace Unity.Services.CloudCode
                 .DependsOn<IAccessToken>()
                 .DependsOn<IInstallationId>()
                 .DependsOn<IProjectConfiguration>()
-                .DependsOn<IExternalUserId>();
+                .DependsOn<IExternalUserId>()
+                .OptionallyDependsOn<IWire>();
         }
 
         public Task Initialize(CoreRegistry registry)
@@ -37,7 +39,7 @@ namespace Unity.Services.CloudCode
             var installationId = registry.GetServiceComponent<IInstallationId>();
             var projectConfiguration = registry.GetServiceComponent<IProjectConfiguration>();
             var externalUserId = registry.GetServiceComponent<IExternalUserId>();
-
+            var wire = registry.GetServiceComponent<IWire>();
 
             var configuration = new Configuration(GetHost(projectConfiguration), null, null, GetServiceHeaders(installationId, externalUserId));
             externalUserId.UserIdChanged += id => UpdateExternalUserId(configuration, id);
@@ -47,7 +49,7 @@ namespace Unity.Services.CloudCode
                 accessToken,
                 configuration);
 
-            CloudCodeService.Instance = new CloudCodeInternal(cloudProjectId, cloudCodeApiClient, playerId, accessToken);
+            CloudCodeService.Instance = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken);
 
             return Task.CompletedTask;
         }

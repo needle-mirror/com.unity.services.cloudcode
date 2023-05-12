@@ -59,7 +59,7 @@ namespace Unity.Services.CloudCode.Internal
 
             if(headers == null)
             {
-                Headers = headers;
+                Headers = new Dictionary<string, string>();
             }
             else
             {
