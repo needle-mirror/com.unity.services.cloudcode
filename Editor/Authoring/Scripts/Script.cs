@@ -11,12 +11,13 @@ using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Langua
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
     [Serializable]
-    class Script : IScript, IDeploymentItem, ISerializationCallbackReceiver
+    class Script : IScript, IDeploymentItem, ISerializationCallbackReceiver, ITypedItem
     {
         float m_Progress;
         DeploymentStatus m_Status;
         string m_Path;
-        string m_Type;
+        string m_Type = "JavaScript";
+
         ScriptName m_Name;
         CoreLanguage? m_Language = CoreLanguage.JS;
 

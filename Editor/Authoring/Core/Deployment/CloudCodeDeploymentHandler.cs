@@ -40,14 +40,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             var validLocalScripts = validationInfo.ValidScripts;
 
             var remoteScripts = await GetRemoteScripts(validLocalScripts);
+            UpdateLastPublishedDate(scriptsEnumerated, remoteScripts);
 
             var remoteScriptNames = remoteScripts.Select(s => s.Name).ToHashSet();
 
-            var toCreate = scriptsEnumerated
+            var toCreate = validLocalScripts
                 .Where(s => !remoteScriptNames.Contains(s.Name))
                 .ToList();
 
-            var toUpdate = scriptsEnumerated
+            var toUpdate = validLocalScripts
                 .Where(s => remoteScriptNames.Contains(s.Name))
                 .ToList();
 
@@ -66,22 +67,35 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 validationInfo.InvalidScripts.Select(s => s.Key).ToList()
             );
 
+            UpdateValidationStatus(validationInfo);
+
             if (dryRun)
             {
                 return res;
             }
 
-            return await DeployFiles(validLocalScripts, toDelete, res, validationInfo);
+            return await DeployFiles(validLocalScripts, toDelete, res);
+        }
+
+        void UpdateLastPublishedDate(
+            IReadOnlyList<IScript> scripts,
+            IReadOnlyList<ScriptInfo> remoteScripts)
+        {
+            foreach (var scriptInfo in remoteScripts)
+            {
+                var matchingScript = scripts.FirstOrDefault(s => s.Name.Equals(scriptInfo.Name));
+                if (matchingScript != null)
+                {
+                    matchingScript.LastPublishedDate = scriptInfo.LastPublishedDate;
+                }
+            }
         }
 
         async Task<DeployResult> DeployFiles(
             IReadOnlyList<IScript> scriptsToPublish,
             IReadOnlyList<IScript> scriptsToDelete,
-            DeployResult dryRunResult,
-            ValidationInfo validationInfo)
+            DeployResult dryRunResult)
         {
-            UpdateValidationStatus(validationInfo);
-
             var publishedFiles = await UploadAndPublish(scriptsToPublish);
             var deletedFiles = await DeleteFiles(scriptsToDelete);
 
@@ -101,6 +115,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 .ToList();
 
             failed.AddRange(failedToDelete);
+            failed.AddRange(dryRunResult.Failed);
 
             var exceptions = publishedFiles
                 .Where(dt => dt.Task.IsFaulted && dt.Task.Exception != null)
@@ -117,7 +132,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 dryRunResult.Updated.Except(failed).ToList(),
                 dryRunResult.Deleted.Except(failedToDelete).ToList(),
                 deployed,
-                dryRunResult.Failed.Concat(failed).ToList());
+                failed.ToList());
 
             if (exceptions.Any())
             {

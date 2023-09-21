@@ -61,6 +61,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion
             return scope;
         }
 
-        internal abstract void Register(ServiceCollection collection);
+        protected abstract void Register(ServiceCollection collection);
     }
 }

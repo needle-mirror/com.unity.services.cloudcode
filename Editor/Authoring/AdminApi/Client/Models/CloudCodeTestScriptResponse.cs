@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeTestScriptResponse model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud-code.test-script-response")]
+    [DataContract(Name = "cloud_code_test_script_response")]
     internal class CloudCodeTestScriptResponse
     {
         /// <summary>

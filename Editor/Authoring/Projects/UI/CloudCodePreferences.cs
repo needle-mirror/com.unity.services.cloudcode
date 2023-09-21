@@ -9,7 +9,6 @@ using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
 using UnityEngine.UIElements;
-
 using Logger = Unity.Services.CloudCode.Authoring.Editor.Shared.Logging.Logger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
@@ -18,6 +17,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
     {
         static readonly string k_Revert = L10n.Tr("Revert");
         static readonly string k_Apply = L10n.Tr("Apply");
+
         static readonly string k_NodeJsPathLabel = L10n.Tr("NodeJS Path");
         static readonly string k_NpmPathLabel = L10n.Tr("NPM Path");
         static readonly string k_ExternalEditorLabel = L10n.Tr("Application Path");
@@ -39,6 +39,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
         static readonly string k_ChooseExternalEditor = L10n.Tr("Choose external editor");
         static readonly string k_SupportedLaunchArguments = L10n.Tr("Supported launch arguments:");
 
+        static readonly string k_DotnetPathLabel = L10n.Tr(".NET Path");
+        static readonly string k_DotnetEnv = L10n.Tr(".NET development environment");
+        static readonly string k_DotnetProjectInfo = L10n.Tr("Setting up your .NET path will enable Cloud Code Module compilation and deployment");
+
 #if UNITY_EDITOR_OSX || UNITY_EDITOR_WIN
         static readonly string k_ExternalEditorDefaultDirectory =
             System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles);
@@ -46,9 +50,37 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
         static readonly string k_ExternalEditorDefaultDirectory = string.Empty;
 #endif
 
-        ProjectSettings m_ProjectSettings;
+        protected CloudCodeProjectSettings ProjectSettings;
+        CloudCodeProjectSettings CloudCodeProjectSettings
+        {
+            get
+            {
+                if (ProjectSettings == null)
+                {
+                    ProjectSettings = new CloudCodeProjectSettings();
+                }
+                return ProjectSettings;
+            }
+        }
         bool m_Dirty;
-        GUIStyle m_Heading1;
+
+        protected GUIStyle m_Heading1;
+        protected GUIStyle m_Style;
+
+        void OnActivated(string searchContext, VisualElement visualElement)
+        {
+            CloudCodeProjectSettings.Load();
+
+            m_Heading1 = new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 16
+            };
+
+            m_Style = new GUIStyle()
+            {
+                margin = new RectOffset(6, 0, 0, 0)
+            };
+        }
 
         internal CloudCodePreferences() : base("Preferences/Cloud Code", SettingsScope.User)
         {
@@ -61,9 +93,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             return new CloudCodePreferences();
         }
 
-        public static IProjectSettings LoadProjectSettings()
+        public static ICloudCodeProjectSettings LoadProjectSettings()
         {
-            var settings = new ProjectSettings();
+            var settings = new CloudCodeProjectSettings();
             settings.Load();
             return settings;
         }
@@ -132,26 +164,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             }
         }
 
-        void OnActivated(string searchContext, VisualElement visualElement)
-        {
-            m_ProjectSettings = new ProjectSettings();
-            m_ProjectSettings.Load();
-
-            m_Heading1 = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 16
-            };
-        }
-
         public override void OnGUI(string searchContext)
         {
             base.OnGUI(searchContext);
 
-            var style = new GUIStyle()
-            {
-                margin = new RectOffset(6, 0, 0, 0)
-            };
-            EditorGUILayout.BeginVertical(style);
+            EditorGUILayout.BeginVertical(m_Style);
             DrawVerticalSettingsArea();
             EditorGUILayout.EndVertical();
         }
@@ -162,6 +179,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             DrawJsDevEnvironment();
             GUILayout.Space(24);
             DrawExternalEditor();
+            GUILayout.Space(24);
+            DrawDotnetDevEnvironment();
             ApplyButtons();
         }
 
@@ -169,12 +188,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
         {
             EditorGUILayout.LabelField(k_JavascriptEnv, m_Heading1);
             EditorGUILayout.Space();
-            m_ProjectSettings.NodeJsPath = CheckChange(
-                EditorGUILayout.TextField(k_NodeJsPathLabel, m_ProjectSettings.NodeJsPath),
-                m_ProjectSettings.NodeJsPath);
-            m_ProjectSettings.NpmPath = CheckChange(
-                EditorGUILayout.TextField(k_NpmPathLabel, m_ProjectSettings.NpmPath),
-                m_ProjectSettings.NpmPath);
+
+            var nodeJSPathValue = ProjectSettings.NodeJsPath;
+            var npmValue = ProjectSettings.NpmPath;
+
+            nodeJSPathValue = CheckChange(
+                EditorGUILayout.TextField(k_NodeJsPathLabel, nodeJSPathValue),
+                nodeJSPathValue);
+            npmValue = CheckChange(
+                EditorGUILayout.TextField(k_NpmPathLabel, npmValue),
+                npmValue);
+
+            ProjectSettings.NodeJsPath = nodeJSPathValue;
+            ProjectSettings.NpmPath = npmValue;
 
             EditorGUILayout.Space();
 
@@ -209,12 +235,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             EditorGUILayout.Space();
             using (new EditorGUILayout.HorizontalScope())
             {
-                m_ProjectSettings.ExternalEditorApplicationPath = CheckChange(
+                var externalEditorPathValue = ProjectSettings.ExternalEditorPath;
+
+                externalEditorPathValue = CheckChange(
                     EditorGUILayout.TextField(
                         k_ExternalEditorLabel,
-                        m_ProjectSettings.ExternalEditorApplicationPath,
+                        externalEditorPathValue,
                         GUILayout.ExpandWidth(true)),
-                    m_ProjectSettings.ExternalEditorApplicationPath);
+                    externalEditorPathValue);
 
                 if (GUILayout.Button(k_ChooseFile, GUILayout.ExpandWidth(false)))
                 {
@@ -224,18 +252,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
                         string.Empty);
 
                     if (!string.IsNullOrEmpty(applicationPath))
-                        m_ProjectSettings.ExternalEditorApplicationPath = CheckChange(applicationPath, m_ProjectSettings.ExternalEditorApplicationPath);
+                        externalEditorPathValue = CheckChange(applicationPath, externalEditorPathValue);
                 }
+
+                ProjectSettings.ExternalEditorPath = externalEditorPathValue;
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                m_ProjectSettings.ExternalEditorArgumentFormat = CheckChange(
-                    EditorGUILayout.TextField(
-                        k_ExternalEditorFormatLabel,
-                        m_ProjectSettings.ExternalEditorArgumentFormat,
-                        GUILayout.ExpandWidth(true)),
-                    m_ProjectSettings.ExternalEditorArgumentFormat);
+                var externalEditorArgsFormatValue = ProjectSettings.ExternalEditorArgsFormat;
+                externalEditorArgsFormatValue = CheckChange(
+                    EditorGUILayout.TextField(k_ExternalEditorFormatLabel, externalEditorArgsFormatValue, GUILayout.ExpandWidth(true)),
+                    externalEditorArgsFormatValue);
+
+                ProjectSettings.ExternalEditorArgsFormat = externalEditorArgsFormatValue;
             }
 
             var args = JsAssetHandler
@@ -247,6 +277,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(argsString, MessageType.Info);
+        }
+
+        void DrawDotnetDevEnvironment()
+        {
+            EditorGUILayout.LabelField(k_DotnetEnv, m_Heading1);
+            EditorGUILayout.Space();
+            var dotnetPathValue = ProjectSettings.DotnetPath;
+
+            dotnetPathValue = CheckChange(
+                EditorGUILayout.TextField(k_DotnetPathLabel, dotnetPathValue),
+                dotnetPathValue);
+
+            ProjectSettings.DotnetPath = dotnetPathValue;
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.HelpBox(k_DotnetProjectInfo, MessageType.Info);
         }
 
         void ApplyButtons()
@@ -266,13 +313,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             if (GUILayout.Button(k_Revert))
             {
                 GUI.FocusControl(null);
-                m_ProjectSettings.Load();
+                CloudCodeProjectSettings.Load();
                 m_Dirty = false;
             }
 
             if (GUILayout.Button(k_Apply))
             {
-                m_ProjectSettings.Save();
+                CloudCodeProjectSettings.Save();
                 m_Dirty = false;
             }
             GUI.enabled = true;

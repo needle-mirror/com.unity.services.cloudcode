@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeListScriptsResponse model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud-code.list-scripts-response")]
+    [DataContract(Name = "cloud_code_list_scripts_response")]
     internal class CloudCodeListScriptsResponse
     {
         /// <summary>
@@ -36,7 +36,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// <param name="limit">Limit used by the request</param>
         /// <param name="results">List of Scripts</param>
         [Preserve]
-        public CloudCodeListScriptsResponse(int total = default, int offset = default, int limit = default, List<CloudCodeListScriptsResponseResults> results = default)
+        public CloudCodeListScriptsResponse(int total = default, int offset = default, int limit = default, List<CloudCodeListScriptsResponseResultsInner> results = default)
         {
             Total = total;
             Offset = offset;
@@ -70,7 +70,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// </summary>
         [Preserve]
         [DataMember(Name = "results", EmitDefaultValue = false)]
-        public List<CloudCodeListScriptsResponseResults> Results{ get; }
+        public List<CloudCodeListScriptsResponseResultsInner> Results{ get; }
     
         /// <summary>
         /// Formats a CloudCodeListScriptsResponse into a string of key-value pairs for use as a path parameter.

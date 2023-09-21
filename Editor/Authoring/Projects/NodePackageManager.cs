@@ -6,6 +6,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
+using Unity.Services.CloudCode.Authoring.Editor.Projects.Exceptions;
+using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.SystemEnvironment;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
@@ -26,7 +28,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         public string WorkingDirectory { get; set; } = Directory.GetCurrentDirectory();
 
-        public NodePackageManager(IProcessRunner processRunner, IProjectSettings settings, ILogger logger)
+        public NodePackageManager(IProcessRunner processRunner, ICloudCodeProjectSettings settings, ILogger logger)
         {
             m_ProcessRunner = processRunner;
             m_NodeJsPath = settings.NodeJsPath;

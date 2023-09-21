@@ -6,7 +6,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Parameters;
-using Unity.Services.CloudCode.Authoring.Editor.Projects;
+using Unity.Services.CloudCode.Authoring.Editor.Projects.Exceptions;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -30,17 +30,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation
             var invalidScripts = new Dictionary<IScript, Exception>(validationInfo.InvalidScripts);
             foreach (var script in validationInfo.ValidScripts)
             {
-                try
+                if (script.Language == Language.JS)
                 {
-                    await m_InScriptParameters.GetParametersFromPath(script.Path);
-                }
-                catch (InvalidOperationException e)
-                {
-                    OnFailedToGetParametersFromPath(invalidScripts, script, e);
-                }
-                catch (NpmCommandFailedException e)
-                {
-                    OnFailedToGetParametersFromPath(invalidScripts, script, e);
+                    try
+                    {
+                        await m_InScriptParameters.GetParametersFromPath(script.Path);
+                    }
+                    catch (InvalidOperationException e)
+                    {
+                        OnFailedToGetParametersFromPath(invalidScripts, script, e);
+                    }
+                    catch (NpmCommandFailedException e)
+                    {
+                        OnFailedToGetParametersFromPath(invalidScripts, script, e);
+                    }
                 }
             }
 

@@ -67,10 +67,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
 
         /// <summary>
         /// Returns the object as a defined type.
+        /// Previously this function restricted use of `object` or `dynamic`
+        /// types but validation for these has been removed. As such, be
+        /// careful when passing or exposing objects of these types.
         /// </summary>
         /// <typeparam name="T">The type to cast internal object to.</typeparam>
         /// <param name="deserializationSettings">Deserialization settings for how to handle properties like missing members.</param>
-        /// <returns>The internal object case to type T.</returns>
+        /// <returns>The internal object cast to type T.</returns>
         public T GetAs<T>(DeserializationSettings deserializationSettings = null)
         {
             // Check if deserializationSettings is null so we can use the default value.
@@ -84,17 +87,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
             try
             {
                 var returnObject = IsolatedJsonConvert.DeserializeObject<T>(IsolatedJsonConvert.SerializeObject(obj), jsonSettings);
-                var errors = ValidateObject(returnObject);
-                if (errors.Count > 0)
-                {
-                    throw new DeserializationException(String.Join("\n", errors));
-                }
-
                 return returnObject;
-            }
-            catch (DeserializationException)
-            {
-                throw;
             }
             catch (JsonSerializationException e)
             {
@@ -176,89 +169,6 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
                 return null;
             }
             return o.ToDictionary(kv => kv.Key, kv => GetNewJsonObjectResponse(kv.Value));
-        }
-
-        private List<string> ValidateObject<T>(T objectToCheck, List<string> errors = null)
-        {
-            if (errors == null)
-            {
-                errors = new List<string>();
-            }
-
-            if (objectToCheck != null)
-            {
-                var isList = typeof(IEnumerable).IsAssignableFrom(typeof(T));
-                if (isList)
-                {
-                    foreach (var item in (IEnumerable) objectToCheck)
-                    {
-                        ValidateFieldInfos(item, errors);
-                        ValidatePropertyInfos(item, errors);
-                    }
-                }
-                else
-                {
-                    ValidateFieldInfos(objectToCheck, errors);
-                    ValidatePropertyInfos(objectToCheck, errors);
-                }
-            }
-
-            return errors;
-        }
-
-        private void ValidatePropertyInfos<T>(T objectToCheck, List<string> errors)
-        {
-            var propertyInfos = objectToCheck.GetType().GetProperties();
-            
-            foreach (var propertyInfo in propertyInfos)
-            {
-                if (propertyInfo.GetIndexParameters().Length > 0)
-                {
-                    for (int index = 0; index < propertyInfo.GetIndexParameters().Length; index++)
-                    {
-                        var value = propertyInfo.GetValue(objectToCheck, new object[] { index });
-                        var memberName = propertyInfo.Name;
-                        var objectName = objectToCheck.GetType().Name;
-                        ValidateValue(value, objectName, "Property", memberName, errors);
-                    }
-                }
-                else
-                { 
-                    var value = propertyInfo.GetValue(objectToCheck);
-                    var memberName = propertyInfo.Name;
-                    var objectName = objectToCheck.GetType().Name;
-                    ValidateValue(value, objectName, "Property", memberName, errors);
-                }
-            } 
-        }
-                                        
-        private void ValidateFieldInfos<T>(T objectToCheck, List<string> errors)
-        {
-            var fieldInfos = objectToCheck.GetType().GetFields();
-            foreach (var fieldInfo in fieldInfos)
-            {
-                var value = fieldInfo.GetValue(objectToCheck);
-                var memberName = fieldInfo.Name;
-                var objectName = objectToCheck.GetType().Name;
-                ValidateValue(value, objectName, "Field", memberName, errors);
-            }
-        }
-
-        private void ValidateValue(object value, string objectName, string memberType, string memberName,
-            List<string> errors)
-        {
-            if (!(value is ValueType) && !(value is string))
-            {
-                if (value is JObject)
-                {
-                    errors.Add(
-                        $"{memberType}: \"{memberName}\" on Type: \"{objectName}\" must not be of type `object` or `dynamic`");
-                }
-                else
-                {
-                    ValidateObject(value, errors);
-                }
-            }
         }
     }
 }

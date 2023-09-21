@@ -13,11 +13,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         string Path { get; }
 
         string Body { get; set; }
+
+        string LastPublishedDate { get; set; }
     }
 
 
     enum Language
     {
-        JS = 1
+        JS = 1,
+        CS = 2
     }
 }

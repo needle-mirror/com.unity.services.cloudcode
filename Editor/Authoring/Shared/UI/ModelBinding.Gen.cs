@@ -8,7 +8,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI
 {
     class ModelBinding<TModel> : EventBinding<TModel> where TModel : INotifyPropertyChanged
     {
-        readonly Dictionary<string, Action<TModel>> m_Bindings = new();
+        readonly Dictionary<string, Action<TModel>> m_Bindings = new Dictionary<string, Action<TModel>>();
 
         public ModelBinding(VisualElement element) : base(element)
         {

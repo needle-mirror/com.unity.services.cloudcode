@@ -17,15 +17,22 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion
 
         public static TInterface Default<TInterface, TImplementation>(IServiceProvider sp) where TImplementation : TInterface
         {
-            var ctr = typeof(TImplementation).GetConstructors().SingleOrDefault(p => p.IsPublic);
-            if (ctr == null)
+            var ctr = typeof(TImplementation).GetConstructors().Where(p => p.IsPublic).ToList();
+            if (ctr.Count == 0)
             {
-                throw new ConstructorNotFoundException(typeof(TImplementation));
+                ctr = typeof(TImplementation)
+                    .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Where(p => p.IsAssembly)
+                    .ToList();
+                if (ctr.Count != 1)
+                {
+                    throw new ConstructorNotFoundException(typeof(TImplementation));
+                }
             }
 
-            var parameters = ctr.GetParameters();
+            var parameters = ctr[0].GetParameters();
             var types = parameters.Select(t => sp.GetService(t.ParameterType));
-            return (TInterface)ctr.Invoke(types.ToArray());
+            return (TInterface)ctr[0].Invoke(types.ToArray());
         }
 
         public static void InitializeInstance(IServiceProvider sp, object instance)

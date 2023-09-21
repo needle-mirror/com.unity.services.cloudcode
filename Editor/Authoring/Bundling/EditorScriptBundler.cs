@@ -10,7 +10,6 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
-using UnityEngine;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Bundling

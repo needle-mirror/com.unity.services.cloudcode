@@ -1,3 +1,4 @@
+using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
@@ -10,7 +11,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
     class EditorCloudCodeDeploymentHandler : CloudCodeDeploymentHandler
     {
         public EditorCloudCodeDeploymentHandler(
-            ICloudCodeClient client,
+            ICloudCodeScriptsClient client,
             IDeploymentAnalytics deploymentAnalytics,
             ILogger logger,
             IPreDeployValidator validator) :

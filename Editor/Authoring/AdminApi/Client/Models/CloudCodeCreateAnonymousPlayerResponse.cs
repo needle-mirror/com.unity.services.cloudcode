@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// The details of the newly created anonymous player
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud-code.create-anonymous-player-response")]
+    [DataContract(Name = "cloud_code_create_anonymous_player_response")]
     internal class CloudCodeCreateAnonymousPlayerResponse
     {
         /// <summary>

@@ -2,7 +2,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
-using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
@@ -18,7 +17,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
     {
         static readonly string k_BreakingChangeWarning = L10n.Tr("The script parameters are incompatible with the parameters currently deployed. Deploying this version will break all existing clients.");
 
-        ICloudCodeClient m_Client;
+        ICloudCodeScriptsClient m_Client;
         InScriptParamsUIHandler m_UIHandler;
 
         Task m_LoadScriptTask;
@@ -32,7 +31,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
             m_UIHandler = CloudCodeAuthoringServices.Instance.GetService<InScriptParamsUIHandler>();
         }
 
-        public void Initialize(ICloudCodeClient client)
+        public void Initialize(ICloudCodeScriptsClient client)
         {
             m_Client = client;
         }

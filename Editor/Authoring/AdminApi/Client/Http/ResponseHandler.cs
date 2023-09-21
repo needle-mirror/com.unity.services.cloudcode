@@ -52,7 +52,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
             try
             {
                 var deserializedJson = GetDeserializedJson(response.Data);
-                return IsolatedJsonConvert.DeserializeObject<T>(deserializedJson, settings);
+                return (deserializedJson == null ? default(T) : IsolatedJsonConvert.DeserializeObject<T>(deserializedJson, settings));
             }
             catch(Exception e)
             {
@@ -77,7 +77,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
 
             try
             {
-                return IsolatedJsonConvert.DeserializeObject(GetDeserializedJson(response.Data), type, settings);
+                var deserializedJson = GetDeserializedJson(response.Data);
+                return (deserializedJson == null ? null : IsolatedJsonConvert.DeserializeObject(deserializedJson, type, settings));
             }
             catch(Exception e)
             {
@@ -87,7 +88,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
 
         private static string GetDeserializedJson(byte[] data)
         {
-            return Encoding.UTF8.GetString(data);
+            return data == null ? null : Encoding.UTF8.GetString(data);
         }
 
         /// <summary>
@@ -227,7 +228,11 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
 
             try
             {
-                if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(System.IO.Stream))
+                if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(string))
+                {
+                    return (response.Data == null ? null : Encoding.UTF8.GetString(response.Data)) as T;
+                }                        
+                else if (statusCodeToTypeMap[response.StatusCode.ToString()] == typeof(System.IO.Stream))
                 {
                     return (response.Data == null ? new MemoryStream() : new MemoryStream(response.Data)) as T;
                 }

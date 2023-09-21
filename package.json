@@ -1,12 +1,12 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
     "com.unity.services.authentication": "2.2.0",
-    "com.unity.services.core": "1.8.1",
+    "com.unity.services.core": "1.11.0",
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.nuget.newtonsoft-json": "3.0.2",
     "com.unity.services.wire": "1.1.5"
@@ -25,18 +25,18 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Added\n- Added subscription methods for player-specific and project-wide push messages from Cloud Code C# Modules."
+    "changelog": "### Added\n- Editor support for Cloud Code C# Modules deploy."
   },
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.4.0"
+    "com.unity.services.cloudcode.tests": "2.5.0"
   },
   "upmCi": {
-    "footprint": "7d2eae50d77ffe2b09b951c3bf3aa02d2a7afdf2"
+    "footprint": "fa7df2b0fbae02613bfe9d0070db9044bdce5d1e"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.4/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.5/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "2560970feabf846e90ddc29b8285bbf816063abd"
+    "revision": "c4c6adb9f41c2a1c15fb49b2ca7c0618d89b0184"
   }
 }

@@ -22,7 +22,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils
                 Interval = checkInterval
             };
 
-            m_Timer.Elapsed += (_, _) => Sync.RunNextUpdateOnMain(TrackValue);
+            m_Timer.Elapsed += (_a, _b) => Sync.RunNextUpdateOnMain(TrackValue);
             m_Timer.Start();
         }
 

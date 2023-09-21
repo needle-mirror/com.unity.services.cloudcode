@@ -12,8 +12,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI
 
     interface INotifications
     {
-        public IProgressBar ProgressBar(string title, string operationInfo, int totalSteps);
-        public bool DisplayDialog(string title, string dialogContent, string ok);
+        IProgressBar ProgressBar(string title, string operationInfo, int totalSteps);
+        bool DisplayDialog(string title, string dialogContent, string ok);
     }
 
     class Notifications : INotifications

@@ -10,13 +10,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.Assets
 {
     class ObservableAssets<T> : ObservableCollection<T>, IDisposable where T : UnityEngine.Object, IPath
     {
-        readonly AssetPostprocessorProxy m_Postprocessor = new AssetPostprocessorProxy();
+        readonly AssetPostprocessorProxy m_Postprocessor;
         protected readonly Dictionary<string, T> m_AssetPaths = new Dictionary<string, T>();
 
-        public ObservableAssets() : this(true) {}
+        public ObservableAssets() : this(new AssetPostprocessorProxy(), true) {}
 
-        protected ObservableAssets(bool loadAssets)
+        public ObservableAssets(AssetPostprocessorProxy assetPostprocessor, bool loadAssets)
         {
+            m_Postprocessor = assetPostprocessor;
             m_Postprocessor.AllAssetsPostprocessed += AllAssetsPostprocessed;
             if (loadAssets)
             {

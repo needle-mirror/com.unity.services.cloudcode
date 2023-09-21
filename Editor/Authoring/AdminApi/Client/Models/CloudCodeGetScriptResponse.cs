@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeGetScriptResponse model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud-code.get-script-response")]
+    [DataContract(Name = "cloud_code_get_script_response")]
     internal class CloudCodeGetScriptResponse
     {
         /// <summary>
@@ -38,7 +38,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// <param name="versions">A list of versions of the Script</param>
         /// <param name="@params">The current list of parameters that are used by the Script</param>
         [Preserve]
-        public CloudCodeGetScriptResponse(string name, TypeOptions type, LanguageOptions language, CloudCodeGetScriptResponseActiveScript activeScript, List<CloudCodeGetScriptResponseVersions> versions, List<CloudCodeScriptParams> @params = default)
+        public CloudCodeGetScriptResponse(string name, TypeOptions type, LanguageOptions language, CloudCodeGetScriptResponseActiveScript activeScript, List<CloudCodeGetScriptResponseVersionsInner> versions, List<CloudCodeScriptParams> @params = default)
         {
             Name = name;
             Type = type;
@@ -83,7 +83,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// </summary>
         [Preserve]
         [DataMember(Name = "versions", IsRequired = true, EmitDefaultValue = true)]
-        public List<CloudCodeGetScriptResponseVersions> Versions{ get; }
+        public List<CloudCodeGetScriptResponseVersionsInner> Versions{ get; }
         
         /// <summary>
         /// The current list of parameters that are used by the Script

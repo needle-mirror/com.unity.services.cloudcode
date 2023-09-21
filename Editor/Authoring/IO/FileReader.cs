@@ -10,5 +10,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.IO
         {
             return File.ReadAllTextAsync(filePath, cancellationToken);
         }
+
+        public Task<Stream> Open(string filePath, FileMode fileMode, FileAccess fileAccess)
+        {
+            return Task.FromResult<Stream>(File.Open(filePath, fileMode, fileAccess));
+        }
     }
 }

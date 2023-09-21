@@ -374,6 +374,120 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         }
     }
     /// <summary>
+    /// CreateModuleRequest
+    /// Create Module
+    /// </summary>
+    [Preserve]
+    internal class CreateModuleRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for name </summary>
+        [Preserve]
+        public string Name { get; }
+        /// <summary>Accessor for language </summary>
+        [Preserve]
+        public string Language { get; }
+        /// <summary>Accessor for file </summary>
+        [Preserve]
+        public System.IO.Stream File { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// CreateModule Request Object.
+        /// Create Module
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="name">Name of a Cloud Code module.</param>
+        /// <param name="language">The language of a Cloud Code module.</param>
+        /// <param name="file">Archive file containing the module assemblies.</param>
+        [Preserve]
+        public CreateModuleRequest(string projectId, string environmentId, string name, string language, System.IO.Stream file)
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            Name = name;
+            Language = language;
+            File = file;
+            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public List<IMultipartFormSection> ConstructBody()
+        {
+            List<IMultipartFormSection> requestParts = new List<IMultipartFormSection>();
+            
+            requestParts.Add(new MultipartFormDataSection("name", ConstructBody(Name), "text/plain"));
+            
+            requestParts.Add(new MultipartFormDataSection("language", ConstructBody(Language), "text/plain"));
+            requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
+            
+            return requestParts;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
     /// CreateScriptRequest
     /// Create Script
     /// </summary>
@@ -462,6 +576,115 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
                 headers.Add("Accept", acceptHeader);
             }
             var httpMethod = "POST";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
+    /// DeleteModuleRequest
+    /// Delete Module
+    /// </summary>
+    [Preserve]
+    internal class DeleteModuleRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for moduleName </summary>
+        [Preserve]
+        public string ModuleName { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// DeleteModule Request Object.
+        /// Delete Module
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="moduleName">moduleName param</param>
+        [Preserve]
+        public DeleteModuleRequest(string projectId, string environmentId, string moduleName)
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            ModuleName = moduleName;
+
+            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+            };
+
+            string[] accepts = {
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "DELETE";
             var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
             if (!string.IsNullOrEmpty(contentTypeHeader))
             {
@@ -596,6 +819,116 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         }
     }
     /// <summary>
+    /// GetModuleRequest
+    /// Get Module
+    /// </summary>
+    [Preserve]
+    internal class GetModuleRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for moduleName </summary>
+        [Preserve]
+        public string ModuleName { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// GetModule Request Object.
+        /// Get Module
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="moduleName">moduleName param</param>
+        [Preserve]
+        public GetModuleRequest(string projectId, string environmentId, string moduleName)
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            ModuleName = moduleName;
+
+            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+            };
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "GET";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
     /// GetScriptRequest
     /// Get Script
     /// </summary>
@@ -632,6 +965,131 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}";
 
 
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+            };
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "GET";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
+    /// ListModulesRequest
+    /// List Modules
+    /// </summary>
+    [Preserve]
+    internal class ListModulesRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for limit </summary>
+        [Preserve]
+        public int? Limit { get; }
+        /// <summary>Accessor for after </summary>
+        [Preserve]
+        public string After { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// ListModules Request Object.
+        /// List Modules
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="limit">The number of modules to return.</param>
+        /// <param name="after">Page token</param>
+        [Preserve]
+        public ListModulesRequest(string projectId, string environmentId, int? limit = default(int?), string after = default(string))
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            Limit = limit;
+            After = after;
+            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
+
+            List<string> queryParams = new List<string>();
+
+            var limitStringValue = Limit.ToString();
+            queryParams = AddParamsToQueryParams(queryParams, "limit", limitStringValue);
+            if(!string.IsNullOrEmpty(After))
+            {
+                queryParams = AddParamsToQueryParams(queryParams, "after", After);
+            }
+            if (queryParams.Count > 0)
+            {
+                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
+            }
         }
 
         /// <summary>
@@ -1061,6 +1519,112 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             else if (httpMethod == "POST" || httpMethod == "PATCH")
             {
                 headers.Add("Content-Type", "application/json");
+            }
+
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
+    /// UpdateModuleRequest
+    /// Update Module
+    /// </summary>
+    [Preserve]
+    internal class UpdateModuleRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for moduleName </summary>
+        [Preserve]
+        public string ModuleName { get; }
+        /// <summary>Accessor for file </summary>
+        [Preserve]
+        public System.IO.Stream File { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// UpdateModule Request Object.
+        /// Update Module
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="moduleName">moduleName param</param>
+        /// <param name="file">Archive file containing the module assemblies.</param>
+        [Preserve]
+        public UpdateModuleRequest(string projectId, string environmentId, string moduleName, System.IO.Stream file = default(System.IO.Stream))
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            ModuleName = moduleName;
+
+            File = file;
+            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public List<IMultipartFormSection> ConstructBody()
+        {
+            List<IMultipartFormSection> requestParts = new List<IMultipartFormSection>();
+            requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
+            
+            return requestParts;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
             }
 
 

@@ -10,20 +10,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         public string Path => "";
         public string Body { get; set; }
 
-        public ScriptInfo(string scriptName, string extension, Language language = Model.Language.JS)
+        public string LastPublishedDate { get; set; }
+
+        public ScriptInfo(string scriptName, string extension, string lastPublishedDate = "", Language language = Model.Language.JS)
         {
             Name = new ScriptName(scriptName + extension);
             Language = language;
             Parameters = new List<CloudCodeParameter>();
             Body = "";
+            LastPublishedDate = lastPublishedDate;
         }
 
-        public ScriptInfo(ScriptName scriptName, Language language = Model.Language.JS)
+        public ScriptInfo(ScriptName scriptName, string lastPublishedDate = "", Language language = Model.Language.JS)
         {
             Name = scriptName;
             Language = language;
             Parameters = new List<CloudCodeParameter>();
             Body = "";
+            LastPublishedDate = lastPublishedDate;
         }
     }
 }

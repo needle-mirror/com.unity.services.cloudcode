@@ -33,6 +33,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
             /// <summary>
             /// Async Operation.
+            /// Create Module.
+            /// </summary>
+            /// <param name="request">Request object for CreateModule.</param>
+            /// <param name="operationConfiguration">Configuration for CreateModule.</param>
+            /// <returns>Task for a Response object containing status code, headers, and CloudCodeCreateModuleResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<CloudCodeCreateModuleResponse>> CreateModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.CreateModuleRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
             /// Create Script.
             /// </summary>
             /// <param name="request">Request object for CreateScript.</param>
@@ -40,6 +50,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             /// <returns>Task for a Response object containing status code, headers.</returns>
             /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
             Task<Response> CreateScriptAsync(Unity.Services.CloudCode.Authoring.Client.Default.CreateScriptRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
+            /// Delete Module.
+            /// </summary>
+            /// <param name="request">Request object for DeleteModule.</param>
+            /// <param name="operationConfiguration">Configuration for DeleteModule.</param>
+            /// <returns>Task for a Response object containing status code, headers.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response> DeleteModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.DeleteModuleRequest request, Configuration operationConfiguration = null);
 
             /// <summary>
             /// Async Operation.
@@ -53,6 +73,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
             /// <summary>
             /// Async Operation.
+            /// Get Module.
+            /// </summary>
+            /// <param name="request">Request object for GetModule.</param>
+            /// <param name="operationConfiguration">Configuration for GetModule.</param>
+            /// <returns>Task for a Response object containing status code, headers, and CloudCodeGetModuleResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<CloudCodeGetModuleResponse>> GetModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.GetModuleRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
             /// Get Script.
             /// </summary>
             /// <param name="request">Request object for GetScript.</param>
@@ -60,6 +90,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             /// <returns>Task for a Response object containing status code, headers, and CloudCodeGetScriptResponse object.</returns>
             /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
             Task<Response<CloudCodeGetScriptResponse>> GetScriptAsync(Unity.Services.CloudCode.Authoring.Client.Default.GetScriptRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
+            /// List Modules.
+            /// </summary>
+            /// <param name="request">Request object for ListModules.</param>
+            /// <param name="operationConfiguration">Configuration for ListModules.</param>
+            /// <returns>Task for a Response object containing status code, headers, and CloudCodeListModulesResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<CloudCodeListModulesResponse>> ListModulesAsync(Unity.Services.CloudCode.Authoring.Client.Default.ListModulesRequest request, Configuration operationConfiguration = null);
 
             /// <summary>
             /// Async Operation.
@@ -90,6 +130,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             /// <returns>Task for a Response object containing status code, headers, and CloudCodeTestScriptResponse object.</returns>
             /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
             Task<Response<CloudCodeTestScriptResponse>> TestScriptAsync(Unity.Services.CloudCode.Authoring.Client.Default.TestScriptRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
+            /// Update Module.
+            /// </summary>
+            /// <param name="request">Request object for UpdateModule.</param>
+            /// <param name="operationConfiguration">Configuration for UpdateModule.</param>
+            /// <returns>Task for a Response object containing status code, headers, and CloudCodeUpdateModuleResponse object.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response<CloudCodeUpdateModuleResponse>> UpdateModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.UpdateModuleRequest request, Configuration operationConfiguration = null);
 
             /// <summary>
             /// Async Operation.
@@ -173,6 +223,36 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
         /// <summary>
         /// Async Operation.
+        /// Create Module.
+        /// </summary>
+        /// <param name="request">Request object for CreateModule.</param>
+        /// <param name="operationConfiguration">Configuration for CreateModule.</param>
+        /// <returns>Task for a Response object containing status code, headers, and CloudCodeCreateModuleResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<CloudCodeCreateModuleResponse>> CreateModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.CreateModuleRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"201", typeof(CloudCodeCreateModuleResponse)   },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"507", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration,
+                "BoundaryCreateModuleBoundary");
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeCreateModuleResponse>(response, statusCodeToTypeMap);
+            return new Response<CloudCodeCreateModuleResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
         /// Create Script.
         /// </summary>
         /// <param name="request">Request object for CreateScript.</param>
@@ -188,6 +268,35 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
 
             var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            ResponseHandler.HandleAsyncResponse(response, statusCodeToTypeMap);
+            return new Response(response);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Delete Module.
+        /// </summary>
+        /// <param name="request">Request object for DeleteModule.</param>
+        /// <param name="operationConfiguration">Configuration for DeleteModule.</param>
+        /// <returns>Task for a Response object containing status code, headers.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response> DeleteModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.DeleteModuleRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"204",  null },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("DELETE",
                 request.ConstructUrl(finalConfiguration.BasePath),
                 request.ConstructBody(),
                 request.ConstructHeaders(finalConfiguration),
@@ -231,6 +340,35 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
         /// <summary>
         /// Async Operation.
+        /// Get Module.
+        /// </summary>
+        /// <param name="request">Request object for GetModule.</param>
+        /// <param name="operationConfiguration">Configuration for GetModule.</param>
+        /// <returns>Task for a Response object containing status code, headers, and CloudCodeGetModuleResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<CloudCodeGetModuleResponse>> GetModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.GetModuleRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(CloudCodeGetModuleResponse)   },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("GET",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeGetModuleResponse>(response, statusCodeToTypeMap);
+            return new Response<CloudCodeGetModuleResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
         /// Get Script.
         /// </summary>
         /// <param name="request">Request object for GetScript.</param>
@@ -255,6 +393,35 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
             var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeGetScriptResponse>(response, statusCodeToTypeMap);
             return new Response<CloudCodeGetScriptResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// List Modules.
+        /// </summary>
+        /// <param name="request">Request object for ListModules.</param>
+        /// <param name="operationConfiguration">Configuration for ListModules.</param>
+        /// <returns>Task for a Response object containing status code, headers, and CloudCodeListModulesResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<CloudCodeListModulesResponse>> ListModulesAsync(Unity.Services.CloudCode.Authoring.Client.Default.ListModulesRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(CloudCodeListModulesResponse)   },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("GET",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeListModulesResponse>(response, statusCodeToTypeMap);
+            return new Response<CloudCodeListModulesResponse>(response, handledResponse);
         }
 
 
@@ -327,7 +494,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
         public async Task<Response<CloudCodeTestScriptResponse>> TestScriptAsync(Unity.Services.CloudCode.Authoring.Client.Default.TestScriptRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(CloudCodeTestScriptResponse)   },{"400", typeof(TestScript400OneOf)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"422", typeof(TestScript422OneOf)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"503", typeof(CloudCodeBasicErrorResponse)   } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(CloudCodeTestScriptResponse)   },{"400", typeof(TestScript400Response)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"422", typeof(TestScript400Response)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"503", typeof(CloudCodeBasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -342,6 +509,36 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
 
             var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeTestScriptResponse>(response, statusCodeToTypeMap);
             return new Response<CloudCodeTestScriptResponse>(response, handledResponse);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Update Module.
+        /// </summary>
+        /// <param name="request">Request object for UpdateModule.</param>
+        /// <param name="operationConfiguration">Configuration for UpdateModule.</param>
+        /// <returns>Task for a Response object containing status code, headers, and CloudCodeUpdateModuleResponse object.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response<CloudCodeUpdateModuleResponse>> UpdateModuleAsync(Unity.Services.CloudCode.Authoring.Client.Default.UpdateModuleRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(CloudCodeUpdateModuleResponse)   },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"507", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("PATCH",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration,
+                "BoundaryUpdateModuleBoundary");
+
+            var handledResponse = ResponseHandler.HandleAsyncResponse<CloudCodeUpdateModuleResponse>(response, statusCodeToTypeMap);
+            return new Response<CloudCodeUpdateModuleResponse>(response, handledResponse);
         }
 
 

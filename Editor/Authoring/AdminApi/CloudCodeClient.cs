@@ -19,7 +19,7 @@ using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Langua
 
 namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 {
-    class CloudCodeClient : ICloudCodeClient
+    class CloudCodeClient : ICloudCodeScriptsClient
     {
         const string k_ContentType = "Content-Type";
         const string k_ProblemJson = "application/problem+json";
@@ -114,7 +114,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             await UpdateToken();
             var offset = 0;
             var limit = 100;
-            var results = new List<CloudCodeListScriptsResponseResults>();
+            var results = new List<CloudCodeListScriptsResponseResultsInner>();
             int resultsCount;
 
             do
@@ -154,11 +154,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 headers.ToDictionary());
         }
 
-        static ScriptInfo ScriptInfoFromResponse(CloudCodeListScriptsResponseResults response)
+        static ScriptInfo ScriptInfoFromResponse(CloudCodeListScriptsResponseResultsInner response)
         {
             return new ScriptInfo(
                 response.Name,
                 CloudCodeFileExtensions.Preferred(),
+                response.LastPublishedDate.ToString(),
                 (CoreLanguage)response.Language);
         }
 

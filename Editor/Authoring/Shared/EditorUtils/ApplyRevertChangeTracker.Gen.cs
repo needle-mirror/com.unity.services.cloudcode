@@ -1,4 +1,5 @@
 // WARNING: Auto generated code. Modifications will be lost!
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -34,7 +35,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils
                     var stateObj = SerializedObject.targetObjects[i];
                     var editorObj = m_EditorTarget.targetObjects[i];
 
-                    if (!Equals(FieldValue(property.propertyPath, (T)stateObj), FieldValue(property.propertyPath, (T)editorObj)))
+                    // strings for SerializedProperty are char arrays
+                    // FieldInfo does not treat strings as arrays
+                    // need to skip array checks if value is a string
+                    if (property.isArray
+                        && property.propertyType != SerializedPropertyType.String)
+                    {
+                        var listState = (IList)FieldValue(property.propertyPath, (T)stateObj);
+                        var listEditor = (IList)FieldValue(property.propertyPath, (T)editorObj);
+
+                        if (listState.Count != listEditor.Count)
+                        {
+                            return true;
+                        }
+
+                        for (var j = 0; j < listState.Count; ++j)
+                        {
+                            if (!Equals(listState[j], listEditor[j]))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    else if (!Equals(FieldValue(property.propertyPath, (T)stateObj), FieldValue(property.propertyPath, (T)editorObj)))
                     {
                         return true;
                     }
