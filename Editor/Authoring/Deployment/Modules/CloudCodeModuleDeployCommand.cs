@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
@@ -18,23 +18,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
     {
         public override string Name => L10n.Tr("Deploy");
 
-        readonly IDotnetRunner m_DotnetRunner;
         readonly IFileSystem m_FileSystem;
         readonly IModuleZipper m_ModuleZipper;
+        readonly ISolutionPublisher m_SolutionPublisher;
 
         readonly EditorCloudCodeModuleDeploymentHandler m_EditorCloudCodeDeploymentHandler;
         readonly bool m_Reconcile;
         readonly bool m_DryRun;
 
         public CloudCodeModuleDeployCommand(
-            IDotnetRunner dotnetRunner,
             IFileSystem fileSystem,
             IModuleZipper moduleZipper,
+            ISolutionPublisher solutionPublisher,
             EditorCloudCodeModuleDeploymentHandler editorCloudCodeDeploymentHandler)
         {
-            m_DotnetRunner = dotnetRunner;
             m_FileSystem = fileSystem;
             m_ModuleZipper = moduleZipper;
+            m_SolutionPublisher = solutionPublisher;
 
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
             m_Reconcile = false;
@@ -60,7 +60,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             });
         }
 
-        async Task<List<IScript>> Compile(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = default)
+        internal async Task<List<IScript>> Compile(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = default)
         {
             var generationList = new List<IScript>();
             foreach (var ccmr in items)
@@ -71,23 +71,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
                 try
                 {
-                    var outputPath = m_FileSystem.Combine(m_FileSystem.GetDirectoryName(targetPath), "module-compilation");
-                    await m_DotnetRunner.ExecuteDotnetAsync(new[] { $"publish \"{targetPath}\" -c Release -r linux-x64 " +
-                        $"-o \"{outputPath}\" -p:AssemblyName={ccmr.name}" }, cancellationToken);
-                    UpdateStatus(ccmr, 33f, "Compiled Successfully");
+                    var generatedModuleName = await GenerateDLLs(ccmr, targetPath, cancellationToken);
+                    ccmr.ModuleName = generatedModuleName;
 
-                    var createdFilePath = await m_ModuleZipper.ZipCompilation(targetPath, ccmr.Name, cancellationToken);
+                    var createdFilePath = await m_ModuleZipper.ZipCompilation(targetPath, generatedModuleName, cancellationToken);
                     UpdateStatus(ccmr, 66f, "Zipped Successfully");
 
-                    var name = new ScriptName(m_FileSystem.GetFileNameWithoutExtension(ccmr.Name));
-                    var script = new Script(createdFilePath)
-                    {
-                        Name = name,
-                        Body = string.Empty,
-                        Parameters = new List<CloudCodeParameter>(),
-                        Language = Language.CS
-                    };
-                    generationList.Add(script);
+                    var model = GenerateModel(generatedModuleName, createdFilePath);
+                    generationList.Add(model);
                 }
                 catch (Exception e)
                 {
@@ -96,6 +87,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             }
 
             return generationList;
+        }
+
+        async Task<string> GenerateDLLs(
+            CloudCodeModuleReference ccmr, string targetPath, CancellationToken cancellationToken = default)
+        {
+            var outputPath = m_FileSystem.Combine(m_FileSystem.GetDirectoryName(targetPath), "module-compilation");
+            var generatedModuleName = await m_SolutionPublisher.PublishToFolder(targetPath, outputPath, cancellationToken);
+            UpdateStatus(ccmr, 33f, "Compiled Successfully");
+            return generatedModuleName;
+        }
+
+        Script GenerateModel(string moduleName, string filePath)
+        {
+            var name = new ScriptName(m_FileSystem.GetFileNameWithoutExtension(moduleName));
+            return new Script(filePath)
+            {
+                Name = name,
+                Body = string.Empty,
+                Parameters = new List<CloudCodeParameter>(),
+                Language = Language.CS
+            };
         }
 
         static void UpdateStatus(CloudCodeModuleReference item, float progress, string statusMessage)

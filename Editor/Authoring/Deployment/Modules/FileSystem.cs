@@ -60,9 +60,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return File.Exists(path);
         }
 
+        public void FileMove(string sourceFileName, string destFileName)
+        {
+            File.Move(sourceFileName, destFileName);
+        }
+
         public bool DirectoryExists(string path)
         {
             return Directory.Exists(path);
+        }
+
+        public string[] DirectoryGetFiles(string path, string searchPattern, SearchOption searchOption)
+        {
+            return Directory.GetFiles(path, searchPattern, searchOption);
+        }
+
+        public DirectoryInfo? DirectoryGetParent(string path)
+        {
+            return Directory.GetParent(path);
+        }
+
+        public string[] DirectoryGetFiles(string path, string searchPattern)
+        {
+            return Directory.GetFiles(path, searchPattern);
         }
 
         public string? GetDirectoryName(string path)

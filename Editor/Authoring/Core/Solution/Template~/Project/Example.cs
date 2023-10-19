@@ -1,14 +1,14 @@
 ﻿using Unity.Services.CloudCode.Core;
 
-namespace HelloWorld
+namespace HelloWorld;
+
+public class MyModule
 {
-    public class MyModule
+    [CloudCodeFunction("SayHello")]
+    public string Hello(string name)
     {
-        [CloudCodeFunction("SayHello")]
-        public string Hello(string name)
-        {
-            return $"Hello, {name}!";
-        }
+        return $"Hello, {name}!";
     }
 }
+
 

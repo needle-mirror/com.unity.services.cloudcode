@@ -93,6 +93,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IFileStream, CloudCodeFileStream>);
             collection.Register(Default<IFileContentRetriever, FileContentRetriever>);
             collection.Register(Default<IModuleZipper, ModuleZipper>);
+            collection.Register(Default<ISolutionPublisher, SolutionPublisher>);
             collection.Register(Default<IFileSystem, FileSystem>);
             collection.Register(Default<IPathResolver, PathResolver>);
             collection.Register(Default<ITemplateInfo, TemplateInfo>);

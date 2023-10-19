@@ -77,7 +77,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return await DeployFiles(validLocalScripts, toDelete, res);
         }
 
-        void UpdateLastPublishedDate(
+        static void UpdateLastPublishedDate(
             IReadOnlyList<IScript> scripts,
             IReadOnlyList<ScriptInfo> remoteScripts)
         {

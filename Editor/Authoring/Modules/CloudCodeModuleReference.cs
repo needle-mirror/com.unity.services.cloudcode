@@ -32,6 +32,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         string m_Type = "C# Module";
         DeploymentStatus m_Status;
 
+        string m_ModuleName;
+        public string ModuleName
+        {
+            get => m_ModuleName;
+            set => SetField(ref m_ModuleName, value);
+        }
         public string Name
         {
             get

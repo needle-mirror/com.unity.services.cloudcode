@@ -3,7 +3,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.IO
 {
-    public class CloudCodeFileStream : IFileStream
+    class CloudCodeFileStream : IFileStream
     {
         internal FileStream FileStream;
 

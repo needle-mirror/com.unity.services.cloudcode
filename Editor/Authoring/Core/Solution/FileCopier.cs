@@ -44,14 +44,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Solution
             {
                 var newFileStream = m_FileSystem.CreateFile(dstPath);
                 newFileStream.Close();
+            }
 
-                var fileContent = await m_FileContentRetriever.GetFileContent(srcPath, cancellationToken);
-                await m_FileSystem.WriteAllText(dstPath, fileContent, cancellationToken);
-            }
-            else
-            {
-                throw new SolutionGenerationException($"File {dstPath} already exists. You cannot override an existing file.");
-            }
+            var fileContent = await m_FileContentRetriever.GetFileContent(srcPath, cancellationToken);
+            await m_FileSystem.WriteAllText(dstPath, fileContent, cancellationToken);
         }
 
         public async Task CopyProjectWithExample(string dstDirectory, string moduleName, CancellationToken cancellationToken)

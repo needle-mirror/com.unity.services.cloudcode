@@ -27,5 +27,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         string Combine(params string[] paths);
         string Join(string path1, string path2);
         string ChangeExtension(string path, string extension);
+        string[] DirectoryGetFiles(string path, string searchPattern);
+        string[] DirectoryGetFiles(string path, string searchPattern, SearchOption searchOption);
+        DirectoryInfo? DirectoryGetParent(string path);
+        void FileMove(string sourceFileName, string destFileName);
     }
 }

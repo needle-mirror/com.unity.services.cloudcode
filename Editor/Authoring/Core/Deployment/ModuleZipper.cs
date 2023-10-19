@@ -1,9 +1,10 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 
-namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
+namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     class ModuleZipper : IModuleZipper
     {

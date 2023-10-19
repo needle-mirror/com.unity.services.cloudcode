@@ -50,25 +50,34 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         public static Task GenerateSolution(CloudCodeModuleReference ccmr, CancellationToken cancellationToken = default)
         {
-            var ccmrDir = Path.GetDirectoryName(Path.GetFullPath(ccmr.Path));
-            var targetPath = Path.Combine(ccmrDir, ccmr.ModulePath);
+            var referenceFileDir = Path.GetDirectoryName(Path.GetFullPath(ccmr.Path));
+            var targetPath = Path.Combine(referenceFileDir, ccmr.ModulePath);
             targetPath = Path.GetFullPath(targetPath);
 
-            var task = m_SolutionGenerator.CreateSolutionWithProject(
+            var solutionPath = Path.Combine(
                 Path.GetDirectoryName(targetPath),
-                Path.GetFileNameWithoutExtension(targetPath), cancellationToken);
+                Path.GetFileNameWithoutExtension(targetPath) + CloudCodeModuleReferenceResources.SolutionExtension);
 
             var solutionName = Path.GetFileNameWithoutExtension(targetPath);
-            if (task.IsCompleted && task.Exception == null)
+            Task generationTask = null;
+
+            if (File.Exists(solutionPath))
             {
-                m_Logger.Log($"Solution {solutionName} generated successfully.");
+                generationTask = Task.FromException(new Exception($"File {solutionPath} already exists. You cannot override an existing solution."));
             }
             else
             {
-                m_Logger.LogError($"Solution {solutionName} failed to generate", task.Exception?.Message);
+                generationTask = m_SolutionGenerator.CreateSolutionWithProject(
+                    Path.GetDirectoryName(targetPath),
+                    Path.GetFileNameWithoutExtension(targetPath), cancellationToken);
+
+                if (generationTask.IsCompletedSuccessfully)
+                {
+                    m_Logger.Log($"Solution {solutionName} generated successfully.");
+                }
             }
 
-            return task;
+            return generationTask;
         }
     }
 }

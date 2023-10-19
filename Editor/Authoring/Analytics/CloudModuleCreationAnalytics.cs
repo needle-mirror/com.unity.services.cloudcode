@@ -2,7 +2,7 @@ using UnityEditor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics
 {
-    public class CloudModuleCreationAnalytics
+    class CloudModuleCreationAnalytics
     {
         const string k_EventNameReferenceCreate = "cloudcode_referencecreated";
         const string k_EventNameModuleCreate = "cloudcode_modulecreated";

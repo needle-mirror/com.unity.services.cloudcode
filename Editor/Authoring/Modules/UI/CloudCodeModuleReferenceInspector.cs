@@ -103,7 +103,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             var task = GenerateSolutionCommand.GenerateSolution(ModuleReference);
             if (task.Exception != null)
             {
-                UpdateMessageBox(task.Exception?.Message, true, HelpBoxMessageType.Error);
+                UpdateMessageBox("Solution failed to generate: " + task.Exception?.Message, true, HelpBoxMessageType.Error);
             }
             else
             {

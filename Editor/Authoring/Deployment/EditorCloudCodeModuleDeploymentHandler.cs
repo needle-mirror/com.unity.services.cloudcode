@@ -57,8 +57,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         bool IsSameModule(IScript script, CloudCodeModuleReference reference)
         {
-            return m_FileSystem.GetFileNameWithoutExtension(reference.Name).Equals(
-                m_FileSystem.GetFileNameWithoutExtension(script.Name.ToString()));
+            return reference.ModuleName == script.Name.ToString();
         }
 
         protected override void UpdateValidationStatus(
