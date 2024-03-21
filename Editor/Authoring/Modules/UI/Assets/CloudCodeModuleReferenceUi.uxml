@@ -6,7 +6,12 @@
         <ui:Button name="Revert" text="Revert" class="revert-button" />
         <ui:Button name="Apply" text="Apply" class="apply-button" />
     </ui:VisualElement>
-    <ui:VisualElement name="Generate Footer" class="apply-footer__container">
-        <ui:Button name="Generate" text="Generate Solution" class="generate-button" />
+    <ui:VisualElement name="GenerateButtonsContainer" class="generation-btn-container-row">
+        <ui:VisualElement name="GenerateSolutionContainer" class="apply-footer__container">
+            <ui:Button name="GenerateSolution" text="Generate Solution" class="generate-button" />
+        </ui:VisualElement>
+        <ui:VisualElement name="GenerateBindingsContainer" class="apply-footer__container">
+            <ui:Button name="GenerateModuleBindings" text="Generate Bindings" class="generate-button" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

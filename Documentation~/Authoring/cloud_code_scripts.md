@@ -1,15 +1,18 @@
-# Cloud Code Assets
+# Cloud Code Scripts
 
 ## Creation
-Right-click on the `Project Window` then select `Create > Cloud Code Script` to create a Cloud Code Script.
+
+Right-click on the `Project Window` then select `Create > Cloud Code Js Script` to create a Cloud Code Script.
 
 ## Parameters
+
 Selecting a Cloud Code Script will allow you to modify its parameters in the inspector.
 
 Be advised that changing parameters on an existing script might make existing game clients
 incompatible. The client may send parameters that are incompatible, or not send required parameters.
 
 The possible parameter types are:
+
 * String
 * Boolean
 * Numeric
@@ -23,17 +26,17 @@ More details can be found in the [Cloud Code Documentation](https://docs.unity.c
 
 ## In-Script Parameters
 
-To allow a more seamless experience in your Cloud Code Scripts, you may declare 
+To allow a more seamless experience in your Cloud Code Scripts, you may declare
 your parameters directly in the script.
 
 To do so, simply export the `params` object, containing each parameter name as a key, and
-its type as a value. 
+its type as a value.
 
 The `module.exports` property must have been assigned before setting the parameters.
 
 Example:
 
-```
+```javascript
 module.exports.params = { "echo" : "Boolean" }
 ```
 
@@ -42,7 +45,7 @@ you may specify an object containing both the `type` and `required` properties.
 
 Example:
 
-```
+```javascript
 module.exports.params = { "aParam" : { "type": "String", "required": true } }
 ```
 
@@ -50,7 +53,7 @@ By default, parameters are not required.
 
 Both formats can be combined as desired:
 
-```
+```javascript
 module.exports.params = { 
   "echo" : "Boolean",
   "aParam" : { "type": "String", "required": true }
@@ -65,7 +68,8 @@ Deploying a file with in-script parameters will add the necessary parameters on 
 At the current time, modifying in-script parameters in the dashboard is not supported.
 
 Here is an example of a full script with in script parameters.
-```js
+
+```javascript
 const _ = require("lodash-4.17");
 
 module.exports = async ({ params, context, logger }) => {
@@ -95,6 +99,7 @@ function rollDice(sides) {
 ```
 
 ## File Names
+
 Cloud Code assets use their file name 
 as the identifier when uploading to the service.
 
@@ -111,6 +116,7 @@ From there, you can set up your desired text editor or IDE.
 For advanced cases, you can specify an argument format.
 
 The following arguments will be handled:
+
 * $(File): File Path of the asset
 * $(ProjectPath): Project Directory
 * $(SolutionPath): Solution Path
@@ -126,6 +132,7 @@ A few examples of possible set ups:
   * Args: $(ProjectPath) $(File)"
 
 ## Naming Restrictions
-The Cloud Code service restricts the possible identifier names that can be used. 
 
-In order to make sure your file uploads correctly, make sure to consult their [documentation](https://docs.unity.com/cloud-code/using-cloud-code.html#Script_creation). 
+The Cloud Code service restricts the possible identifier names that can be used.
+
+In order to make sure your file uploads correctly, make sure to consult their [documentation](https://docs.unity.com/cloud-code/using-cloud-code.html#Script_creation).

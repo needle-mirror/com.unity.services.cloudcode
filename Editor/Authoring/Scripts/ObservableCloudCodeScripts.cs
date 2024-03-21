@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
 using Unity.Services.DeploymentApi.Editor;
+using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
@@ -43,6 +44,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
                     Add(newItem.Model);
                 }
             }
+        }
+
+        CloudCodeScript RegenAsset(CloudCodeScript asset)
+        {
+            var newAsset = ScriptableObject.CreateInstance<CloudCodeScript>();
+            newAsset.Model = asset.Model;
+            asset = newAsset;
+            return asset;
+        }
+
+        public CloudCodeScript GetOrCreateInstance(string ctxAssetPath)
+        {
+            foreach (var a in m_CloudCodeScripts)
+            {
+                if (ctxAssetPath == a.Path)
+                {
+                    return a == null ? RegenAsset(a) : a;
+                }
+            }
+
+            var asset = ScriptableObject.CreateInstance<CloudCodeScript>();
+            asset.Model = new Script(ctxAssetPath);
+            return asset;
         }
     }
 }

@@ -12,5 +12,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
         public string exception;
         public float duration;
         public int size;
+        public string fileType;
     }
 }

@@ -2,8 +2,9 @@
     "name": "Unity.Services.CloudCode.Editor",
     "rootNamespace": "Unity.Services.CloudCode",
     "references": [
-        "GUID:1c66728ad60364b82bf095d383b87458",
-        "GUID:fe25561d224ed4743af4c60938a59d0b"
+        "Unity.Services.Core.Editor",
+        "Unity.Services.Core",
+        "Unity.Services.CloudCode.Authoring.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,6 +15,12 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0-pre.5,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_0"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -5,6 +5,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     interface ISolutionPublisher
     {
-        public Task<string> PublishToFolder(string solutionPath, string outputPath, CancellationToken cancellationToken);
+        public Task PublishSolutionLinux64(string solutionPath, string outputPath, CancellationToken cancellationToken = default);
+        public Task PublishSolutionCrossPlatform(string solutionPath, string outputPath, CancellationToken cancellationToken = default);
     }
 }

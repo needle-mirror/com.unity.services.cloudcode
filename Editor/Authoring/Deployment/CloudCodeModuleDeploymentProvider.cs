@@ -10,22 +10,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 {
     class CloudCodeModuleDeploymentProvider : DeploymentProvider
     {
-        public override string Service => "Cloud Code C# Module";
+        public override string Service => "Cloud Code";
         public override Command DeployCommand { get; }
-        public override Command OpenCommand { get; }
 
         public CloudCodeModuleDeploymentProvider(
             CloudCodeModuleDeployCommand deployCommand,
             GenerateSolutionCommand generateSolutionCommand,
+            CloudCodeModuleGenerateBindingsCommand generateBindingsCommand,
             CloudCodeModuleReferenceCollection scripts)
         {
             DeployCommand = deployCommand;
-            OpenCommand = generateSolutionCommand;
+            Commands.Add(generateBindingsCommand);
+            Commands.Add(generateSolutionCommand);
+
             foreach (var script in scripts)
             {
                 DeploymentItems.Add(script);
             }
-
+            
             scripts.CollectionChanged += OnCollectionChanged;
         }
 

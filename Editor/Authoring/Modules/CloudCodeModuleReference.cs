@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
 using Unity.Services.DeploymentApi.Editor;
@@ -14,7 +15,7 @@ using SystemPath = System.IO.Path;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
-    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, IDeploymentItem, ITypedItem
+    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, IModuleItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
         {
@@ -27,7 +28,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         [SerializeField]
         string m_ModulePath;
         string m_Path;
-        string m_Name;
+        string m_AssetName;
         float m_Progress;
         string m_Type = "C# Module";
         DeploymentStatus m_Status;
@@ -42,13 +43,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         {
             get
             {
-                if (m_Name.IsNullOrEmpty())
+                if (m_AssetName.IsNullOrEmpty())
                 {
                     return SystemPath.GetFileName(Path);
                 }
-                return m_Name;
+                return m_AssetName;
             }
-            set => SetField(ref m_Name, value);
+            set => SetField(ref m_AssetName, value);
         }
 
         public string Type
@@ -63,6 +64,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         }
 
         string IDeploymentItem.Name => SystemPath.GetFileName(Path);
+
+        public string SolutionPath => GetSolutionPath();
+
+        public string CcmPath { get; set; }
 
         public float Progress
         {
@@ -82,6 +87,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         {
             get => m_ModulePath;
             set => SetValidPath(value);
+        }
+
+        string GetSolutionPath()
+        {
+            var ccmrDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(m_Path));
+            var targetPath = System.IO.Path.Combine(ccmrDir, ModulePath);
+            return System.IO.Path.GetFullPath(targetPath);
         }
 
         void SetValidPath(string newModulePath)

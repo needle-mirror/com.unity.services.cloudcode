@@ -12,13 +12,16 @@ using Unity.Services.CloudCode.Authoring.Editor.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Solution;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
+using Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Package;
 using Unity.Services.CloudCode.Authoring.Editor.Parameters;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
@@ -74,7 +77,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<NodePackageManager>);
 
             collection.Register(Default<IInScriptParameters, InScriptParameters>);
-            collection.Register(Default<ObservableCollection<IDeploymentItem>, ObservableCloudCodeScripts>);
+            collection.RegisterSingleton(Default<ObservableCollection<IDeploymentItem>, ObservableCloudCodeScripts>);
+            collection.Register(col => (ObservableCloudCodeScripts)col.GetService(typeof(ObservableCollection<IDeploymentItem>)));
             collection.RegisterStartupSingleton(Default<DuplicateNameValidator>);
             collection.RegisterStartupSingleton(Default<CloudCodeModuleReferenceCollection>);
 
@@ -88,6 +92,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<ICommonAnalytics, CommonAnalytics>);
             collection.Register(Default<CloudScriptCreationAnalytics>);
             collection.Register(Default<CloudModuleCreationAnalytics>);
+            collection.Register(Default<ICloudCodeModuleBindingsGenerationAnalytics, CloudCodeModuleBindingsGenerationAnalytics>);
 
             collection.Register(Default<IDotnetRunner, DotnetRunner>);
             collection.Register(Default<IFileStream, CloudCodeFileStream>);
@@ -98,7 +103,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IPathResolver, PathResolver>);
             collection.Register(Default<ITemplateInfo, TemplateInfo>);
             collection.Register(Default<IFileCopier, FileCopier>);
+            collection.Register(Default<IModuleProjectRetriever, ModuleProjectRetriever>);
+            collection.Register(Default<IModuleBuilder, ModuleBuilder>);
             collection.Register(Default<CloudCodeModuleSolutionGenerator>);
+            collection.Register(Default<ICloudCodeModuleBindingsGenerator, CloudCodeModuleBindingsGenerator>);
 
             collection.Register(Default<EditorCloudCodeDeploymentHandler>);
             collection.Register(Default<EditorCloudCodeModuleDeploymentHandler>);
@@ -133,6 +141,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(Default<IEditorGUIUtils, EditorGUIUtils>);
             collection.Register(Default<InScriptParamsUIHandler>);
+
+            collection.Register(Default<CloudCodeModuleGenerateBindingsCommand>);
         }
     }
 }

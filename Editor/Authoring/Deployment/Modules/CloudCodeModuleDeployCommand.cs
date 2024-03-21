@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
-using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
@@ -18,23 +18,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
     {
         public override string Name => L10n.Tr("Deploy");
 
-        readonly IFileSystem m_FileSystem;
-        readonly IModuleZipper m_ModuleZipper;
-        readonly ISolutionPublisher m_SolutionPublisher;
+        readonly IModuleBuilder m_ModuleBuilder;
 
         readonly EditorCloudCodeModuleDeploymentHandler m_EditorCloudCodeDeploymentHandler;
         readonly bool m_Reconcile;
         readonly bool m_DryRun;
 
         public CloudCodeModuleDeployCommand(
-            IFileSystem fileSystem,
-            IModuleZipper moduleZipper,
-            ISolutionPublisher solutionPublisher,
+            IModuleBuilder moduleBuilder,
             EditorCloudCodeModuleDeploymentHandler editorCloudCodeDeploymentHandler)
         {
-            m_FileSystem = fileSystem;
-            m_ModuleZipper = moduleZipper;
-            m_SolutionPublisher = solutionPublisher;
+            m_ModuleBuilder = moduleBuilder;
 
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
             m_Reconcile = false;
@@ -65,20 +59,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var generationList = new List<IScript>();
             foreach (var ccmr in items)
             {
-                var ccmrDir = m_FileSystem.GetDirectoryName(m_FileSystem.GetFullPath(ccmr.Path));
-                var targetPath = m_FileSystem.Combine(ccmrDir, ccmr.ModulePath);
-                targetPath = m_FileSystem.GetFullPath(targetPath);
-
                 try
                 {
-                    var generatedModuleName = await GenerateDLLs(ccmr, targetPath, cancellationToken);
-                    ccmr.ModuleName = generatedModuleName;
+                    await m_ModuleBuilder.CreateCloudCodeModuleFromSolution(ccmr, cancellationToken);
+                    if (ccmr.Status.MessageSeverity == SeverityLevel.Error)
+                    {
+                        continue;
+                    }
 
-                    var createdFilePath = await m_ModuleZipper.ZipCompilation(targetPath, generatedModuleName, cancellationToken);
-                    UpdateStatus(ccmr, 66f, "Zipped Successfully");
-
-                    var model = GenerateModel(generatedModuleName, createdFilePath);
-                    generationList.Add(model);
+                    generationList.Add(GenerateModule(ccmr.ModuleName, ccmr.CcmPath));
                 }
                 catch (Exception e)
                 {
@@ -89,18 +78,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return generationList;
         }
 
-        async Task<string> GenerateDLLs(
-            CloudCodeModuleReference ccmr, string targetPath, CancellationToken cancellationToken = default)
+        static IScript GenerateModule(string moduleName, string filePath)
         {
-            var outputPath = m_FileSystem.Combine(m_FileSystem.GetDirectoryName(targetPath), "module-compilation");
-            var generatedModuleName = await m_SolutionPublisher.PublishToFolder(targetPath, outputPath, cancellationToken);
-            UpdateStatus(ccmr, 33f, "Compiled Successfully");
-            return generatedModuleName;
-        }
-
-        Script GenerateModel(string moduleName, string filePath)
-        {
-            var name = new ScriptName(m_FileSystem.GetFileNameWithoutExtension(moduleName));
+            var name = new ScriptName(moduleName);
             return new Script(filePath)
             {
                 Name = name,
@@ -108,12 +88,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 Parameters = new List<CloudCodeParameter>(),
                 Language = Language.CS
             };
-        }
-
-        static void UpdateStatus(CloudCodeModuleReference item, float progress, string statusMessage)
-        {
-            item.Progress = progress;
-            item.Status = new DeploymentStatus(statusMessage);
         }
     }
 }

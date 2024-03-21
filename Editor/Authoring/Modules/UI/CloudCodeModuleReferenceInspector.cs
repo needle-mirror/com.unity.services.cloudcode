@@ -1,11 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using Unity.Services.CloudCode.Authoring.Editor.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Task = System.Threading.Tasks.Task;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
@@ -20,7 +27,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         ApplyRevertChangeTracker<CloudCodeModuleReference> m_ChangeTracker;
         VisualElement m_ApplyFooter;
-        VisualElement m_GenerateFooter;
+        VisualElement m_GenerateSolutionContainer;
+        VisualElement m_GenerateBindingsContainer;
 
         HelpBox m_MessageBox;
 
@@ -59,11 +67,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         void BindApplyFooter(VisualElement rootElement)
         {
             m_ApplyFooter = rootElement.Q<VisualElement>(UxmlNames.ApplyFooter);
-            m_GenerateFooter = rootElement.Q<VisualElement>(UxmlNames.GenerateFooter);
+            m_GenerateSolutionContainer = rootElement.Q<VisualElement>(UxmlNames.GenerateSolutionContainer);
+            m_GenerateBindingsContainer = rootElement.Q<VisualElement>(UxmlNames.GenerateBindingsContainer);
 
             rootElement.Q<Button>(UxmlNames.Apply).clicked += ApplyChanges;
             rootElement.Q<Button>(UxmlNames.Revert).clicked += RevertChanges;
-            rootElement.Q<Button>(UxmlNames.Generate).clicked += GenerateSolution;
+            rootElement.Q<Button>(UxmlNames.GenerateSolutionButton).clicked += GenerateSolution;
+            rootElement.Q<Button>(UxmlNames.GenerateBindingsButton).clicked += GenerateModuleBindings;
         }
 
         void ApplyChanges()
@@ -111,6 +121,47 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             }
         }
 
+        async Task GenerateModuleBindingsAsync()
+        {
+            Exception ex = null;
+            try
+            {
+                var taskResult = await CloudCodeAuthoringServices.Instance
+                    .GetService<ICloudCodeModuleBindingsGenerator>()
+                    .GenerateModuleBindings(new List<IModuleItem>() { ModuleReference }, CancellationToken.None);
+
+                var generationResult = taskResult.First();
+                if (generationResult.IsSuccessful)
+                {
+                    UpdateMessageBox($"Bindings generated successfully in {generationResult.OutputPath}.", true, HelpBoxMessageType.Info);
+                    SelectInProjectWindow(generationResult.OutputPath);
+                }
+                else
+                {
+                    UpdateMessageBox("Bindings failed to generate: " + generationResult.Exception!.Message, true, HelpBoxMessageType.Error);
+                    ex = generationResult.Exception;
+                }
+            }
+            catch (Exception e)
+            {
+                UpdateMessageBox("Bindings failed to generate: " + e.Message, true, HelpBoxMessageType.Error);
+                ex = e;
+            }
+            finally
+            {
+                m_GenerateBindingsContainer.SetEnabled(true);
+
+                CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleBindingsGenerationAnalytics>()
+                    .SendCodeGenerationFromInspectorBtnEvent(ex);
+            }
+        }
+
+        void GenerateModuleBindings()
+        {
+            m_GenerateBindingsContainer.SetEnabled(false);
+            _ = GenerateModuleBindingsAsync();
+        }
+
         void UpdateMessageBox(string message, bool isVisible, HelpBoxMessageType messageType)
         {
             if (m_MessageBox != null)
@@ -119,13 +170,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 m_MessageBox.visible = isVisible;
                 m_MessageBox.messageType = messageType;
             }
-
         }
 
         void UpdateApplyRevertEnabled()
         {
             m_ApplyFooter.SetEnabled(m_ChangeTracker.IsDirty());
-            m_GenerateFooter.SetEnabled(!m_ChangeTracker.IsDirty());
+            m_GenerateSolutionContainer.SetEnabled(!m_ChangeTracker.IsDirty());
+            m_GenerateBindingsContainer.SetEnabled(!m_ChangeTracker.IsDirty());
         }
 
         void DisableReadonlyFlags()
@@ -133,13 +184,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             serializedObject.targetObject.hideFlags = HideFlags.None;
         }
 
+        static void SelectInProjectWindow(string path)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+            Selection.activeObject = asset;
+
+            var types = TypeCache
+                .GetTypesDerivedFrom<EditorWindow>()
+                .ToList();
+            var pb = types
+                .FirstOrDefault(t => t.Name == "ProjectBrowser");
+            if (pb != null)
+            {
+                var window = EditorWindow.GetWindow(pb);
+                window?.ShowTab();
+            }
+        }
+
         static class UxmlNames
         {
             public const string Apply = "Apply";
             public const string Revert = "Revert";
-            public const string Generate = "Generate";
             public const string ApplyFooter = "Apply Footer";
-            public const string GenerateFooter = "Generate Footer";
+            public const string GenerateSolutionButton = "GenerateSolution";
+            public const string GenerateBindingsButton = "GenerateModuleBindings";
+            public const string GenerateSolutionContainer = "GenerateSolutionContainer";
+            public const string GenerateBindingsContainer = "GenerateBindingsContainer";
         }
     }
 }

@@ -1,7 +1,9 @@
 {
     "name": "Unity.Services.CloudCode.Authoring.Editor.Core",
     "rootNamespace": "Unity.Services.CloudCode.Authoring.Editor.Core",
-    "references": [],
+    "references": [
+        "Unity.Services.DeploymentApi"
+    ],
     "includePlatforms": [
         "Editor"
     ],

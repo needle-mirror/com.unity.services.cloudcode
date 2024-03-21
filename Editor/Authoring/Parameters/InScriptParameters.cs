@@ -22,9 +22,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
             public bool required { get; set; }
         }
 
-        static readonly string k_FailedToParseMessage = L10n.Tr("Failed to parse in-script parameters. ");
+        static readonly string k_FailedToParseMessage = L10n.Tr("Failed to parse in-script parameters (see logs). ");
         static readonly string k_FailedToParseParameterMessageFormat = L10n.Tr("Failed to parse parameter '{0}'. ");
-        static readonly string k_FailedToParseParameterTypeMessageFormat = L10n.Tr("Could not parse '{0}'.");
+        static readonly string k_FailedToParseParameterTypeMessageFormat = L10n.Tr("Impossible to convert '{0}' to enum. Possible values are: {1}.");
+        static string paramTypePossibleValues => string.Join(", ", Enum.GetNames(typeof(ParameterType)));
 
         readonly INodeJsRunner m_ScriptRunner;
         readonly ILogger m_Logger;
@@ -136,43 +137,53 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters
 
             if (param is JObject jParamData)
             {
-                return TryParseObject(result, jParamData);
+                return TryParseObject(result, jParamData, out failureReason);
             }
             return false;
         }
 
         static bool TryParseValue(JToken param, CloudCodeParameter result, out string failureReason)
         {
-            failureReason = string.Format(
-                k_FailedToParseParameterTypeMessageFormat,
-                param);
+            failureReason = "";
             try
             {
                 ParameterType type = param.ToObject<ParameterType>();
                 result.ParameterType = type;
             }
-            catch (JsonSerializationException)
+            catch (JsonSerializationException e)
             {
+                failureReason = e.Message;
                 return false;
             }
             catch (ArgumentException)
             {
+                failureReason = string.Format(
+                    k_FailedToParseParameterTypeMessageFormat,
+                    param, paramTypePossibleValues);
                 return false;
             }
 
             return true;
         }
 
-        static bool TryParseObject(CloudCodeParameter result, JObject jParamData)
+        static bool TryParseObject(CloudCodeParameter result, JObject jParamData, out string failureReason)
         {
+            failureReason = "";
             try
             {
                 var paramData = jParamData.ToObject<EvaluatedParam>();
                 result.ParameterType = paramData.type;
                 result.Required = paramData.required;
             }
-            catch (JsonSerializationException)
+            catch (JsonSerializationException e)
             {
+                failureReason = e.Message;
+                if (e.Path?.EndsWith(".type") ?? false)
+                {
+                    failureReason = string.Format(
+                        k_FailedToParseParameterTypeMessageFormat,
+                        jParamData.GetValue("type"), paramTypePossibleValues);
+                }
                 return false;
             }
             return true;

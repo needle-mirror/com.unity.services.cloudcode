@@ -30,12 +30,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
             return new DisposableScope(() => {});
         }
 
-        public IDisposable BeginDeploySend(int fileSize)
+        public IDisposable BeginDeploySend(int fileSize, string fileType)
         {
-            return new AnalyticsTimer((duration) => SendSuccessfulDeploymentEvent(duration, fileSize));
+            return new AnalyticsTimer((duration) => SendSuccessfulDeploymentEvent(duration, fileSize, fileType));
         }
 
-        void SendSuccessfulDeploymentEvent(float duration, int fileSize)
+        void SendSuccessfulDeploymentEvent(float duration, int fileSize, string fileType)
         {
             var deploymentArguments = new DeploymentParameters()
             {
@@ -45,6 +45,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
                 exception = null,
                 duration = duration,
                 size = fileSize,
+                fileType =  fileType,
             };
             SendDeployEvent(deploymentArguments);
         }
@@ -58,7 +59,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
                 status = "failure",
                 exception = exceptionType,
                 duration = 0,
-                size = 0,
+                size = 0
             };
             SendDeployEvent(deploymentArguments);
         }

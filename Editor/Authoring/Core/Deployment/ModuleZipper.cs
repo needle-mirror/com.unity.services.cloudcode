@@ -2,14 +2,14 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     class ModuleZipper : IModuleZipper
     {
-        const string PublishPathEnd = "module-compilation";
-        const string ZipFileExtension = "ccm";
+        const string k_ZipFileExtension = "ccm";
 
         readonly IFileSystem m_FileSystem;
 
@@ -18,25 +18,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             m_FileSystem = fileSystem;
         }
 
-        public async Task<string> ZipCompilation(string solutionFilePath, string moduleName, CancellationToken cancellationToken)
+        public async Task<string> ZipCompilation(
+            string srcPath, string dstPath, string moduleName, CancellationToken cancellationToken = default)
         {
-            var directoryPath = m_FileSystem.GetDirectoryName(solutionFilePath);
-            if (directoryPath == null)
+            try
             {
-                throw new DirectoryNotFoundException();
+                var directoryPath = Path.GetDirectoryName(srcPath);
+                if (directoryPath == null)
+                {
+                    throw new DirectoryNotFoundException();
+                }
+
+                var zippedFileName = Path.ChangeExtension(moduleName, k_ZipFileExtension);
+                var dstFileFullPath = Path.Join(dstPath, zippedFileName);
+                // Remove previously generated module
+                if (m_FileSystem.FileExists(dstFileFullPath))
+                {
+                    await m_FileSystem.Delete(dstFileFullPath, cancellationToken);
+                }
+
+                m_FileSystem.CreateZipFromDirectory(srcPath, dstFileFullPath);
+                return dstFileFullPath;
             }
-
-            var publishedFilesPath = m_FileSystem.Join(directoryPath, PublishPathEnd);
-            var zipPath = m_FileSystem.ChangeExtension(moduleName, ZipFileExtension);
-
-            var destinationArchiveFileName = m_FileSystem.Join(directoryPath, zipPath);
-            if (m_FileSystem.FileExists(destinationArchiveFileName))
+            catch (IOException e)
             {
-                await m_FileSystem.Delete(destinationArchiveFileName, cancellationToken);
+                throw new FailedZipCompilationException(e);
             }
-
-            m_FileSystem.CreateZipFromDirectory(publishedFilesPath, destinationArchiveFileName);
-            return destinationArchiveFileName;
         }
     }
 }

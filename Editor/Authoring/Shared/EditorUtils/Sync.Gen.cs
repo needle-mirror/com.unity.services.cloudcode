@@ -31,6 +31,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils
             EditorApplication.update += callback;
         }
 
+        public static Task SafeAsync<T>(Func<Task<T>> action, Action<Task<T>, Exception> continuation)
+        {
+            return action().ContinueWith(t =>
+            {
+                RunNextUpdateOnMain(() =>
+                {
+                    continuation(t, t.Exception?.InnerException);
+                });
+            });
+        }
+
         public static Task SafeAsync(Func<Task> action, Action<Task> success = null)
         {
             return action().ContinueWith(t =>

@@ -5,4 +5,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("GameIteration")]
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Authoring.Tests.Editor")]
+[assembly: InternalsVisibleTo("Unity.Services.CloudCode.Editor")]
 #endif

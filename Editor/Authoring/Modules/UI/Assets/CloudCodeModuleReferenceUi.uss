@@ -4,3 +4,10 @@
     justify-content: flex-end;
     margin-top: 8px;
 }
+
+.generation-btn-container-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 8px;
+}

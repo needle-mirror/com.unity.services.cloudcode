@@ -202,7 +202,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             try
             {
                 m_Logger.LogVerbose($"[Upload] Uploading {script.Name}");
-                var sendTimer = m_DeploymentAnalytics.BeginDeploySend(GetFileSize(script.Path));
+                var sendTimer = m_DeploymentAnalytics.BeginDeploySend(
+                    GetFileSize(script.Path),
+                    GetFileType(script.Language));
 
                 await m_Client.UploadFromFile(script);
 
@@ -243,7 +245,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             return publishTasks;
         }
 
-        async Task<IScript> PublishFile(Task<IScript> uploadTask)
+        internal async Task<IScript> PublishFile(Task<IScript> uploadTask)
         {
             var script = await uploadTask;
             try
@@ -341,6 +343,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         {
             var fileInfo = new System.IO.FileInfo(filePath);
             return fileInfo.Exists ? (int)fileInfo.Length : -1;
+        }
+
+        internal static string GetFileType(Language? language)
+        {
+            return language switch
+            {
+                Language.JS => "script",
+                Language.CS => "module",
+                _ => "unknown"
+            };
         }
     }
 }

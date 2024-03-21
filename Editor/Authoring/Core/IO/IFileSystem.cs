@@ -19,6 +19,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         Task<DirectoryInfo> CreateDirectory(string path);
         void CreateZipFromDirectory(string sourceDirectoryName, string destinationArchiveFileName);
         Task DeleteDirectory(string path, bool recursive);
+        void MoveDirectory(string sourceDirName, string destDirName);
         bool FileExists(string path);
         bool DirectoryExists(string path);
         string? GetDirectoryName(string path);

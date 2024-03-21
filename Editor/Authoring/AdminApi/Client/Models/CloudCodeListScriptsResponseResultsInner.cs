@@ -109,7 +109,12 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
             /// Enum MODULE for value: MODULE
             /// </summary>
             [EnumMember(Value = "MODULE")]
-            MODULE = 2
+            MODULE = 2,
+            /// <summary>
+            /// Enum MODERATION for value: MODERATION
+            /// </summary>
+            [EnumMember(Value = "MODERATION")]
+            MODERATION = 3
         }
 
         /// <summary>

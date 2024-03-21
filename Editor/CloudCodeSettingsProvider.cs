@@ -1,5 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+#if DEPLOYMENT_API_AVAILABLE_V1_0
+using Unity.Services.CloudCode.Authoring.Editor.Modules.UI;
+#endif
 using Unity.Services.Core.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -25,16 +28,33 @@ namespace Unity.Services.CloudCode.Settings
         protected override string Title => k_Title;
         protected override string Description => "Connect your game's frameworks through the cloud. Create scripts, interact with your backend services, and effortlessly scale your code based on demand.";
 
+#if DEPLOYMENT_API_AVAILABLE_V1_0
+        static CloudCodeModuleGenerateBindingsVisualElement Element { get; set; }
+#endif
+
         public CloudCodeSettingsProvider(SettingsScope scopes)
             : base(GenerateProjectSettingsPath(k_Title), scopes) {}
 
         protected override VisualElement GenerateServiceDetailUI()
         {
-            var containerVisualElement = new VisualElement();
+#if DEPLOYMENT_API_AVAILABLE_V1_0
+            if (Element == null)
+            {
+                Element = new CloudCodeModuleGenerateBindingsVisualElement();
+            }
+            return Element;
+#else
+            return new VisualElement();
+#endif
+        }
 
-            // There are currently no settings for Cloud Code, so this is intentionally left blank.
-
-            return containerVisualElement;
+        /// <summary>
+        /// The generator for the UI when unsupported.
+        /// </summary>
+        /// <returns>The visual element added to the Settings Project page when unsupported.</returns>
+        protected override VisualElement GenerateUnsupportedDetailUI()
+        {
+            return GenerateServiceDetailUI();
         }
 
         public override void OnActivate(string searchContext, VisualElement rootElement)

@@ -4,9 +4,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
-using Unity.Services.CloudCode.Authoring.Editor.Projects.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
@@ -75,7 +75,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
                 var output = await m_ProcessRunner.RunAsync(startInfo, null, cancellationToken);
                 if (output.ExitCode != 0)
                 {
-                    throw new Exception(output.StdOut);
+                    throw new Exception($"DotNet failed with Error Code {output.ExitCode}. Details: {output.StdOut}. StdErr: {output.StdErr}");
                 }
 
                 return output.StdOut;
@@ -83,7 +83,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
             catch (Win32Exception e)
             {
                 m_Logger.LogVerbose($"Error {e}");
-                throw new DotnetNotFoundException();
+                throw new DotnetNotFoundException(e);
             }
             catch (Exception e)
             {

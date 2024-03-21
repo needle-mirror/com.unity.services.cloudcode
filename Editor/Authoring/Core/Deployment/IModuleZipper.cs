@@ -6,6 +6,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     interface IModuleZipper
     {
-        Task<string> ZipCompilation(string solutionFilePath, string moduleName, CancellationToken cancellationToken);
+        Task<string> ZipCompilation(string srcPath, string dstPath, string moduleName, CancellationToken cancellationToken);
     }
 }

@@ -51,8 +51,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
         public Task DeleteDirectory(string path, bool recursive)
         {
-            Directory.Delete(path);
+            Directory.Delete(path, recursive);
             return Task.CompletedTask;
+        }
+
+        public void MoveDirectory(string sourceDirName, string destDirName)
+        {
+            Directory.Move(sourceDirName, destDirName);
         }
 
         public bool FileExists(string path)
