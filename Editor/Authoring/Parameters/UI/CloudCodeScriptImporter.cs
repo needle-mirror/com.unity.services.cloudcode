@@ -48,14 +48,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
             jsScript.Model.Parameters = Parameters?.ToList() ?? new List<CloudCodeParameter>();
             Source = ParameterSource.Editor;
 
+            var path = ctx.assetPath; //getter must be called on the main thread
+            jsScript.name = jsScript.Model.Name.GetNameWithoutExtension();
+            ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript, CloudCodeResources.Icon);
+            ctx.SetMainObject(jsScript);
+            RemoveFailedToLoadParametersState(jsScript.Model);
+
             if (CloudCodeProject.IsInitialized())
             {
                 var loader = CloudCodeAuthoringServices.Instance.GetService<IInScriptParameters>();
-                var path = ctx.assetPath; //getter must be called on the main thread
-                jsScript.name = jsScript.Model.Name.GetNameWithoutExtension();
-                ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript, CloudCodeResources.Icon);
-                ctx.SetMainObject(jsScript);
-                RemoveFailedToLoadParametersState(jsScript.Model);
                 LoadInScriptParameters(loader, path, jsScript);
             }
         }
