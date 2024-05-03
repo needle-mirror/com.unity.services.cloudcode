@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeCreateScriptRequest model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud_code_create_script_request")]
+    [DataContract(Name = "cloud-code.create-script-request")]
     internal class CloudCodeCreateScriptRequest
     {
         /// <summary>

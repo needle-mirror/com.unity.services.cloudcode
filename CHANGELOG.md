@@ -4,10 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2024-05-03
+
+### Added
+- Added privacy manifest
+
+### Fixed
+- An issue that would cache Npm and Node path at startup instead of reading them from the settings
+
 ## [2.6.1] - 2024-03-25
 
 ### Fixed
-
 - Fixed JS script import when Node project is not initialized
 
 ## [2.6.0] - 2024-03-21

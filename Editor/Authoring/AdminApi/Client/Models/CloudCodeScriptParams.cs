@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeScriptParams model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud_code_script_params")]
+    [DataContract(Name = "cloud-code.script-params")]
     internal class CloudCodeScriptParams
     {
         /// <summary>

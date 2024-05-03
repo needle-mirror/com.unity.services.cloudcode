@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeListModulesResponse model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud_code_list_modules_response")]
+    [DataContract(Name = "cloud-code.list-modules-response")]
     internal class CloudCodeListModulesResponse
     {
         /// <summary>

@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -25,18 +25,18 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Fixed\n\n- Fixed JS script import when Node project is not initialized"
+    "changelog": "### Added\n- Added privacy manifest\n\n### Fixed\n- An issue that would cache Npm and Node path at startup instead of reading them from the settings"
   },
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.6.1"
+    "com.unity.services.cloudcode.tests": "2.6.2"
   },
   "upmCi": {
-    "footprint": "94dfc3a0e231279a00dcd79e277bd8642ef6e7b4"
+    "footprint": "8cd64333101bc39a733970160b70f06da3f843a8"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.6/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "2b32e3d4543067e827c9fdebf8ee889ad8a0eb12"
+    "revision": "bd36e20b79844a8f6bd7b63386c775eac35616d2"
   }
 }

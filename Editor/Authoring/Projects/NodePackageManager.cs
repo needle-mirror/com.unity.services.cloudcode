@@ -22,17 +22,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
         readonly IEnumerable<string> k_Run = new[] { "run", "--silent" };
 
         readonly IProcessRunner m_ProcessRunner;
-        readonly string m_NodeJsPath;
-        readonly string m_NpmPath;
         readonly ILogger m_Logger;
+        readonly ICloudCodeProjectSettings m_NodeSettings;
 
         public string WorkingDirectory { get; set; } = Directory.GetCurrentDirectory();
 
         public NodePackageManager(IProcessRunner processRunner, ICloudCodeProjectSettings settings, ILogger logger)
         {
             m_ProcessRunner = processRunner;
-            m_NodeJsPath = settings.NodeJsPath;
-            m_NpmPath = settings.NpmPath;
+            m_NodeSettings = settings;
             m_Logger = logger;
         }
 
@@ -100,10 +98,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             string stdIn = default,
             CancellationToken cancellationToken = default)
         {
+            m_NodeSettings.Load();
+            var nodeJsPath = m_NodeSettings.NodeJsPath;
+            var npmPath = m_NodeSettings.NpmPath;
             var joinedArgs = ProcessArguments.Join(arguments);
-            m_Logger.LogVerbose($"[{k_LoggerTag}] Running \"{m_NodeJsPath}\" {joinedArgs}");
+            m_Logger.LogVerbose($"[{k_LoggerTag}] Running \"{nodeJsPath}\" {joinedArgs}");
 
-            var startInfo = new ProcessStartInfo(m_NodeJsPath, joinedArgs)
+            var startInfo = new ProcessStartInfo(nodeJsPath, joinedArgs)
             {
                 WorkingDirectory = WorkingDirectory,
                 UseShellExecute = false,
@@ -128,7 +129,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             catch (Win32Exception e)
             {
                 m_Logger.LogVerbose($"[{k_LoggerTag}] Error {e}");
-                throw new NpmNotFoundException(m_NodeJsPath, m_NpmPath);
+                throw new NpmNotFoundException(nodeJsPath, npmPath);
             }
             catch (Exception e)
             {
@@ -138,9 +139,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             }
         }
 
-        Task<string> NpmRun(IEnumerable<string> arguments, string stdIn, CancellationToken cancellationToken)
+        internal Task<string> NpmRun(IEnumerable<string> arguments, string stdIn, CancellationToken cancellationToken)
         {
-            var nodeArguments = new List<string> { m_NpmPath };
+            m_NodeSettings.Load();
+            var nodeArguments = new List<string> { m_NodeSettings.NpmPath };
             nodeArguments.AddRange(arguments);
 
             return ExecNodeJs(nodeArguments, stdIn, cancellationToken);
@@ -148,10 +150,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         void EnsurePathContainsNodeAndNpm()
         {
-            if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(m_NpmPath))
-                SystemEnvironmentPathUtils.AddProcessToPath(m_NpmPath);
-            if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(m_NodeJsPath))
-                SystemEnvironmentPathUtils.AddProcessToPath(m_NodeJsPath);
+            m_NodeSettings.Load();
+            var nodeJsPath = m_NodeSettings.NodeJsPath;
+            var npmPath = m_NodeSettings.NpmPath;
+            if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(npmPath))
+                SystemEnvironmentPathUtils.AddProcessToPath(npmPath);
+            if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(nodeJsPath))
+                SystemEnvironmentPathUtils.AddProcessToPath(nodeJsPath);
         }
 
         string GetProjectFilePath()

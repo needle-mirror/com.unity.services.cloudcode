@@ -57,7 +57,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
         public void MoveDirectory(string sourceDirName, string destDirName)
         {
-            Directory.Move(sourceDirName, destDirName);
+            // Check if source directory exists
+            var srcDir = new DirectoryInfo(sourceDirName);
+            if (!srcDir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {srcDir.FullName}");
+
+            // Cache directories before we start copying
+            DirectoryInfo[] dirs = srcDir.GetDirectories();
+
+            // Create the destination directory
+            Directory.CreateDirectory(destDirName);
+
+            // Get the files in the source directory and copy to the destination directory
+            foreach (FileInfo file in srcDir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(targetFilePath);
+            }
+
+            // Repeat Process for sub directories
+            foreach (DirectoryInfo subDir in dirs)
+            {
+                string newDestinationDir = Path.Combine(destDirName, subDir.Name);
+                MoveDirectory(subDir.FullName, newDestinationDir);
+            }
+
+            Directory.Delete(sourceDirName, true);
         }
 
         public bool FileExists(string path)

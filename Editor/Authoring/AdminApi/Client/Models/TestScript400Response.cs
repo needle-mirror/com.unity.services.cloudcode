@@ -51,7 +51,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         {
             
         };
-        private static List<Type> PossibleTypes = new List<Type>(){ typeof(CloudCodeBasicErrorResponse) , typeof(TestScript400ResponseOneOf)  };
+        private static List<Type> PossibleTypes = new List<Type>(){ typeof(CloudCodeBasicErrorResponse) , typeof(CloudCodeTestScriptErrorResponse)  };
 
         private static Type GetConcreteType(string type)
         {

@@ -135,7 +135,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             string token = await m_TokenProvider.GetServicesGatewayTokenAsync();
             var headers = new AdminApiHeaders<CloudCodeClient>(token);
             client.Configuration = new Configuration(
-                "https://services.unity.com/api",
+                default,
                 null,
                 null,
                 headers.ToDictionary());
@@ -185,7 +185,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 var request = new UpdateModuleRequest(
                     m_ProjectIdProvider.ProjectId,
                     m_EnvironmentProvider.Current,
-                    script.Name.GetNameWithoutExtension(), stream);
+                    script.Name.GetNameWithoutExtension(),
+                    null,
+                    stream);
 
                 response = await WrapRequest(m_Client.UpdateModuleAsync(request));
             }

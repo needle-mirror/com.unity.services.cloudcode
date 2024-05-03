@@ -395,6 +395,9 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <summary>Accessor for file </summary>
         [Preserve]
         public System.IO.Stream File { get; }
+        /// <summary>Accessor for tags </summary>
+        [Preserve]
+        public Dictionary<string, string> Tags { get; }
         string PathAndQueryParams;
 
         /// <summary>
@@ -406,8 +409,9 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <param name="name">Name of a Cloud Code module.</param>
         /// <param name="language">The language of a Cloud Code module.</param>
         /// <param name="file">Archive file containing the module assemblies.</param>
+        /// <param name="tags">A set of user-defined tags in the form of string key-value pairs.</param>
         [Preserve]
-        public CreateModuleRequest(string projectId, string environmentId, string name, string language, System.IO.Stream file)
+        public CreateModuleRequest(string projectId, string environmentId, string name, string language, System.IO.Stream file, Dictionary<string, string> tags = default(Dictionary<string, string>))
         {
             ProjectId = projectId;
 
@@ -416,7 +420,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             Name = name;
             Language = language;
             File = file;
-            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
+            Tags = tags;
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
 
 
         }
@@ -443,6 +448,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
             requestParts.Add(new MultipartFormDataSection("name", ConstructBody(Name), "text/plain"));
             
             requestParts.Add(new MultipartFormDataSection("language", ConstructBody(Language), "text/plain"));
+            
+            requestParts.Add(new MultipartFormDataSection("tags", ConstructBody(Tags), "application/octet-stream"));
             requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
             
             return requestParts;
@@ -634,7 +641,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             ModuleName = moduleName;
 
-            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
 
 
         }
@@ -852,7 +859,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             ModuleName = moduleName;
 
-            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
 
 
         }
@@ -1076,7 +1083,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             Limit = limit;
             After = after;
-            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules";
 
             List<string> queryParams = new List<string>();
 
@@ -1551,6 +1558,9 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <summary>Accessor for moduleName </summary>
         [Preserve]
         public string ModuleName { get; }
+        /// <summary>Accessor for tags </summary>
+        [Preserve]
+        public Dictionary<string, string> Tags { get; }
         /// <summary>Accessor for file </summary>
         [Preserve]
         public System.IO.Stream File { get; }
@@ -1563,9 +1573,10 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <param name="projectId">projectId param</param>
         /// <param name="environmentId">environmentId param</param>
         /// <param name="moduleName">moduleName param</param>
+        /// <param name="tags">A set of user-defined tags in the form of string key-value pairs.</param>
         /// <param name="file">Archive file containing the module assemblies.</param>
         [Preserve]
-        public UpdateModuleRequest(string projectId, string environmentId, string moduleName, System.IO.Stream file = default(System.IO.Stream))
+        public UpdateModuleRequest(string projectId, string environmentId, string moduleName, Dictionary<string, string> tags = default(Dictionary<string, string>), System.IO.Stream file = default(System.IO.Stream))
         {
             ProjectId = projectId;
 
@@ -1573,8 +1584,9 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             ModuleName = moduleName;
 
+            Tags = tags;
             File = file;
-            PathAndQueryParams = $"/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
 
 
         }
@@ -1597,6 +1609,8 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         public List<IMultipartFormSection> ConstructBody()
         {
             List<IMultipartFormSection> requestParts = new List<IMultipartFormSection>();
+            
+            requestParts.Add(new MultipartFormDataSection("tags", ConstructBody(Tags), "application/octet-stream"));
             requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
             
             return requestParts;

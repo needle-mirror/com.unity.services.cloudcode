@@ -25,7 +25,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
     /// CloudCodeUpdateModuleResponse model
     /// </summary>
     [Preserve]
-    [DataContract(Name = "cloud_code_update_module_response")]
+    [DataContract(Name = "cloud-code.update-module-response")]
     internal class CloudCodeUpdateModuleResponse
     {
         /// <summary>
