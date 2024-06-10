@@ -30,6 +30,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         VisualElement m_GenerateSolutionContainer;
         VisualElement m_GenerateBindingsContainer;
 
+        PropertyField m_PropertyModulePath;
+        Button m_ButtonBrowse;
         HelpBox m_MessageBox;
 
         public override VisualElement CreateInspectorGUI()
@@ -43,10 +45,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
             BindControls(rootElement);
 
-            m_MessageBox = new HelpBox("help", HelpBoxMessageType.Error);
-            m_MessageBox.visible = false;
-            rootElement.Add(m_MessageBox);
-
             return rootElement;
         }
 
@@ -54,14 +52,33 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         {
             rootElement.Bind(m_ChangeTracker.SerializedObject);
 
+            m_ButtonBrowse = rootElement.Q<Button>("button-browse-file");
+            m_ButtonBrowse.clickable.clicked += OnBrowseButtonClicked;
+
             BindApplyFooter(rootElement);
 
-            foreach (var property in rootElement.Query<PropertyField>().Build())
-            {
-                property.RegisterValueChangeCallback(_ => UpdateApplyRevertEnabled());
-            }
+            m_PropertyModulePath = rootElement.Q<PropertyField>();
+            m_PropertyModulePath.RegisterValueChangeCallback(_ => UpdateApplyRevertEnabled());
 
             UpdateApplyRevertEnabled();
+
+            m_MessageBox = new HelpBox("help", HelpBoxMessageType.Error);
+            m_MessageBox.visible = false;
+            rootElement.Add(m_MessageBox);
+        }
+
+        void OnBrowseButtonClicked()
+        {
+            var ccmrPath = AssetDatabase.GetAssetPath(target);
+            var slnPath = EditorUtility.OpenFilePanel("Select a Cloud Code Module solution", ccmrPath, "sln");
+            if (!string.IsNullOrEmpty(slnPath))
+            {
+                var textField = m_PropertyModulePath.Q<TextField>();
+                textField.value = slnPath;
+
+                var serializedProp = serializedObject.FindProperty(m_PropertyModulePath.bindingPath);
+                serializedProp.stringValue = slnPath;
+            }
         }
 
         void BindApplyFooter(VisualElement rootElement)
@@ -138,7 +155,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 }
                 else
                 {
-                    UpdateMessageBox("Bindings failed to generate: " + generationResult.Exception!.Message, true, HelpBoxMessageType.Error);
+                    UpdateMessageBox("Bindings failed to generate: " + generationResult.Exception !.Message, true, HelpBoxMessageType.Error);
                     ex = generationResult.Exception;
                 }
             }

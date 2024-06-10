@@ -95,7 +95,8 @@ namespace Unity.Services.CloudCode.Subscriptions
             {
                 callbacks.InvokeMessageReceived(
                     IsolatedJsonConvert.DeserializeObject<MessageReceivedEvent>(payload, m_JsonSerializerSettings));
-            } catch (JsonException ex)
+            }
+            catch (JsonException ex)
             {
                 Debug.unityLogger.LogException(ex);
             }
@@ -108,15 +109,7 @@ namespace Unity.Services.CloudCode.Subscriptions
         /// <param name="callbacks">The callbacks you want to be called from the events subscription.</param>
         void OnSubscriptionMessageBytes(byte[] payload, SubscriptionEventCallbacks callbacks)
         {
-            try
-            {
-                callbacks.InvokeMessageReceived(
-                    IsolatedJsonConvert.DeserializeObject<MessageReceivedEvent>(Encoding.ASCII.GetString(payload),
-                        m_JsonSerializerSettings));
-            } catch (JsonException ex)
-            {
-                Debug.unityLogger.LogException(ex);
-            }
+            callbacks.InvokeMessageBytesReceived(payload);
         }
 
         /// <summary>

@@ -133,6 +133,8 @@ For example, if your reference file is called `test_module.ccmr`, your default s
 
 You can deploy modules through the Deployment window. You can also deploy automatically when you enter the Play mode in the Unity Editor.
 
+By default, the deployment is based on the `Release` build configuration of your solution. This configuration should avoid including extra content such as test projects to reduce the size. To learn more on build configurations, visit [Rider](https://www.jetbrains.com/help/rider/Build_Configurations.html) or [Visual Studio](https://learn.microsoft.com/en-us/visualstudio/ide/understanding-build-configurations?view=vs-2022)'s documentation.
+
 Check the [Deployment package manual](https://docs.unity3d.com/Packages/com.unity.services.deployment@latest) for more information .
 
 You can verify the deployment is successful by calling the module endpoints. The template module contains a default endpoint called `SayHello`.

@@ -54,6 +54,27 @@ namespace Unity.Services.CloudCode
     }
 }
 
+namespace Unity.Services.CloudCode.Internal.Http
+{
+    public class DeserializationSettings
+    {
+        public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
+        public DeserializationSettings() {}
+    }
+
+    [Newtonsoft.Json.JsonConverter(typeof(JsonObjectConverter))] [UnityEngine.Scripting.Preserve] public interface IDeserializable
+    {
+        public T GetAs<T>(DeserializationSettings deserializationSettings = default(DeserializationSettings));
+        public string GetAsString();
+    }
+
+    public enum MissingMemberHandling
+    {
+        Error = 0,
+        Ignore = 1,
+    }
+}
+
 namespace Unity.Services.CloudCode.Subscriptions
 {
     public enum EventConnectionState

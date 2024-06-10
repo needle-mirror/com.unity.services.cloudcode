@@ -2,7 +2,7 @@
 
 ## Creation
 
-Right-click on the `Project Window` then select `Create > Cloud Code Js Script` to create a Cloud Code Script.
+Right-click on the `Project Window` then select `Create > Services > Cloud Code Js Script` to create a Cloud Code Script.
 
 ## Parameters
 

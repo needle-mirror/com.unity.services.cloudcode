@@ -4,6 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.7.1] - 2024-06-10
+
+### Added
+- A MessageBytesReceived callback has been added to the available subscription event callbacks
+- Adding service registration to the core services registry
+- Adding service access through the core services registry (`UnityServices.Instance.GetCloudCodeService()`)
+- Added a button to browse your files when choosing a path for a Cloud Code Module
+
+### Changed
+- The MessageReceived callback will no longer be fired upon receiving bytes via the event subscription
+
+### Fixed
+- Bindings generation is broken when ILogger dependency injection is used
+- Cloud Code modules now cleans up compilation artifacts after deploying or generating bindings
+- Cloud Code runtime timeout increased to 30 seconds
+- Moved create Cloud Code Asset menu items under "Services"
+
 ## [2.6.2] - 2024-05-03
 
 ### Added

@@ -26,7 +26,7 @@ namespace Unity.Services.CloudCode.Internal
             // Pass an instance of this class to Core
             var generatedPackageRegistry =
             CoreRegistry.Instance.RegisterPackage(new CloudCodeServiceProvider());
-                // And specify what components it requires, or provides.
+            // And specify what components it requires, or provides.
             generatedPackageRegistry.DependsOn<IAccessToken>();
 
         }
@@ -37,7 +37,7 @@ namespace Unity.Services.CloudCode.Internal
             var httpClient = new HttpClient(retryPolicyCloudCode);
 
             var accessTokenCloudCode = registry.GetServiceComponent<IAccessToken>();
-            
+
             if (accessTokenCloudCode != null)
             {
                 CloudCodeService.Instance =
@@ -57,19 +57,19 @@ namespace Unity.Services.CloudCode.Internal
         /// </summary>
         /// <param name="httpClient">The HttpClient for InternalCloudCodeService.</param>
         /// <param name="accessToken">The Authentication token for the service.</param>
-        
+
         public InternalCloudCodeService(HttpClient httpClient, IAccessToken accessToken = null)
         {
-            
+
             CloudCodeApi = new CloudCodeApiClient(httpClient, accessToken);
-            
+
             var baseUrl = "https://cloud-code.services.api.unity.com";
-            Configuration = new Configuration(baseUrl, 10, 4, null, null, null);
+            Configuration = new Configuration(baseUrl, 30, 4, null, null, null);
         }
-        
+
         /// <summary> Instance of ICloudCodeApiClient interface</summary>
         public ICloudCodeApiClient CloudCodeApi { get; set; }
-        
+
         /// <summary> Configuration properties for the service.</summary>
         public Configuration Configuration { get; set; }
     }

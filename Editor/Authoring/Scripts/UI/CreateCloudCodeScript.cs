@@ -11,7 +11,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
         static readonly string k_DefaultFileName = "new_cloud_code_script";
         static readonly string k_MonoDefinitionPath = Path.Combine(CloudCodePackage.EditorPath, "Authoring/Scripts/CloudCodeScript.cs");
 
-        [MenuItem("Assets/Create/Cloud Code Js Script", false, 81)]
+        [MenuItem("Assets/Create/Services/Cloud Code Js Script", false, 81)]
         public static void CreateScript()
         {
             CreateScriptInternal();

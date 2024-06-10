@@ -49,8 +49,9 @@ namespace Unity.Services.CloudCode
                 accessToken,
                 configuration);
 
-            CloudCodeService.Instance = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken);
-
+            var service = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken);
+            registry.RegisterService<ICloudCodeService>(service);
+            CloudCodeService.Instance = service;
             return Task.CompletedTask;
         }
 

@@ -10,6 +10,11 @@ namespace Unity.Services.CloudCode.Subscriptions
         public event Action<IMessageReceivedEvent> MessageReceived;
 
         /// <summary>
+        /// Event called when a message bytes is received
+        /// </summary>
+        public event Action<byte[]> MessageBytesReceived;
+
+        /// <summary>
         /// Event called when the connection state of the events subscription changes.
         /// </summary>
         public event Action<EventConnectionState> ConnectionStateChanged;
@@ -31,6 +36,15 @@ namespace Unity.Services.CloudCode.Subscriptions
         internal void InvokeMessageReceived(IMessageReceivedEvent messageReceivedEvent)
         {
             MessageReceived?.Invoke(messageReceivedEvent);
+        }
+
+        /// <summary>
+        /// Invoked when a player MESSAGE bytes event occurs on the subscription channel.
+        /// </summary>
+        /// <param name="bytes">The payload of the message event as byte[].</param>
+        internal void InvokeMessageBytesReceived(byte[] bytes)
+        {
+            MessageBytesReceived?.Invoke(bytes);
         }
 
         /// <summary>

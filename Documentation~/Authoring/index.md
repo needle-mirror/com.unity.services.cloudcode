@@ -33,7 +33,7 @@ becomes a simple task.
 
 ### Create Scripts
 
-Right-click on the `Project Window` then select `Create > Cloud Code Js Script` to create a Cloud Code Script.
+Right-click on the `Project Window` then select `Create > Services > Cloud Code Js Script` to create a Cloud Code Script.
 
 The Deployment Window automatically detects these files to be deployed at a later time.
 
@@ -53,7 +53,7 @@ For the best experience please make sure that you have NodeJS installed and that
 
 ### Create C# Modules
 
-Right-click on the `Project Window` then select `Create > Cloud Code C# Module Reference` to create a Cloud Code Module Reference.
+Right-click on the `Project Window` then select `Create > Services > Cloud Code C# Module Reference` to create a Cloud Code Module Reference.
 
 The Deployment Window automatically detects these files to be generated then deployed at a later time.
 

@@ -71,10 +71,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                     Path.GetDirectoryName(targetPath),
                     Path.GetFileNameWithoutExtension(targetPath), cancellationToken);
 
-                if (generationTask.IsCompletedSuccessfully)
+                generationTask.ContinueWith(generation =>
                 {
-                    m_Logger.Log($"Solution {solutionName} generated successfully.");
-                }
+                    if (generation.IsCompletedSuccessfully)
+                    {
+                        m_Logger.Log($"Solution '{solutionName}' generated successfully.");
+                    }
+                }, cancellationToken);
             }
 
             return generationTask;

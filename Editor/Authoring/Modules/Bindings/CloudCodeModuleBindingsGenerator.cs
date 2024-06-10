@@ -52,7 +52,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             if (!moduleItemsList.Any())
             {
                 m_Logger.Log($"No Cloud Code Module Reference file was found in the project." +
-                    $" To create one right-click in the Project window, then select Create > Cloud Code C# Module Reference.");
+                    $" To create one right-click in the Project window, then select Create > Services > Cloud Code C# Module Reference.");
                 return new List<CloudCodeModuleBindingsGenerationResult>() {};
             }
 
@@ -118,7 +118,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
         /// <param name="moduleItem"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateModuleBindings(
+        internal async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateModuleBindings(
             IModuleItem moduleItem,
             CancellationToken cancellationToken = default)
         {
@@ -126,10 +126,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             {
                 var moduleName = m_ModuleProjectRetriever.GetMainEntryProjectName(moduleItem.SolutionPath);
                 var tempFolder = GetBindingsGenerationOutputTempFolder(moduleName);
+                var solutionCompilationOutputPath = GetSolutionCompilationOutputPath(moduleItem.SolutionPath);
 
-                DeleteExistingDirectory(tempFolder);
-                await CompileSolution(moduleItem.SolutionPath, cancellationToken);
-                await GenerateBindings(moduleItem.SolutionPath, tempFolder, cancellationToken);
+                try
+                {
+                    await DeleteExistingDirectory(solutionCompilationOutputPath);
+                    await CompileSolution(moduleItem.SolutionPath, cancellationToken);
+                    await GenerateBindings(moduleItem.SolutionPath, tempFolder, cancellationToken);
+                }
+                finally
+                {
+                    await DeleteExistingDirectory(solutionCompilationOutputPath);
+                }
 
                 return new CloudCodeModuleBindingsGenerationResult(moduleItem, tempFolder, true);
             }
@@ -139,11 +147,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             }
         }
 
-        void DeleteExistingDirectory(string dirPath)
+        async Task DeleteExistingDirectory(string dirPath)
         {
             if (m_FileSystem.DirectoryExists(dirPath))
             {
-                m_FileSystem.DeleteDirectory(dirPath, true);
+                await m_FileSystem.DeleteDirectory(dirPath, true);
             }
         }
 

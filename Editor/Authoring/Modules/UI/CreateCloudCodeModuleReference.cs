@@ -13,7 +13,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_MonoDefinitionPath =
             Path.Combine(CloudCodePackage.EditorPath, "Authoring/Modules/CloudCodeModuleReference.cs");
 
-        [MenuItem("Assets/Create/Cloud Code C# Module Reference", false, 81)]
+        [MenuItem("Assets/Create/Services/Cloud Code C# Module Reference", false, 81)]
         public static void CreateModuleReferenceFile()
         {
             var filePath = k_DefaultReferenceName + CloudCodeModuleReferenceResources.FileExtension;
