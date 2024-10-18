@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "unity": "2020.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -25,7 +25,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Added\n- A MessageBytesReceived callback has been added to the available subscription event callbacks\n- Adding service registration to the core services registry\n- Adding service access through the core services registry (`UnityServices.Instance.GetCloudCodeService()`)\n- Added a button to browse your files when choosing a path for a Cloud Code Module\n\n### Changed\n- The MessageReceived callback will no longer be fired upon receiving bytes via the event subscription\n\n### Fixed\n- Bindings generation is broken when ILogger dependency injection is used\n- Cloud Code modules now cleans up compilation artifacts after deploying or generating bindings\n- Cloud Code runtime timeout increased to 30 seconds\n- Moved create Cloud Code Asset menu items under \"Services\""
+    "changelog": "### Added\n- View in Deployment Window button in `.ccmr` and `.js` files, dependent on Deployment package version 1.4.0.\n- View in Dashboard button in inspector for `.ccmr` and `.js` files.\n- View in Dashboard context menu in Deployment Window for `.ccmr` and `.js` files.\n- Add `Open Solution` button to `.ccmr` inspector.\n- Add Enum support for Cloud Code Bindings generation.\n\n### Fixed\n- Fixed support for various primitive types in Cloud Code Modules binding generation\n- In-script parameters analysis throws an exception in Unity 6\n- `Browse...` button in `.ccmr` inspector now opens the current solution folder properly.\n- Fixed Cloud Code Binding generation of primitive types\n- Binding Generation will attempt to run in the latest available runtime.\n  - This can be disabled with CLOUD_CODE_AUTHORING_DISABLE_VERSION_DETECT flag"
   },
   "samples": [
     {
@@ -40,15 +40,15 @@
     }
   ],
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.7.1"
+    "com.unity.services.cloudcode.tests": "2.8.0"
   },
   "upmCi": {
-    "footprint": "a26b61fcf5fa00b186316693c0195305f8143e37"
+    "footprint": "77e4542a446744ce68cc7cd837bff7ebeabe173d"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.7/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "9d637f79269bf111f964409520051e8f1db0ada8"
+    "revision": "103b2e6a78ab91de6e1f5145dfc20058714d9b4a"
   }
 }
