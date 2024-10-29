@@ -9,6 +9,9 @@ using Unity.Services.CloudCode.Authoring.Client.Default;
 using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Client.Models;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+#if !DEPLOYMENT_API_AVAILABLE_V1_1
+using Unity.Services.CloudCode.Authoring.Editor.Deployment;
+#endif
 using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;

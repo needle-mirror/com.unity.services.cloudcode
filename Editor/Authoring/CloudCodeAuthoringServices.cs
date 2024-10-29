@@ -45,6 +45,12 @@ using ICoreLogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogg
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;
 using Logger = Unity.Services.CloudCode.Authoring.Editor.Logging.Logger;
 
+#if DEPLOYMENT_API_AVAILABLE_V1_1
+using IProjectID = Unity.Services.DeploymentApi.Editor.IProjectIdentifierProvider;
+#else
+using IProjectID = Unity.Services.CloudCode.Authoring.Editor.Deployment.IProjectIdentifierProvider;
+#endif
+
 namespace Unity.Services.CloudCode.Authoring.Editor
 {
     class CloudCodeAuthoringServices : AbstractRuntimeServices<CloudCodeAuthoringServices>
@@ -143,7 +149,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<CloudCodeModuleGenerateBindingsCommand>);
             collection.Register(Default<IDashboardUrlResolver, DashboardUrlResolver>);
             collection.Register(_ => EnvironmentsApi.Instance);
-            collection.Register(Default<IProjectIdentifierProvider, ProjectIdentifierProvider>);
+            collection.Register(Default<IProjectID, ProjectIdentifierProvider>);
         }
     }
 }

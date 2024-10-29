@@ -5,21 +5,27 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.Core.Editor.OrganizationHandler;
-using Unity.Services.DeploymentApi.Editor;
+
+#if DEPLOYMENT_API_AVAILABLE_V1_1
+using IProjectID = Unity.Services.DeploymentApi.Editor.IProjectIdentifierProvider;
+#else
+using IProjectID = Unity.Services.CloudCode.Authoring.Editor.Deployment.IProjectIdentifierProvider;
+#endif
+
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 {
     class DashboardUrlResolver : IDashboardUrlResolver
     {
         readonly IEnvironmentsApi m_EnvironmentsApi;
-        readonly IProjectIdentifierProvider m_ProjectIdProvider;
+        readonly IProjectID m_ProjectIdProvider;
         readonly IOrganizationHandler m_OrganizationHandler;
         readonly ICloudCodeModulesClient m_ModuleClient;
         readonly ICloudCodeScriptsClient m_ScriptClient;
 
         public DashboardUrlResolver(
             IEnvironmentsApi environmentsApi,
-            IProjectIdentifierProvider projectIdProvider,
+            IProjectID projectIdProvider,
             IOrganizationHandler organizationHandler,
             ICloudCodeScriptsClient scriptClient,
             ICloudCodeModulesClient moduleClient)
