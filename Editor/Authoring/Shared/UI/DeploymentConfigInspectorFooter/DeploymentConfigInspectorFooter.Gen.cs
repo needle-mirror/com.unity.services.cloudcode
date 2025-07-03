@@ -46,6 +46,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI.DeploymentConfigIn
             m_CommonAnalyticsSender = analyticsSender;
         }
 
+        public void BindCommand(Command command, IDeploymentItem item, ICommonAnalytics.CommonEventPayload analyticsEvent)
+        {
+            var container = this.Q<VisualElement>("deployment-container");
+            var entry = new VisualElement();
+            entry.AddToClassList("deployment-content-container");
+            var button = new Button(async () =>
+            {
+                await command.ExecuteAsync(new[] { item });
+                m_CommonAnalyticsSender.Send(analyticsEvent);
+            });
+            button.text = command.Name;
+            button.SetEnabled(command.IsEnabled(new []{item}));
+            button.visible = command.IsVisible(new[] { item });
+            entry.Add(button);
+            container.Add(entry);
+        }
+
         void SetupFooterVisual([CallerFilePath] string sourceFilePath = "")
         {
             var basePath = GetBasePath(sourceFilePath);
@@ -73,7 +90,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI.DeploymentConfigIn
             var basePath = Path.Combine("Packages",
                 packageInfo.name,
                 dirRelativePath,
-                "Assets");
+"Assets");
             return basePath;
         }
 
@@ -97,13 +114,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Shared.UI.DeploymentConfigIn
             if (viewInDashboardBtn != null)
             {
                 var enabled = m_DashboardUrlGetter != null;
-                viewInDashboardBtn.SetEnabled(enabled);
-
                 if (enabled)
                 {
+                    viewInDashboardBtn.SetEnabled(true);
+                    viewInDashboardBtn.style.visibility = new StyleEnum<Visibility>(Visibility.Visible);
                     // if we don't do this we might trigger the link more than once when clicked
                     viewInDashboardBtn.clicked -= OnViewInDashboardClicked;
                     viewInDashboardBtn.clicked += OnViewInDashboardClicked;
+                }
+                else
+                {
+                    viewInDashboardBtn.SetEnabled(false);
+                    viewInDashboardBtn.style.visibility = new StyleEnum<Visibility>(Visibility.Hidden);
                 }
             }
         }

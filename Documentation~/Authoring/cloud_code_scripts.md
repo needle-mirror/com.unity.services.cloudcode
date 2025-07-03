@@ -26,6 +26,9 @@ More details can be found in the [Cloud Code Documentation](https://docs.unity.c
 
 ## In-Script Parameters
 
+> [!NOTE]
+> In-script parameters are not supported through the dashboard.
+
 To allow a more seamless experience in your Cloud Code Scripts, you may declare
 your parameters directly in the script.
 
@@ -65,7 +68,8 @@ inspector parameters.
 
 In-script parameters offer a simpler alternative to declaring parameters. 
 Deploying a file with in-script parameters will add the necessary parameters on the dashboard. 
-At the current time, modifying in-script parameters in the dashboard is not supported.
+
+At the current time, **modifying in-script parameters in the dashboard is not supported**.
 
 Here is an example of a full script with in script parameters.
 

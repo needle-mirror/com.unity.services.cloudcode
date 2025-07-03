@@ -53,53 +53,26 @@ By default, the script will not be bundled.
 #### **`lib.js`**
 
 ```js
-export const helloWorld = "Hello world!";
+const _ = require("lodash-4.17");
+
+module.exports.rollDice = function rollDice(sides) {
+  return _.random(1, sides);
+}
 ```
 
 #### **`scriptToBundle.js`**
 
 ```js
-const lib = require("./lib.js");
+const { rollDice } = require('./lib.js');
 
 module.exports = async ({ params, context, logger }) => {
-    return {
-    "value": lib.helloWorld
-    };
+  const roll = rollDice(NUMBER_OF_SIDES);
+  return { roll: roll  };
 };
 
-module.exports.bundling = true;
-```
+module.exports.params = { "echo" : "Boolean" }; // must be declared after module.exports is assigned
+module.exports.bundling = true; //required for bundling
 
-### ES modules
-
-The addition of bundling allows the use of ES Modules when authoring JS scripts from the editor.
-If you plan on using ES Modules to write your scripts, we recommend this signature to make the bundler result as lean as possible.
-
-#### **`lib.js`**
-
-```js
-export const someNumber = 42;
-```
-
-#### **`cloudCodeScript.js`**
-
-```js
-import { someNumber } from './lib.js'
-
-function handler(params, context, logger) {
-    /*your Cloud Code function logic here*/
-  return {
-      'value': someNumber, /*example use of the someNumber from the lib.js script*/
-  };
-}
-
-handler.bundling = true
-
-handler.params = {
-  /*your params here*/
-};
-
-export default handler;
 ```
 
 ## External Tools

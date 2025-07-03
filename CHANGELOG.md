@@ -4,6 +4,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-07-03
+
+### Changed
+- Generating bindings will generate one file and class per cloud code class instead of one class for all functions
+- Before generating a solution, the path will be validated so that it corresponds to a valid module name
+
+### Fixed
+-[Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)
+  -Changed exit condition , it seems [only indefinite wait for exit will always work](https://github.com/dotnet/runtime/issues/18789)
+  - Added timeout
+- Tentative fix for occasional hang of dotnet when redirecting std output
+- Fixed documentation that still used `import` over `require` for bundling
+
 ## [2.9.0] - 2024-10-29
 ### Changed
 - Updated the minimum supported Editor version to 2021.3.

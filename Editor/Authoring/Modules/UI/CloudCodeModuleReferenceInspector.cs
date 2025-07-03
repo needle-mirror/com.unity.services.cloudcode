@@ -105,11 +105,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         {
             try
             {
-                Process process = new Process();
-                process.StartInfo.FileName = ModuleReference.SolutionPath;
-                process.StartInfo.UseShellExecute = true;
-                process.Start();
-                UpdateMessageBox("Solution opened.", true, HelpBoxMessageType.Info);
+                using (Process process = new Process())
+                {
+                    process.StartInfo.FileName = ModuleReference.SolutionPath;
+                    process.StartInfo.UseShellExecute = true;
+                    process.Start();
+                    UpdateMessageBox("Solution opened.", true, HelpBoxMessageType.Info);
+                }
             }
             catch (Exception e)
             {

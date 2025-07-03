@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
@@ -17,6 +18,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         static CloudCodeModuleSolutionGenerator m_SolutionGenerator;
         static ILogger m_Logger;
+        static Regex m_ValidNameRegex = new Regex("^[a-zA-Z][a-zA-Z_0-9]*$", RegexOptions.Compiled);
 
         public GenerateSolutionCommand(CloudCodeModuleSolutionGenerator generator, ILogger logger)
         {
@@ -29,6 +31,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             List<Task> generationTasks = new List<Task>();
             foreach (var ccmr in items)
             {
+                var name = Path.GetFileNameWithoutExtension(ccmr.ModulePath);
                 var task = GenerateSolution(ccmr, cancellationToken);
                 generationTasks.Add(task);
             }
@@ -54,11 +57,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             var targetPath = Path.Combine(referenceFileDir, ccmr.ModulePath);
             targetPath = Path.GetFullPath(targetPath);
 
+            var solutionName = Path.GetFileNameWithoutExtension(targetPath);
+            if (!m_ValidNameRegex.IsMatch(solutionName))
+            {
+                var msg =
+                    "Cloud Code Module will not be generated, selected 'Path' contains invalid characters. The solution name should only contain alphanumerical characters and underscores.";
+
+                m_Logger.LogError(msg);
+                return Task.FromException(new Exception(msg));
+            }
             var solutionPath = Path.Combine(
                 Path.GetDirectoryName(targetPath),
                 Path.GetFileNameWithoutExtension(targetPath) + CloudCodeModuleReferenceResources.SolutionExtension);
 
-            var solutionName = Path.GetFileNameWithoutExtension(targetPath);
             Task generationTask = null;
 
             if (File.Exists(solutionPath))

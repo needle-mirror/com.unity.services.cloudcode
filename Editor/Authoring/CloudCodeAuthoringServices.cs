@@ -44,7 +44,6 @@ using IDeploymentEnvironmentProvider = Unity.Services.DeploymentApi.Editor.IEnvi
 using ICoreLogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;
 using Logger = Unity.Services.CloudCode.Authoring.Editor.Logging.Logger;
-
 #if DEPLOYMENT_API_AVAILABLE_V1_1
 using IProjectID = Unity.Services.DeploymentApi.Editor.IProjectIdentifierProvider;
 #else
@@ -134,6 +133,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<ICloudCodeScriptsClient, CloudCodeClient>);
             collection.Register(Default<ICloudCodeModulesClient, CloudCodeModulesClient>);
             collection.Register(Default<IFileReader, FileReader>);
+            collection.Register(Default<IDisplayDialog, DisplayDialog>);
 
             collection.Register(Default<IEnvironmentProvider, EnvironmentProvider>);
             collection.Register(_ => new Lazy<IDeploymentEnvironmentProvider>(() => Deployments.Instance.EnvironmentProvider));

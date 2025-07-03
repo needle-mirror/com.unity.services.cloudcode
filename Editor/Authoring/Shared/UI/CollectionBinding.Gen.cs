@@ -1,4 +1,5 @@
 // WARNING: Auto generated code. Modifications will be lost!
+// Original source 'com.unity.services.shared' @0.0.12.
 using System;
 using System.Collections.Specialized;
 using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
