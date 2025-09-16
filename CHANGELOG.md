@@ -4,11 +4,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.10.2] - 2025-09-16
+
+### Fixed
+- Signing package
+- Fixed assets being loaded despite being of the incorrect type
+
 ## [2.10.0] - 2025-07-03
 
 ### Changed
 - Generating bindings will generate one file and class per cloud code class instead of one class for all functions
 - Before generating a solution, the path will be validated so that it corresponds to a valid module name
+- Bumped dependency of Core package
 
 ### Fixed
 -[Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)

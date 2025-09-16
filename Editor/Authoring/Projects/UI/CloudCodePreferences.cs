@@ -130,7 +130,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             await npm.Install();
             progressBar.CompleteStep();
 
-            using var assets = new ObservableAssets<CloudCodeScript>();
+            using var assets = new ObservableAssets<CloudCodeScript>(new [] { ".js" });
             foreach (var jsScript in assets)
             {
                 AssetDatabase.ImportAsset(PathUtils.GetRelativePath(".", jsScript.Path), ImportAssetOptions.ForceUpdate);

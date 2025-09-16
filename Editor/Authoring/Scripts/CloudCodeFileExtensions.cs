@@ -6,8 +6,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
     static class CloudCodeFileExtensions
     {
-        const string Es10 = ".es10";
-        const string Js = ".js";
+        public const string Es10 = ".es10";
+        public const string Js = ".js";
 
         public static string[] SupportedExtensions(string unityVersion)
         {
@@ -45,7 +45,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
                 return true;
             }
 
-            return false;
+            return false; // basically after 2022.2 we're good, and after 2021.2.11
         }
     }
 }

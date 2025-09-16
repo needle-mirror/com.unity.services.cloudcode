@@ -14,7 +14,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
         public ObservableCloudCodeScripts()
         {
-            m_CloudCodeScripts = new ObservableAssets<CloudCodeScript>();
+            m_CloudCodeScripts = new ObservableAssets<CloudCodeScript>(new [] {CloudCodeFileExtensions.Js, CloudCodeFileExtensions.Es10});
             foreach (var asset in m_CloudCodeScripts)
             {
                 Add(asset.Model);

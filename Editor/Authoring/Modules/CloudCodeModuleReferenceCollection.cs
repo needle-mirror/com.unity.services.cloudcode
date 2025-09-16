@@ -5,6 +5,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
     class CloudCodeModuleReferenceCollection : ObservableAssets<CloudCodeModuleReference>
     {
         public CloudCodeModuleReferenceCollection()
-            : base(new AssetPostprocessorProxy(), true) {}
+            : base(new[] { CloudCodeModuleReferenceResources.FileExtension }, new AssetPostprocessorProxy(), true) {}
     }
 }
