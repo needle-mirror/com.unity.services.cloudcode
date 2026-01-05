@@ -1,23 +1,26 @@
+using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Core.Solution
 {
     class CloudCodeModuleSolutionGenerator
     {
         IFileSystem m_FileSystem;
-        IFileCopier m_FileCopier;
+        ITemplateInfo m_TemplateInfo;
         IDotnetRunner m_DotnetRunner;
 
         public CloudCodeModuleSolutionGenerator(
             IFileSystem fileSystem,
-            IFileCopier fileCopier,
+            ITemplateInfo templateInfo,
             IDotnetRunner dotnetRunner)
         {
             m_FileSystem = fileSystem;
-            m_FileCopier = fileCopier;
+            m_TemplateInfo = templateInfo;
             m_DotnetRunner = dotnetRunner;
         }
 
@@ -29,26 +32,36 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Solution
 
         async Task CopyFilesFromTemplate(string dstDirectory, string moduleName, CancellationToken cancellationToken)
         {
-            var slnTask = m_FileCopier.CopySolution(dstDirectory, moduleName, cancellationToken);
-            var projectTask = m_FileCopier.CopyProjectWithExample(dstDirectory, moduleName, cancellationToken);
-            var configTask = m_FileCopier.CopyPublishConfigs(dstDirectory, moduleName, cancellationToken);
+            var srcSlnFile = m_TemplateInfo.PathSolution;
+            var srcDir = Path.GetDirectoryName(srcSlnFile);
 
-            await Task.WhenAll(slnTask, projectTask, configTask);
+            m_FileSystem.CopyDirectory(srcDir, dstDirectory);
         }
 
         async Task UpdateProjectName(string dstDirectory, string moduleName, CancellationToken cancellationToken)
         {
+            var srcSlnFile = m_FileSystem.Combine(dstDirectory, "Solution.sln");
             var solutionPath = m_FileSystem.Combine(dstDirectory, $"{moduleName}.sln");
-            var projectPath = m_FileSystem.Combine(dstDirectory, "Project");
+            var projectDir = m_FileSystem.Combine(dstDirectory, "Project");
+            var oldProjectPath = m_FileSystem.Combine(projectDir, "Project.csproj");
+            var newProjectPath = m_FileSystem.Combine(projectDir, $"{moduleName!}.csproj");
+            var testProjectPath = m_FileSystem.Combine(dstDirectory, "TestProject", "TestProject.csproj");
 
+            // Rename sln
+            m_FileSystem.FileMove(srcSlnFile, solutionPath);
+
+            //Update module name
             await m_DotnetRunner.ExecuteDotnetAsync(
-                new[] { $"sln \"{solutionPath}\" remove \"{projectPath}\"" }, cancellationToken);
-
-            m_FileSystem.FileMove(m_FileSystem.Combine(projectPath, "Project.csproj"),
-                m_FileSystem.Combine(projectPath, $"{moduleName!}.csproj"));
-
+                new[] { $"sln \"{solutionPath}\" remove \"{oldProjectPath}\"" }, cancellationToken);
+            m_FileSystem.FileMove(oldProjectPath, newProjectPath);
             await m_DotnetRunner.ExecuteDotnetAsync(
-                new[] { $"sln \"{solutionPath}\" add \"{projectPath}\"" }, cancellationToken);
+                new[] { $"sln \"{solutionPath}\" add \"{newProjectPath}\"" }, cancellationToken);
+
+            // Update test project dependency
+            string testProject = await m_FileSystem.ReadAllText(testProjectPath, cancellationToken);
+            testProject = testProject.Replace("<ProjectReference Include=\"..\\Project\\Project.csproj\" />",
+                $"<ProjectReference Include=\"..\\Project\\{moduleName!}.csproj\" />");
+            await m_FileSystem.WriteAllText(testProjectPath, testProject, cancellationToken);
         }
     }
 }

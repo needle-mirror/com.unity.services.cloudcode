@@ -4,7 +4,7 @@ using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Threading;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Threading;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -51,7 +51,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 
             var path = ctx.assetPath; //getter must be called on the main thread
             jsScript.name = jsScript.Model.Name.GetNameWithoutExtension();
-            ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript, CloudCodeResources.Icon);
+            ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript);
             ctx.SetMainObject(jsScript);
             RemoveFailedToLoadParametersState(jsScript.Model);
 

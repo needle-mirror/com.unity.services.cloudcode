@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
+
 using UnityEditor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
@@ -19,17 +23,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
         readonly IModuleBuilder m_ModuleBuilder;
 
-        readonly EditorCloudCodeModuleDeploymentHandler m_EditorCloudCodeDeploymentHandler;
+        readonly CloudCodeDeploymentHandler m_CloudCodeDeploymentHandler;
         readonly bool m_Reconcile;
         readonly bool m_DryRun;
 
         public CloudCodeModuleDeployCommand(
             IModuleBuilder moduleBuilder,
-            EditorCloudCodeModuleDeploymentHandler editorCloudCodeDeploymentHandler)
+            ICloudCodeModulesClient modulesClient,
+            IDeploymentAnalytics analytics,
+            ILogger logger,
+            IPreDeployValidator validator)
         {
             m_ModuleBuilder = moduleBuilder;
 
-            m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
+            m_CloudCodeDeploymentHandler =
+                new CloudCodeDeploymentHandler(modulesClient, analytics, logger, validator);
             m_Reconcile = false;
             m_DryRun = false;
         }
@@ -39,8 +47,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var cloudCodeModuleReferences = items.ToList();
             OnDeploy(cloudCodeModuleReferences);
             var compiled = await Compile(cloudCodeModuleReferences, cancellationToken);
-            m_EditorCloudCodeDeploymentHandler.SetReferenceFiles(cloudCodeModuleReferences);
-            await m_EditorCloudCodeDeploymentHandler.DeployAsync(compiled, m_Reconcile, m_DryRun);
+            await m_CloudCodeDeploymentHandler.DeployAsync(compiled, m_Reconcile, m_DryRun);
         }
 
         static void OnDeploy(IEnumerable<CloudCodeModuleReference> items)
@@ -65,7 +72,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                     {
                         continue;
                     }
-
                     generationList.Add(GenerateModule(ccmr));
                 }
                 catch (Exception e)
@@ -77,10 +83,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return generationList;
         }
 
-        static Script GenerateModule(CloudCodeModuleReference moduleReference)
+        static Module GenerateModule(CloudCodeModuleReference moduleReference)
         {
             var name = new ScriptName(moduleReference.ModuleName);
-            var script = new Script(moduleReference.CcmPath)
+            var module = new Module(moduleReference.CcmPath, moduleReference)
             {
                 Name = name,
                 Body = string.Empty,
@@ -88,7 +94,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 Language = Language.CS
             };
 
-            return script;
+            return module;
         }
     }
 }

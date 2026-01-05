@@ -1,41 +1,43 @@
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using UnityEditor;
-using UnityEditor.ProjectWindowCallback;
 using UnityEngine;
+
+#if UNITY_6000_4_OR_NEWER
+using BaseClass = UnityEditor.ProjectWindowCallback.AssetCreationEndAction;
+using ActionIdentifier = UnityEngine.EntityId;
+#else
+using BaseClass = UnityEditor.ProjectWindowCallback.EndNameEditAction;
+using ActionIdentifier = System.Int32;
+#endif
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
-    class CreateCloudCodeModuleReference : EndNameEditAction
+    class CreateCloudCodeModuleReference : BaseClass
     {
         const string k_DefaultReferenceName = "new_module_reference";
-        static readonly string k_MonoDefinitionPath =
-            Path.Combine(CloudCodePackage.EditorPath, "Authoring/Modules/CloudCodeModuleReference.cs");
 
         [MenuItem("Assets/Create/Services/Cloud Code C# Module Reference", false, 81)]
         public static void CreateModuleReferenceFile()
         {
             var filePath = k_DefaultReferenceName + CloudCodeModuleReferenceResources.FileExtension;
-            var icon = CloudCodeModuleReferenceResources.Icon;
+
+#if UNITY_6000_4_OR_NEWER
+            UnityEngine.EntityId instanceId = new UnityEngine.EntityId();
+#else
+            int instanceId = 0;
+#endif
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
-                0,
+                instanceId,
                 CreateInstance<CreateCloudCodeModuleReference>(),
                 filePath,
-                icon,
+                null,
                 null);
         }
 
-        [InitializeOnLoadMethod]
-        static void SetMonoDefinitionIcon()
-        {
-            var monoImporter = (MonoImporter)AssetImporter.GetAtPath(k_MonoDefinitionPath);
-            var monoScript = monoImporter.GetScript();
-            EditorGUIUtility.SetIconForObject(monoScript,  CloudCodeModuleReferenceResources.Icon);
-        }
-
-        public override void Action(int instanceId, string pathName, string resourceFile)
+        public override void Action(ActionIdentifier instanceId, string pathName, string resourceFile)
         {
             var reference = CreateInstance<CloudCodeModuleReference>();
             reference.Name =  Path.GetFileName(pathName);

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.SystemEnvironment;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.SystemEnvironment;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {

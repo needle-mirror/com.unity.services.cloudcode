@@ -1,7 +1,7 @@
 <ui:UXML
     xmlns:ui="UnityEngine.UIElements"
     xmlns:uie="UnityEditor.UIElements"
-    xmlns:fba="Unity.Services.CloudCode.Authoring.Editor.Shared.UI.DeploymentConfigInspectorFooter"
+    xmlns:fba="Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter"
     xmlns="UnityEngine.UIElements" editor-extension-mode="True">
     <Style src="project://database/Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeModuleReferenceUi.uss" />
     <ui:GroupBox class="group-path">

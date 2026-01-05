@@ -5,13 +5,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEngine;
-using Logger = Unity.Services.CloudCode.Authoring.Editor.Shared.Logging.Logger;
-using ThreadSync = Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Threading.Sync;
+using Logger = Unity.Services.CloudCode.Editor.Shared.Logging.Logger;
+using ThreadSync = Unity.Services.CloudCode.Editor.Shared.Infrastructure.Threading.Sync;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Bundling
 {

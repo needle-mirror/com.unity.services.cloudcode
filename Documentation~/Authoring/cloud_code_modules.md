@@ -3,7 +3,7 @@
 You can use the Unity Editor to create and deploy Cloud Code modules.
 The Cloud Code package contains the Cloud Code Authoring module, which allows you to use the [Deployment package](https://docs.unity3d.com/Packages/com.unity.services.deployment@1.0/manual/index.html) to interact with modules.
 
-For more detailed information about Cloud Code Modules, go ot the [manual documentation](https://docs.unity.com/ugs/en-us/manual/cloud-code/manual/modules).
+For more detailed information about Cloud Code Modules, go to the [manual documentation](https://docs.unity.com/ugs/en-us/manual/cloud-code/manual/modules).
 
 > [!NOTE]
 > **Note:** Only Unity 2021.3 and above support Unity Editor integration for modules.

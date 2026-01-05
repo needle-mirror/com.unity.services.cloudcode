@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 

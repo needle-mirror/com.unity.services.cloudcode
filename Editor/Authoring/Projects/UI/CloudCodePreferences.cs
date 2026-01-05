@@ -5,12 +5,12 @@ using UnityEditor;
 using UnityEngine;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
+using Unity.Services.CloudCode.Editor.Shared.UI;
 using UnityEngine.UIElements;
-using Logger = Unity.Services.CloudCode.Authoring.Editor.Shared.Logging.Logger;
+using Logger = Unity.Services.CloudCode.Editor.Shared.Logging.Logger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
 {
@@ -130,7 +130,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
             await npm.Install();
             progressBar.CompleteStep();
 
-            using var assets = new ObservableAssets<CloudCodeScript>(new [] { ".js" });
+            using var assets = new ObservableAssets<CloudCodeScript>(new[] { ".js" });
             foreach (var jsScript in assets)
             {
                 AssetDatabase.ImportAsset(PathUtils.GetRelativePath(".", jsScript.Path), ImportAssetOptions.ForceUpdate);

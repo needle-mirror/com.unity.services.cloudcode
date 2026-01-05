@@ -27,19 +27,19 @@ using Unity.Services.CloudCode.Authoring.Editor.Parameters;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
 using Unity.Services.CloudCode.Authoring.Editor.UI;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
+using Unity.Services.CloudCode.Editor.Shared.UI;
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.Core.Editor.OrganizationHandler;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
-using static Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion.Factories;
+using static Unity.Services.CloudCode.Editor.Shared.DependencyInversion.Factories;
 using IDeploymentEnvironmentProvider = Unity.Services.DeploymentApi.Editor.IEnvironmentProvider;
 using ICoreLogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;
@@ -97,20 +97,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(Default<IDotnetRunner, DotnetRunner>);
             collection.Register(Default<IFileStream, CloudCodeFileStream>);
-            collection.Register(Default<IFileContentRetriever, FileContentRetriever>);
             collection.Register(Default<IModuleZipper, ModuleZipper>);
             collection.Register(Default<ISolutionPublisher, SolutionPublisher>);
             collection.Register(Default<IFileSystem, FileSystem>);
-            collection.Register(Default<IPathResolver, PathResolver>);
             collection.Register(Default<ITemplateInfo, TemplateInfo>);
-            collection.Register(Default<IFileCopier, FileCopier>);
             collection.Register(Default<IModuleProjectRetriever, ModuleProjectRetriever>);
             collection.Register(Default<IModuleBuilder, ModuleBuilder>);
             collection.Register(Default<CloudCodeModuleSolutionGenerator>);
             collection.Register(Default<ICloudCodeModuleBindingsGenerator, CloudCodeModuleBindingsGenerator>);
 
-            collection.Register(Default<EditorCloudCodeDeploymentHandler>);
-            collection.Register(Default<EditorCloudCodeModuleDeploymentHandler>);
+            collection.Register(sp =>
+                (ICloudCodeClient)sp.GetService(typeof(ICloudCodeScriptsClient)));
+            collection.Register(Default<CloudCodeDeploymentHandler>);
+
             collection.Register(Default<DeployCommand>);
             collection.Register(Default<OpenCommand>);
             collection.Register(Default<GenerateSolutionCommand>);

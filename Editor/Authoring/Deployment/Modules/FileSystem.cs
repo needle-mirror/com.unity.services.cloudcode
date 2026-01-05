@@ -95,6 +95,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             File.Move(sourceFileName, destFileName);
         }
 
+        public void CopyDirectory(
+            string sourceDir,
+            string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string fileName = Path.GetFileName(file);
+                string destFile = Path.Combine(destDir, fileName);
+                File.Copy(file, destFile);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(subDir);
+                string destSubDir = Path.Combine(destDir, dirName);
+                CopyDirectory(subDir, destSubDir);
+            }
+        }
+
         public bool DirectoryExists(string path)
         {
             return Directory.Exists(path);

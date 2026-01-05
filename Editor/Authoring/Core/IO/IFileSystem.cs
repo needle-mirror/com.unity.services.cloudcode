@@ -32,5 +32,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         string[] DirectoryGetFiles(string path, string searchPattern, SearchOption searchOption);
         DirectoryInfo? DirectoryGetParent(string path);
         void FileMove(string sourceFileName, string destFileName);
+
+        void CopyDirectory(
+            string sourceDir,
+            string destDir);
     }
 }

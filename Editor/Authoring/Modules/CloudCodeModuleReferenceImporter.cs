@@ -19,7 +19,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 
             definition.FromJson(fileContent);
 
-            ctx.AddObjectToAsset("MainAsset", definition, CloudCodeModuleReferenceResources.Icon);
+            ctx.AddObjectToAsset("MainAsset", definition);
             ctx.SetMainObject(definition);
         }
     }

@@ -51,7 +51,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             return Task.CompletedTask;
         }
 
-        public static Task GenerateSolution(CloudCodeModuleReference ccmr, CancellationToken cancellationToken = default)
+        public static async Task GenerateSolution(CloudCodeModuleReference ccmr, CancellationToken cancellationToken = default)
         {
             var referenceFileDir = Path.GetDirectoryName(Path.GetFullPath(ccmr.Path));
             var targetPath = Path.Combine(referenceFileDir, ccmr.ModulePath);
@@ -64,7 +64,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                     "Cloud Code Module will not be generated, selected 'Path' contains invalid characters. The solution name should only contain alphanumerical characters and underscores.";
 
                 m_Logger.LogError(msg);
-                return Task.FromException(new Exception(msg));
+                throw new Exception(msg);
             }
             var solutionPath = Path.Combine(
                 Path.GetDirectoryName(targetPath),
@@ -74,24 +74,22 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
             if (File.Exists(solutionPath))
             {
-                generationTask = Task.FromException(new Exception($"File {solutionPath} already exists. You cannot override an existing solution."));
+                throw new Exception($"File {solutionPath} already exists. You cannot override an existing solution.");
             }
-            else
+
+            try
             {
-                generationTask = m_SolutionGenerator.CreateSolutionWithProject(
+                await m_SolutionGenerator.CreateSolutionWithProject(
                     Path.GetDirectoryName(targetPath),
                     Path.GetFileNameWithoutExtension(targetPath), cancellationToken);
 
-                generationTask.ContinueWith(generation =>
-                {
-                    if (generation.IsCompletedSuccessfully)
-                    {
-                        m_Logger.LogInfo($"Solution '{solutionName}' generated successfully.");
-                    }
-                }, cancellationToken);
+                m_Logger.LogInfo($"Solution '{solutionName}' generated successfully.");
             }
-
-            return generationTask;
+            catch (Exception e)
+            {
+                m_Logger.LogError($"Failed to generate solution: {e}");
+                throw;
+            }
         }
     }
 }

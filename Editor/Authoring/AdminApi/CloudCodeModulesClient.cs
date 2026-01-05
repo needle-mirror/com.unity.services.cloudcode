@@ -13,8 +13,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 #endif
 using Unity.Services.CloudCode.Authoring.Editor.IO;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
+using Unity.Services.CloudCode.Editor.Shared.Clients;
 using Unity.Services.Core.Editor;
 using Unity.Services.DeploymentApi.Editor;
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;

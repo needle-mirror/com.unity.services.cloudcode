@@ -1,5 +1,5 @@
-using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
+using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
+using Unity.Services.CloudCode.Editor.Shared.Logging;
 using UnityEditor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics

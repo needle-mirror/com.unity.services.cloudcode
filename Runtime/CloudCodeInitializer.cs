@@ -17,10 +17,15 @@ namespace Unity.Services.CloudCode
     {
         const string k_CloudEnvironmentKey = "com.unity.services.core.cloud-environment";
         const string k_StagingEnvironment = "staging";
+        const int k_ConfigurationReqTimeoutSec = 30;
+        const string k_PackageName = "com.unity.services.cloudcode";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
+            // Ensure Instance is reset to account for Fast Enter Play Mode
+            CloudCodeService.Instance = null;
+
             CoreRegistry.Instance.RegisterPackage(new CloudCodeInitializer())
                 .DependsOn<ICloudProjectId>()
                 .DependsOn<IPlayerId>()
@@ -41,7 +46,9 @@ namespace Unity.Services.CloudCode
             var externalUserId = registry.GetServiceComponent<IExternalUserId>();
             var wire = registry.GetServiceComponent<IWire>();
 
-            var configuration = new Configuration(GetHost(projectConfiguration), null, null, GetServiceHeaders(installationId, externalUserId));
+            var configuration = new Configuration(GetHost(projectConfiguration), k_ConfigurationReqTimeoutSec, null, GetServiceHeaders(installationId, externalUserId));
+            var packageVersion = projectConfiguration.GetString($"{k_PackageName}.version", "unknown");
+            configuration.Headers["User-Agent"] = BuildUserAgent(k_PackageName, packageVersion);
             externalUserId.UserIdChanged += id => UpdateExternalUserId(configuration, id);
 
             ICloudCodeApiClient cloudCodeApiClient = new CloudCodeApiClient(
@@ -95,6 +102,11 @@ namespace Unity.Services.CloudCode
                 default:
                     return "https://cloud-code.services.api.unity.com";
             }
+        }
+
+        internal static string BuildUserAgent(string packageName, string packageVersion)
+        {
+            return $"UnityPlayer/{Application.unityVersion} ({packageName}/{packageVersion})";
         }
     }
 }

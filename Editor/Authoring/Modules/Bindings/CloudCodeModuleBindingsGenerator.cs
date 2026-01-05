@@ -11,7 +11,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using UnityEditor;
 using Task = System.Threading.Tasks.Task;
 

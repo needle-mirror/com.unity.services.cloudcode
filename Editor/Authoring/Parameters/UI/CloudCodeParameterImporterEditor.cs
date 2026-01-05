@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.UI;
 using UnityEditor;
 using UnityEditor.AssetImporters;

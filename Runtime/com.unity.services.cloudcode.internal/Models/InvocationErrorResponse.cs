@@ -38,8 +38,9 @@ namespace Unity.Services.CloudCode.Internal.Models
         /// <param name="detail">detail param</param>
         /// <param name="details">details param</param>
         /// <param name="instance">instance param</param>
+        /// <param name="requestId">An identifier Unity uses internally to investigate what happened to a particular request that went through the Unity Services or Game API Gateway. </param>
         [Preserve]
-        public InvocationErrorResponse(string type, string title, int status, int code, string detail, List<InvocationErrorResponseDetails> details, string instance = default)
+        public InvocationErrorResponse(string type, string title, int status, int code, string detail, List<InvocationErrorResponseDetails> details, string instance = default, object requestId = default)
         {
             Type = type;
             Title = title;
@@ -47,6 +48,7 @@ namespace Unity.Services.CloudCode.Internal.Models
             Code = code;
             Detail = detail;
             Instance = instance;
+            RequestId = (IDeserializable) JsonObject.GetNewJsonObjectResponse(requestId);
             Details = details;
         }
 
@@ -93,6 +95,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         public string Instance{ get; }
         
         /// <summary>
+        /// An identifier Unity uses internally to investigate what happened to a particular request that went through the Unity Services or Game API Gateway. 
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "requestId", EmitDefaultValue = false)]
+        public IDeserializable RequestId{ get; }
+        
+        /// <summary>
         /// Parameter details of InvocationErrorResponse
         /// </summary>
         [Preserve]
@@ -124,6 +133,10 @@ namespace Unity.Services.CloudCode.Internal.Models
             if (Instance != null)
             {
                 serializedModel += "instance," + Instance + ",";
+            }
+            if (RequestId != null)
+            {
+                serializedModel += "requestId," + RequestId.ToString() + ",";
             }
             if (Details != null)
             {
