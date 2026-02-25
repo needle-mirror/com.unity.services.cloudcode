@@ -1,25 +1,14 @@
 .module-bindings-container {
-    flex-direction: column;
-    margin: 10px;
+    flex-direction: row;
+    margin-left: 10px;
 }
 
 .module-bindings-title {
     flex-direction: row;
-    margin-bottom: 10px;
-}
-
-.module-bindings-text {
-    font-size: 18px;
-    -unity-font-style: bold;
-}
-
-
-.generate-bindings-button-container {
-    flex-direction: row;
-    justify-content: flex-start;
-    margin-top: 10px;
+    width: 50%;
 }
 
 .generate-bindings-button {
     margin: 0px;
+    left: 7px;
 }

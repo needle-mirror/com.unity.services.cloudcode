@@ -6,9 +6,11 @@ using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using UnityEditor;
 using UnityEngine.UIElements;
+// ReSharper disable once RedundantUsingDirective
 // Required for older unity versions.
 // ReSharper disable RedundantUsingDirective
 using UnityEditor.UIElements;
+// ReSharper disable once RedundantUsingDirective
 using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
@@ -26,10 +28,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 "Authoring", "Modules", "UI",
                 "Assets", "CloudCodeModuleGenerateBindingsProjectSettings.uss");
 
+        static readonly string k_ModuleBindingText = L10n.Tr("Modules Binding");
+        static readonly string k_GenerateButtonText = L10n.Tr("Generate All Modules Bindings");
+        static readonly string k_GenerateButtonTooltip = L10n.Tr("Generate the code bindings for all modules found in the current project.");
+
         /// <summary>
         /// The button to generate all modules bindings found in the current project.
         /// </summary>
         Button GenerateAllModulesBindingsButton { get; }
+        Label ModuleBindingsLabel { get; }
 
         public CloudCodeModuleGenerateBindingsVisualElement()
         {
@@ -50,6 +57,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
                 GenerateAllModulesBindingsButton = containerUI.Q<Button>("generate-bindings-btn");
                 GenerateAllModulesBindingsButton.clicked += GenerateAllModulesBindingsClicked;
+                GenerateAllModulesBindingsButton.text = k_GenerateButtonText;
+                GenerateAllModulesBindingsButton.tooltip = k_GenerateButtonTooltip;
+
+                ModuleBindingsLabel = containerUI.Q<Label>("module-bindings-text");
+                ModuleBindingsLabel.text = k_ModuleBindingText;
 
                 Add(containerUI);
             }

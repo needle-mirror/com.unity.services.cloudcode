@@ -25,23 +25,21 @@ namespace Unity.Services.CloudCode.Subscriptions
         /// <summary>
         /// Offers the methods to call when events occur on the channel.
         /// </summary>
-        public SubscriptionEventCallbacks Callbacks { get; }
+        public SubscriptionEventCallbacks Callbacks { get; } = new SubscriptionEventCallbacks();
 
         /// <summary>
         /// Initialize the subscription channel with event callbacks.
         /// </summary>
         /// <param name="channel">This object allows the subscription to a channel.</param>
         /// <param name="callbacks">The callbacks you want to be called from the events subscription.</param>
-        internal SubscriptionChannel(IChannel channel, SubscriptionEventCallbacks callbacks)
+        internal SubscriptionChannel(IChannel channel)
         {
-            Callbacks = callbacks;
-
             m_Channel = channel;
-            m_Channel.MessageReceived += payload => { OnSubscriptionMessage(payload, callbacks); };
-            m_Channel.BinaryMessageReceived += bytes => { OnSubscriptionMessageBytes(bytes, callbacks); };
-            m_Channel.NewStateReceived += state => { OnSubscriptionNewState(state, callbacks); };
-            m_Channel.KickReceived += () => { OnSubscriptionKick(callbacks); };
-            m_Channel.ErrorReceived += error => { OnSubscriptionError(error, callbacks); };
+            m_Channel.MessageReceived += payload => { OnSubscriptionMessage(payload, Callbacks); };
+            m_Channel.BinaryMessageReceived += bytes => { OnSubscriptionMessageBytes(bytes, Callbacks); };
+            m_Channel.NewStateReceived += state => { OnSubscriptionNewState(state, Callbacks); };
+            m_Channel.KickReceived += () => { OnSubscriptionKick(Callbacks); };
+            m_Channel.ErrorReceived += error => { OnSubscriptionError(error, Callbacks); };
         }
 
         ///<inheritdoc cref="ISubscriptionEvents.SubscribeAsync"/>

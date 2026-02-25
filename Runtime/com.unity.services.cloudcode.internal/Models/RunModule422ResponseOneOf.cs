@@ -51,7 +51,6 @@ namespace Unity.Services.CloudCode.Internal.Models
         {
             { "problems/basic", typeof(BasicErrorResponse) },
             { "problems/invocation", typeof(InvocationErrorResponse) },
-            { "problems/invocation/axios", typeof(AxiosInvocationErrorResponse) },
             { "BasicErrorResponse", typeof(BasicErrorResponse) }, 
             { "InvocationErrorResponse", typeof(InvocationErrorResponse) }
             
@@ -170,7 +169,7 @@ namespace Unity.Services.CloudCode.Internal.Models
 
         public override bool CanConvert(Type objectType)
         {
-            throw new NotImplementedException();
+            return objectType == typeof(RunModule422ResponseOneOf);
         }
     }
 }

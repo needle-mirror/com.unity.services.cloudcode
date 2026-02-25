@@ -32,10 +32,12 @@ namespace Unity.Services.CloudCode.Internal.Models
         /// Creates an instance of RunModuleArguments.
         /// </summary>
         /// <param name="@params">Object containing key-value pairs that map on to the parameter definitions for the given function of a module. Parameters are required according to the arguments defined in the function signature. </param>
+        /// <param name="scope">scope param</param>
         [Preserve]
-        public RunModuleArguments(object @params)
+        public RunModuleArguments(object @params, RunModuleArgumentsScope scope = default)
         {
             Params = (IDeserializable) JsonObject.GetNewJsonObjectResponse(@params);
+            Scope = scope;
         }
 
         /// <summary>
@@ -44,6 +46,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]
         public IDeserializable Params{ get; }
+        
+        /// <summary>
+        /// Parameter scope of RunModuleArguments
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "scope", EmitDefaultValue = false)]
+        public RunModuleArgumentsScope Scope{ get; }
     
         /// <summary>
         /// Formats a RunModuleArguments into a string of key-value pairs for use as a path parameter.
@@ -55,7 +64,11 @@ namespace Unity.Services.CloudCode.Internal.Models
 
             if (Params != null)
             {
-                serializedModel += "params," + Params.ToString();
+                serializedModel += "params," + Params.ToString() + ",";
+            }
+            if (Scope != null)
+            {
+                serializedModel += "scope," + Scope.ToString();
             }
             return serializedModel;
         }

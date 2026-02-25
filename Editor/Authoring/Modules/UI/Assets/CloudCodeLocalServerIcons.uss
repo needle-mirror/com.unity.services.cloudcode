@@ -1,0 +1,24 @@
+/*
+   USS to make icons available to other stylesheets
+   use @import url("./CloudCodeLocalServerIcons.uss");
+   See CloudCodeLocalServerIconsDark.uss for reference
+*/
+
+.icon {
+    min-height: 16px;
+    min-width: 16px;
+    max-height: 16px;
+    max-width: 16px;
+}
+
+:root {
+    --icon-server-status-idle-dark:url('./Icons/d_PopupIdle.png');
+    --icon-server-status-idle-light:url('./Icons/PopupIdle.png');
+    --server-status-starting-dark:url('./Icons/d_PopupLoading.png');
+    --server-status-starting-light:url('./Icons/PopupLoading.png');
+    --server-status-started-dark: resource('Icons/d_PlayButton.png');
+    --server-status-started-light: resource('Icons/PlayButton.png');
+    --server-status-error:url('./Icons/PopupError.png');
+    --server-pid-copy-dark:url('./Icons/d_copy.png');
+    --server-pid-copy-light:url('./Icons/copy.png');
+}

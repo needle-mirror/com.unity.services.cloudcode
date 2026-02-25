@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.SystemEnvironment;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.SystemEnvironment;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
@@ -23,14 +23,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         readonly IProcessRunner m_ProcessRunner;
         readonly ILogger m_Logger;
-        readonly ICloudCodeProjectSettings m_NodeSettings;
+        readonly ICloudCodePreferences m_NodePreferences;
 
         public string WorkingDirectory { get; set; } = Directory.GetCurrentDirectory();
 
-        public NodePackageManager(IProcessRunner processRunner, ICloudCodeProjectSettings settings, ILogger logger)
+        public NodePackageManager(IProcessRunner processRunner, ICloudCodePreferences preferences, ILogger logger)
         {
             m_ProcessRunner = processRunner;
-            m_NodeSettings = settings;
+            m_NodePreferences = preferences;
             m_Logger = logger;
         }
 
@@ -98,8 +98,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             string stdIn = default,
             CancellationToken cancellationToken = default)
         {
-            var nodeJsPath = m_NodeSettings.NodeJsPath;
-            var npmPath = m_NodeSettings.NpmPath;
+            var nodeJsPath = m_NodePreferences.NodeJsPath;
+            var npmPath = m_NodePreferences.NpmPath;
             var joinedArgs = ProcessArguments.Join(arguments);
             m_Logger.LogVerbose($"[{k_LoggerTag}] Running \"{nodeJsPath}\" {joinedArgs}");
 
@@ -140,7 +140,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         internal Task<string> NpmRun(IEnumerable<string> arguments, string stdIn, CancellationToken cancellationToken)
         {
-            var nodeArguments = new List<string> { m_NodeSettings.NpmPath };
+            var nodeArguments = new List<string> { m_NodePreferences.NpmPath };
             nodeArguments.AddRange(arguments);
 
             return ExecNodeJs(nodeArguments, stdIn, cancellationToken);
@@ -148,8 +148,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         void EnsurePathContainsNodeAndNpm()
         {
-            var nodeJsPath = m_NodeSettings.NodeJsPath;
-            var npmPath = m_NodeSettings.NpmPath;
+            var nodeJsPath = m_NodePreferences.NodeJsPath;
+            var npmPath = m_NodePreferences.NpmPath;
             if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(npmPath))
                 SystemEnvironmentPathUtils.AddProcessToPath(npmPath);
             if (!SystemEnvironmentPathUtils.DoesEnvironmentPathContain(nodeJsPath))

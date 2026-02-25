@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {

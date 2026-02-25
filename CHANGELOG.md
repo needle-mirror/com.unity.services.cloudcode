@@ -4,6 +4,40 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-exp.3] - 2026-02-25
+- Releasing public experimental exp-3.
+
+## [3.0.0-exp.2] - 2026-02-12
+### Fixed
+- Enable support for passing complex types for C# modules deployed onto the local Cloud Code server. 
+
+## [3.0.0-exp.1] - 2026-01-19
+### Added
+- Implemented Local Cloud Code debugging, enabling Users to rapidly iterate and debug C# modules on a local server
+  running on their machine. This has a requirement of Unity 6.3 or higher. Users can:
+  - Configure local server settings via Cloud Code Project Settings (File > Project Settings > Services > Cloud Code)
+  - Enable the Local Cloud Code Toolbar via (Top right Toolbar Context Menu > Services > Cloud Code)
+  - Start or stop the local server via the toolbar and attach local debuggers through Visual Studio or Rider.
+  - Deploy C# modules to the local server via the deployment window (Services > Deployment) to be executed.
+
+- Implemented support for Stateful Cloud Code with Player and Multiplayer Session scoped invocations, enabling users
+  to simplify state management for event-driven games. Note that this is only supported for Local Cloud Code Debugging and
+  not remote.
+
+### Changed
+- Cloud Code event subscription only exposes event registration
+from within the returned subscription object
+
+### Removed
+- Removed deprecated CloudCode API
+
+## [2.10.3] - 2026-01-05
+
+### Fixed
+- Updated versions for cloud apis
+- Added Unit test that is not published as part of the template
+- Added .gitignore as part of the template
+
 ## [2.10.2] - 2025-09-16
 
 ### Fixed

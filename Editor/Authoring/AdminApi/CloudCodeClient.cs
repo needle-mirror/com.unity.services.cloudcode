@@ -15,7 +15,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 #endif
 using Unity.Services.CloudCode.Authoring.Editor.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Clients;
+using Unity.Services.CloudCode.Editor.Shared.Clients;
 using Unity.Services.Core.Editor;
 using Unity.Services.DeploymentApi.Editor;
 using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Language;
@@ -152,7 +152,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             string token = await m_TokenProvider.GetServicesGatewayTokenAsync();
             var headers = new AdminApiHeaders<CloudCodeClient>(token);
             client.Configuration = new Configuration(
-                null,
+                client.Configuration.BasePath,
                 null,
                 null,
                 headers.ToDictionary());

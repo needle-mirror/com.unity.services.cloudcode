@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:VisualElement class="debugger-container">
+        <ui:Foldout name="debugger-foldout" class="debugger-title">
+            <ui:VisualElement class="debugger-element-container">
+                <ui:HelpBox message-type="info" name="debugger-start-help-box" style="width: 100%;margin-left: 10px"/>
+            </ui:VisualElement>
+        </ui:Foldout>
+    </ui:VisualElement>
+</ui:UXML>

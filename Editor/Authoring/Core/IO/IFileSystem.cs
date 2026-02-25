@@ -24,6 +24,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         bool DirectoryExists(string path);
         string? GetDirectoryName(string path);
         string GetFullPath(string path);
+        string GetCurrentDirectory();
         string GetFileNameWithoutExtension(string path);
         string Combine(params string[] paths);
         string Join(string path1, string path2);
@@ -32,5 +33,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         string[] DirectoryGetFiles(string path, string searchPattern, SearchOption searchOption);
         DirectoryInfo? DirectoryGetParent(string path);
         void FileMove(string sourceFileName, string destFileName);
+
+        void CopyDirectory(
+            string sourceDir,
+            string destDir);
     }
 }

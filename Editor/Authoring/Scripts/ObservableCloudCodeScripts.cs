@@ -2,7 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEngine;
 
@@ -14,7 +14,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
         public ObservableCloudCodeScripts()
         {
-            m_CloudCodeScripts = new ObservableAssets<CloudCodeScript>(new [] {CloudCodeFileExtensions.Js, CloudCodeFileExtensions.Es10});
+            m_CloudCodeScripts = new ObservableAssets<CloudCodeScript>(new[] {CloudCodeFileExtensions.Js, CloudCodeFileExtensions.Es10});
             foreach (var asset in m_CloudCodeScripts)
             {
                 Add(asset.Model);

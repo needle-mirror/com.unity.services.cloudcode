@@ -25,14 +25,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             CancellationToken cancellationToken = default)
             => await PublishSolution(solutionPath, outputPath, "any", cancellationToken);
 
+        public async Task PublishSolutionForOperatingSystem(
+            string solutionPath,
+            string outputPath,
+            string operatingSystem,
+            string configuration,
+            CancellationToken cancellationToken = default)
+            => await PublishSolution(solutionPath, outputPath, operatingSystem, configuration, cancellationToken);
+
         async Task PublishSolution(
             string solutionPath,
             string outputPath,
             string runtimeIdentifier,
             CancellationToken cancellationToken = default)
         {
+            await PublishSolution(solutionPath, outputPath, runtimeIdentifier, "Release", cancellationToken);
+        }
+
+        async Task PublishSolution(
+            string solutionPath,
+            string outputPath,
+            string runtimeIdentifier,
+            string configuration,
+            CancellationToken cancellationToken = default)
+        {
             await m_DotnetRunner.ExecuteDotnetAsync(
-                new[] { $"publish \"{solutionPath}\" -c Release -r \"{runtimeIdentifier}\" -o \"{outputPath}\"" },
+                new[] { $"publish \"{solutionPath}\" -c \"{configuration}\" -r \"{runtimeIdentifier}\" -o \"{outputPath}\"" },
                 cancellationToken);
         }
     }

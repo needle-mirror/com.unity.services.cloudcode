@@ -15,16 +15,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
     class DotnetRunner : IDotnetRunner
     {
         readonly IProcessRunner m_ProcessRunner;
-        readonly ICloudCodeProjectSettings m_ProjectSettings;
+        readonly ICloudCodePreferences m_Preferences;
         readonly ILogger m_Logger;
 
         static readonly string k_VersionCommand = "--version";
         static readonly string k_DotnetDefaultPathFallback = "dotnet";
 
-        public DotnetRunner(IProcessRunner processRunner, ICloudCodeProjectSettings settings, ILogger logger)
+        public DotnetRunner(IProcessRunner processRunner, ICloudCodePreferences settings, ILogger logger)
         {
             m_ProcessRunner = processRunner;
-            m_ProjectSettings = settings;
+            m_Preferences = settings;
             m_Logger = logger;
         }
 
@@ -42,8 +42,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
             {
                 try
                 {
-                    m_ProjectSettings.DotnetPath = k_DotnetDefaultPathFallback;
-                    m_ProjectSettings.WriteToEditorPrefs();
+                    m_Preferences.DotnetPath = k_DotnetDefaultPathFallback;
+                    m_Preferences.WriteToEditorPrefs();
 
                     await ExecuteDotnetAsync(new List<string>
                     {
@@ -61,7 +61,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
 
         public async Task<string> ExecuteDotnetAsync(IEnumerable<string> arguments = default, CancellationToken cancellationToken = default)
         {
-            var startInfo = new ProcessStartInfo(m_ProjectSettings.DotnetPath, string.Join(" ", arguments))
+            var startInfo = new ProcessStartInfo(m_Preferences.DotnetPath, string.Join(" ", arguments))
             {
                 UseShellExecute = false,
                 RedirectStandardInput = true,

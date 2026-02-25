@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.UI.DeploymentConfigInspectorFooter;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
 using UnityEditor;
 using UnityEngine.UIElements;
+using DeploymentConfigInspectorFooter = Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter.DeploymentConfigInspectorFooter;
 using Object = UnityEngine.Object;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI

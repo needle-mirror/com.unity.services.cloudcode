@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment

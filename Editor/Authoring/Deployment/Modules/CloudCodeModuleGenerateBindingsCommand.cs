@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
+using Unity.Services.CloudCode.Editor.Shared.UI;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 

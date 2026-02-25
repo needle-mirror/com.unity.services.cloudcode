@@ -4,7 +4,7 @@ using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Threading;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Threading;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor.AssetImporters;
 using UnityEngine;

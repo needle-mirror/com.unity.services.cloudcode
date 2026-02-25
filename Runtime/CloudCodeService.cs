@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Models;
 using Unity.Services.CloudCode.Subscriptions;
 
 namespace Unity.Services.CloudCode
@@ -39,10 +41,11 @@ namespace Unity.Services.CloudCode
         /// <param name="module">Cloud Code Module to call</param>
         /// <param name="function">Cloud Code function to call.</param>
         /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
+        /// <param name="scope">Optional scope type and ID, which provide statefulness across invocations with the same ID</param>
         /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null);
+        Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null, CloudCodeModuleScope scope = null);
 
         /// <summary>
         /// Calls a Cloud Code function.
@@ -50,27 +53,26 @@ namespace Unity.Services.CloudCode
         /// <param name="module">Cloud Code Module to call</param>
         /// <param name="function">Cloud Code function to call.</param>
         /// <param name="args">Arguments for the cloud code function. Will be serialized to JSON.</param>
+        /// <param name="scope">Optional scope type and ID, which provide statefulness across invocations with the same ID</param>
         /// <typeparam name="TResult">Serialized from JSON returned by Cloud Code.</typeparam>
         /// <returns>Serialized output from the called function.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null);
+        Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null, CloudCodeModuleScope scope = null);
 
         /// <summary>
         /// Subscribe to push messages from the Cloud Code service for the currently logged in player.
         /// </summary>
-        /// <param name="callbacks">The event callbacks to be invoked when messages are received from Cloud Code</param>
         /// <returns>SubscriptionEvents object that can be used to unsubscribe from messages.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
-        Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks);
+        Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync();
 
         /// <summary>
         /// Subscribe to push messages from the Cloud Code service for all project-wide messages.
         /// </summary>
-        /// <param name="callbacks">The event callbacks to be invoked when messages are received from Cloud Code</param>
         /// <returns>SubscriptionEvents object that can be used to unsubscribe from messages.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
-        Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks);
+        Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync();
     }
 
     /// <summary>

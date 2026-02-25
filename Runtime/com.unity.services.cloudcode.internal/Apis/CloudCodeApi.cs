@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
 
         /// <summary>
         /// Async Operation.
-        /// Create a player subscription token..
+        /// Create a player subscription token.
         /// </summary>
         /// <param name="request">Request object for SubscriptionTokenPlayer.</param>
         /// <param name="operationConfiguration">Configuration for SubscriptionTokenPlayer.</param>
@@ -54,7 +54,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
 
         /// <summary>
         /// Async Operation.
-        /// Create a project subscription token..
+        /// Create a project subscription token.
         /// </summary>
         /// <param name="request">Request object for SubscriptionTokenProject.</param>
         /// <param name="operationConfiguration">Configuration for SubscriptionTokenProject.</param>
@@ -68,7 +68,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
     internal class CloudCodeApiClient : BaseApiClient, ICloudCodeApiClient
     {
         private IAccessToken _accessToken;
-        private const int _baseTimeout = 25;
+        private const int _baseTimeout = 30;
         private Configuration _configuration;
         /// <summary>
         /// Accessor for the client configuration object. This returns a merge
@@ -78,16 +78,11 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         /// </summary>
         public Configuration Configuration
         {
-            get
-            {
+            get {
                 // We return a merge between the current configuration and the
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).
-                Configuration globalConfiguration = new Configuration("https://cloud-code.services.api.unity.com", 30, 4, null);
-                if (CloudCodeService.Instance != null)
-                {
-                    globalConfiguration = CloudCodeService.Instance.Configuration;
-                }
+                Configuration globalConfiguration = new Configuration("https://cloud-code.services.api.unity.com", 10, 4, null);
                 return Configuration.MergeConfigurations(_configuration, globalConfiguration);
             }
             set { _configuration = value; }
@@ -122,7 +117,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.RunModuleResponse>> RunModuleAsync(Unity.Services.CloudCode.Internal.CloudCode.RunModuleRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { { "200", typeof(Models.RunModuleResponse) }, { "400", typeof(Models.BasicErrorResponse) }, { "401", typeof(Models.BasicErrorResponse) }, { "404", typeof(Models.BasicErrorResponse) }, { "422", typeof(RunModule422Response) }, { "429", typeof(Models.BasicErrorResponse) }, { "500", typeof(Models.BasicErrorResponse) }, { "503", typeof(Models.BasicErrorResponse) }, { "504", typeof(Models.BasicErrorResponse) } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunModuleResponse)   },{"400", typeof(Models.BasicErrorResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunModule422Response)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -151,7 +146,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.RunScriptResponse>> RunScriptAsync(Unity.Services.CloudCode.Internal.CloudCode.RunScriptRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { { "200", typeof(Models.RunScriptResponse) }, { "400", typeof(RunScript400Response) }, { "401", typeof(Models.BasicErrorResponse) }, { "404", typeof(Models.BasicErrorResponse) }, { "422", typeof(RunModule422Response) }, { "429", typeof(Models.BasicErrorResponse) }, { "500", typeof(Models.BasicErrorResponse) }, { "503", typeof(Models.BasicErrorResponse) }, { "504", typeof(Models.BasicErrorResponse) } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.RunScriptResponse)   },{"400", typeof(RunScript400Response)   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(RunModule422Response)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -171,7 +166,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
 
         /// <summary>
         /// Async Operation.
-        /// Create a player subscription token..
+        /// Create a player subscription token.
         /// </summary>
         /// <param name="request">Request object for SubscriptionTokenPlayer.</param>
         /// <param name="operationConfiguration">Configuration for SubscriptionTokenPlayer.</param>
@@ -180,7 +175,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenPlayerAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenPlayerRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { { "200", typeof(Models.SubscriptionTokenResponse) }, { "401", typeof(Models.BasicErrorResponse) }, { "429", typeof(Models.BasicErrorResponse) }, { "500", typeof(Models.BasicErrorResponse) }, { "503", typeof(Models.BasicErrorResponse) }, { "504", typeof(Models.BasicErrorResponse) } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.SubscriptionTokenResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
@@ -200,7 +195,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
 
         /// <summary>
         /// Async Operation.
-        /// Create a project subscription token..
+        /// Create a project subscription token.
         /// </summary>
         /// <param name="request">Request object for SubscriptionTokenProject.</param>
         /// <param name="operationConfiguration">Configuration for SubscriptionTokenProject.</param>
@@ -209,7 +204,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         public async Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenProjectAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenProjectRequest request,
             Configuration operationConfiguration = null)
         {
-            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { { "200", typeof(Models.SubscriptionTokenResponse) }, { "401", typeof(Models.BasicErrorResponse) }, { "429", typeof(Models.BasicErrorResponse) }, { "500", typeof(Models.BasicErrorResponse) }, { "503", typeof(Models.BasicErrorResponse) }, { "504", typeof(Models.BasicErrorResponse) } };
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", typeof(Models.SubscriptionTokenResponse)   },{"401", typeof(Models.BasicErrorResponse)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
 
             // Merge the operation/request level configuration with the client level configuration.
             var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);

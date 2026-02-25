@@ -5,9 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.Collections;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 
@@ -16,26 +17,34 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
     class CloudCodeModuleDeployCommand : Command<CloudCodeModuleReference>
     {
         public override string Name => L10n.Tr("Deploy");
-
         readonly IModuleBuilder m_ModuleBuilder;
-
         readonly EditorCloudCodeModuleDeploymentHandler m_EditorCloudCodeDeploymentHandler;
         readonly bool m_Reconcile;
         readonly bool m_DryRun;
+        readonly CloudCodeLocalModuleDeployCommand m_CloudCodeLocalModuleDeployCommand;
 
         public CloudCodeModuleDeployCommand(
             IModuleBuilder moduleBuilder,
+            CloudCodeLocalModuleDeployCommand cloudCodeLocalModuleDeployCommand,
             EditorCloudCodeModuleDeploymentHandler editorCloudCodeDeploymentHandler)
         {
             m_ModuleBuilder = moduleBuilder;
-
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
+            m_CloudCodeLocalModuleDeployCommand = cloudCodeLocalModuleDeployCommand;
             m_Reconcile = false;
             m_DryRun = false;
         }
 
         public override async Task ExecuteAsync(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = new CancellationToken())
         {
+            // If the User is using a Local Cloud Code server, direct all deployments to it.
+            if (m_CloudCodeLocalModuleDeployCommand.ShouldDeployToLocal())
+            {
+                await m_CloudCodeLocalModuleDeployCommand.ExecuteAsync(items, cancellationToken);
+                return;
+            }
+
+            // Else, deploy to Remote Cloud Code as usual.
             var cloudCodeModuleReferences = items.ToList();
             OnDeploy(cloudCodeModuleReferences);
             var compiled = await Compile(cloudCodeModuleReferences, cancellationToken);
@@ -66,7 +75,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                         continue;
                     }
 
-                    generationList.Add(GenerateModule(ccmr));
+                    generationList.Add(GenerateModule(ccmr.ModuleName, ccmr.CcmPath));
                 }
                 catch (Exception e)
                 {
@@ -77,10 +86,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return generationList;
         }
 
-        static Script GenerateModule(CloudCodeModuleReference moduleReference)
+        static IScript GenerateModule(string moduleName, string filePath)
         {
-            var name = new ScriptName(moduleReference.ModuleName);
-            var script = new Script(moduleReference.CcmPath)
+            var name = new ScriptName(moduleName);
+            var script = new Script(filePath)
             {
                 Name = name,
                 Body = string.Empty,

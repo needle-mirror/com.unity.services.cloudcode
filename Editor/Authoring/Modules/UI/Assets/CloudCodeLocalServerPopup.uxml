@@ -1,0 +1,32 @@
+<ui:UXML
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xmlns="UnityEngine.UIElements">
+    <Style src="CloudCodeLocalServerPopup.uss" />
+    <ui:VisualElement name="popup-window-container" class="popup-column__container">
+
+        <!-- Local CLoud Code Server Status -->
+        <ui:VisualElement class="popup-row__container">
+            <ui:TextElement name="server-status-title-txt" class="popup-row-server-title__text" />
+            <ui:VisualElement class="popup-row-sever-status__container">
+                <ui:VisualElement name="server-status-icon" />
+                <ui:TextElement name="server-status-txt" />
+                <ui:Label name="server-pid-txt" />
+                <ui:Button name="server-pid-copy-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Local CLoud Code Settings Shortcut -->
+        <ui:VisualElement class="popup-row__container">
+            <ui:Button name="server-settings-btn" class="popup-row-settings-title__button" />
+        </ui:VisualElement>
+
+        <!-- Local CLoud Code Server Start / Stop controls -->
+        <ui:VisualElement class="popup-row__container">
+            <ui:Button name="server-action-btn" class="popup-row-sever-action__button" />
+        </ui:VisualElement>
+
+        <!-- Local Cloud Code Edit Mode only info box -->
+        <ui:HelpBox name="server-edit-only-info-box" class="popup-row-server-edit-only__infobox" message-type="Info" />
+    </ui:VisualElement>
+</ui:UXML>

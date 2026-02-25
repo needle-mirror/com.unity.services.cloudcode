@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Bundling;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Bundling

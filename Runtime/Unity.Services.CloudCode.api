@@ -3,12 +3,6 @@
 // make sure the XML doc file is present and located next to the scraped dll
 namespace Unity.Services.CloudCode
 {
-    [System.Obsolete(@"The interface provided by CloudCode has moved to CloudCodeService.Instance, and should be accessed from there instead. This API will be removed in an upcoming release.")] public static class CloudCode
-    {
-        [System.Obsolete(@"The interface provided by CloudCode.CallEndpointAsync(string, object) has been replaced by CloudCodeService.Instance.CallEndpointAsync(string, Dictionary<string, object>), and should be accessed from there instead. This API will be removed in an upcoming release.", false)] public static System.Threading.Tasks.Task<string> CallEndpointAsync(string function, object args);
-        [System.Obsolete(@"The interface provided by CloudCode.CallEndpointAsync<TResult>(string, object) has been replaced by CloudCodeService.Instance.CallEndpointAsync<TResult>(string, Dictionary<string, object>), and should be accessed from there instead. This API will be removed in an upcoming release.", false)] public static System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, object args);
-    }
-
     public class CloudCodeException : Unity.Services.Core.RequestFailedException
     {
         public override string Message { get; }
@@ -49,8 +43,8 @@ namespace Unity.Services.CloudCode
         public System.Threading.Tasks.Task<TResult> CallEndpointAsync<TResult>(string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
         public System.Threading.Tasks.Task<string> CallModuleEndpointAsync(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
         public System.Threading.Tasks.Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, System.Collections.Generic.Dictionary<string, object> args = default(System.Collections.Generic.Dictionary<string, object>));
-        public System.Threading.Tasks.Task<Subscriptions.ISubscriptionEvents> SubscribeToPlayerMessagesAsync(Subscriptions.SubscriptionEventCallbacks callbacks);
-        public System.Threading.Tasks.Task<Subscriptions.ISubscriptionEvents> SubscribeToProjectMessagesAsync(Subscriptions.SubscriptionEventCallbacks callbacks);
+        public System.Threading.Tasks.Task<Subscriptions.ISubscriptionEvents> SubscribeToPlayerMessagesAsync();
+        public System.Threading.Tasks.Task<Subscriptions.ISubscriptionEvents> SubscribeToProjectMessagesAsync();
     }
 }
 

@@ -1,0 +1,29 @@
+.debugger-container {
+    flex-direction: column;
+}
+
+.debugger-title{
+    flex-direction: column;
+}
+
+.debugger-text {
+    -unity-font-style: bold;
+}
+
+.debugger-element-container {
+    flex-direction: row;
+    justify-content: flex-start;
+    margin-left: 10px;
+}
+
+.debugger-text-field {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.unity-base-field__label {
+    width: 50%;
+}
+.unity-base-field__input {
+    flex-grow: 1;
+}

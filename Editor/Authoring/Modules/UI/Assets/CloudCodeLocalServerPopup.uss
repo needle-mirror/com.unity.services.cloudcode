@@ -1,0 +1,65 @@
+.popup-row__container {
+    flex-direction: row;
+    width: 260px;
+    height: 20px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    align-items: center;
+}
+
+.popup-column__container {
+    flex-direction: column;
+    height: 80px;
+    padding-right: 5px;
+    padding-left: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+/* Required as Flex grow has a Editor Window outline Bug */
+.popup-column__container-extended {
+    flex-direction: column;
+    height: 120px;
+    padding-right: 5px;
+    padding-left: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.popup-row-sever-status__container {
+    width: 108px;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.popup-row-server-title__text {
+    font-size: 12px;
+    padding-right: 10px;
+}
+
+.popup-row-settings-title__button{
+    font-size: 12px;
+    padding-left: 0px;
+    padding-right: 30px;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+    border-width: 0;
+    border-radius: 0;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.popup-row-sever-action__button {
+    max-width: 350px;
+    flex-grow: 1;
+    display: flex;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.popup-row-server-edit-only__infobox {
+    width: 260px;
+    margin-left: 0px;
+    margin-right: 0px;
+}

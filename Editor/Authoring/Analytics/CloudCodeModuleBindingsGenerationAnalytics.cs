@@ -1,6 +1,6 @@
 using System;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.EditorUtils;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics

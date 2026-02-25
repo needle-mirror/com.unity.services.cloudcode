@@ -1,0 +1,36 @@
+@import url("./CloudCodeLocalServerIcons.uss");
+
+.server-status-idle__icon {
+    background-image:var(--icon-server-status-idle-dark);
+}
+
+.server-status-starting__icon {
+    background-image:var(--server-status-starting-dark);
+    rotate: 3110400deg;
+    transition-property: rotate;
+    transition-timing-function: linear;
+    transition-duration: 8640s;
+}
+
+.server-status-started__icon {
+    background-image:var(--server-status-started-dark);
+}
+
+.server-status-error__icon {
+    background-image:var(--server-status-error);
+}
+
+.popup-row-server-pid__button-icon {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: var(--server-pid-copy-dark);
+    border-width: 0px;
+    border-radius: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.popup-row-server-pid__button-icon:active {
+    background-image: var(--server-pid-copy-light);
+}

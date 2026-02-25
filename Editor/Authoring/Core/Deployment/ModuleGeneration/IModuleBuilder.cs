@@ -6,6 +6,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
 {
     interface IModuleBuilder
     {
-        Task CreateCloudCodeModuleFromSolution(IModuleItem deploymentItem, CancellationToken cancellationToken = default);
+        Task CreateCloudCodeModuleFromSolution(
+            IModuleItem deploymentItem,
+            CancellationToken cancellationToken = default,
+            string operatingSystem = "linux-x64",
+            string configuration = "Release");
     }
 }

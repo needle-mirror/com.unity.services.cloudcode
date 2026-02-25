@@ -28,9 +28,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return Task.CompletedTask;
         }
 
-        public Task Copy(string sourceFileName, string destFileName, bool overwrite, CancellationToken token = default(CancellationToken))
+        public Task Copy(string sourceFileName, string destFileName, bool overwrite = true, CancellationToken token = default(CancellationToken))
         {
-            File.Copy(sourceFileName, destFileName, true);
+            File.Copy(sourceFileName, destFileName, overwrite);
             return Task.CompletedTask;
         }
 
@@ -95,6 +95,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             File.Move(sourceFileName, destFileName);
         }
 
+        public void CopyDirectory(
+            string sourceDir,
+            string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string fileName = Path.GetFileName(file);
+                string destFile = Path.Combine(destDir, fileName);
+                File.Copy(file, destFile);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(subDir);
+                string destSubDir = Path.Combine(destDir, dirName);
+                CopyDirectory(subDir, destSubDir);
+            }
+        }
+
         public bool DirectoryExists(string path)
         {
             return Directory.Exists(path);
@@ -123,6 +144,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         public string GetFullPath(string path)
         {
             return Path.GetFullPath(path);
+        }
+
+        public string GetCurrentDirectory()
+        {
+            return Directory.GetCurrentDirectory();
         }
 
         public string GetFileNameWithoutExtension(string path)

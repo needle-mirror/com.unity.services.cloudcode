@@ -517,7 +517,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
     }
     /// <summary>
     /// SubscriptionTokenPlayerRequest
-    /// Create a player subscription token.
+    /// Create a player subscription token
     /// </summary>
     [Preserve]
     internal class SubscriptionTokenPlayerRequest : CloudCodeApiBaseRequest
@@ -529,7 +529,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
         /// <summary>
         /// SubscriptionTokenPlayer Request Object.
-        /// Create a player subscription token.
+        /// Create a player subscription token
         /// </summary>
         /// <param name="projectId">ID of the project.</param>
         [Preserve]
@@ -621,7 +621,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
     }
     /// <summary>
     /// SubscriptionTokenProjectRequest
-    /// Create a project subscription token.
+    /// Create a project subscription token
     /// </summary>
     [Preserve]
     internal class SubscriptionTokenProjectRequest : CloudCodeApiBaseRequest
@@ -633,7 +633,7 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
 
         /// <summary>
         /// SubscriptionTokenProject Request Object.
-        /// Create a project subscription token.
+        /// Create a project subscription token
         /// </summary>
         /// <param name="projectId">ID of the project.</param>
         [Preserve]

@@ -23,7 +23,7 @@ namespace Unity.Services.CloudCode.Internal.Http
     /// </summary>
     [Preserve]
     [JsonConverter(typeof(JsonObjectConverter))]
-    interface IDeserializable
+    interface IDeserializable // IMPORTANT - This interface should be internal and not public.
     {
         /// <summary>
         /// Returns the internal object as a string.
@@ -39,4 +39,5 @@ namespace Unity.Services.CloudCode.Internal.Http
         /// <returns>This object as the given type.</returns>
         T GetAs<T>(DeserializationSettings deserializationSettings = null);
     }
+        
 }

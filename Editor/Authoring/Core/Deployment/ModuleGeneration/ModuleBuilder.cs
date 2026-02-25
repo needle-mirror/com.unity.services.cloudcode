@@ -29,7 +29,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
 
         public async Task CreateCloudCodeModuleFromSolution(
             IModuleItem deploymentItem,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            string operatingSystem = "linux-x64",
+            string configuration = "Release")
         {
             var slnName = Path.GetFileNameWithoutExtension(deploymentItem.SolutionPath);
             var tempFolderPath = Path.Combine(Path.GetTempPath(), slnName);
@@ -42,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
                 if (!SetAndValidateEntryProject(deploymentItem))
                     return;
 
-                if (!await Publish(deploymentItem, slnOutputPath, cancellationToken) ||
+                if (!await Publish(deploymentItem, slnOutputPath, cancellationToken, operatingSystem, configuration) ||
                     cancellationToken.IsCancellationRequested)
                     return;
 
@@ -78,12 +80,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
             }
         }
 
-        async Task<bool> Publish(IModuleItem deploymentItem, string slnOutputPath, CancellationToken cancellationToken)
+        async Task<bool> Publish(IModuleItem deploymentItem, string slnOutputPath, CancellationToken cancellationToken, string operatingSystem = "linux-x64", string configuration = "Release")
         {
             try
             {
-                deploymentItem.UpdateLogStatus(new DeploymentStatus("Compiling..."));
-                await m_SolutionPublisher.PublishSolutionLinux64(deploymentItem.SolutionPath, slnOutputPath, cancellationToken);
+                await m_SolutionPublisher.PublishSolutionForOperatingSystem(deploymentItem.SolutionPath, slnOutputPath, operatingSystem, configuration, cancellationToken);
                 UpdateStatusAndProgress(deploymentItem, 33f, ModuleBuilderStatuses.CompiledSuccessfully);
                 return true;
             }

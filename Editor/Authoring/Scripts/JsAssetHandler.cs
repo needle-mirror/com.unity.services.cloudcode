@@ -16,7 +16,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         const string k_SolutionPath = "$(SolutionPath)";
         const string k_EditorExePath = "$(EditorExePath)";
 
-        readonly ICloudCodeProjectSettings m_ProjectSettings;
+        readonly ICloudCodePreferences m_Preferences;
         readonly IProcessRunner m_ProcessRunner;
         readonly IExternalCodeEditor m_CodeEditor;
 
@@ -29,11 +29,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         };
 
         public JsAssetHandler(
-            ICloudCodeProjectSettings projectSettings,
+            ICloudCodePreferences preferences,
             IProcessRunner processRunner,
             IExternalCodeEditor codeEditor)
         {
-            m_ProjectSettings = projectSettings;
+            m_Preferences = preferences;
             m_ProcessRunner = processRunner;
             m_CodeEditor = codeEditor;
         }
@@ -58,8 +58,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         {
             OpenFile(
                 filePath,
-                m_ProjectSettings.ExternalEditorPath,
-                m_ProjectSettings.ExternalEditorArgsFormat);
+                m_Preferences.ExternalEditorPath,
+                m_Preferences.ExternalEditorArgsFormat);
         }
 
         internal void OpenFile(

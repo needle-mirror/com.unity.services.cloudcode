@@ -7,6 +7,7 @@ using Unity.Services.CloudCode.Internal.Apis.CloudCode;
 using Unity.Services.CloudCode.Internal.CloudCode;
 using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.CloudCode.Internal.Models;
+using Unity.Services.CloudCode.Models;
 using Unity.Services.CloudCode.Subscriptions;
 using Unity.Services.Core;
 using Unity.Services.Core.Configuration.Internal;
@@ -47,32 +48,32 @@ namespace Unity.Services.CloudCode
             return DeserializeOutput<TResult>(result);
         }
 
-        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args)
+        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope = null)
         {
-            var result = await GetRunModuleScriptResponse(module, function, args);
+            var result = await GetRunModuleScriptResponse(module, function, args, scope);
 
             var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
 
-        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args)
+        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope = null)
         {
-            var result = await GetRunModuleScriptResponse(module, function, args);
+            var result = await GetRunModuleScriptResponse(module, function, args, scope);
 
             return DeserializeOutput<TResult>(result);
         }
 
-        public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks)
+        public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync()
         {
-            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
+            return await SubscribeAsync(TokenProvider.TokenProviderMode.Player);
         }
 
-        public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks)
+        public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync()
         {
-            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
+            return await SubscribeAsync(TokenProvider.TokenProviderMode.Project);
         }
 
-        async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, TokenProvider.TokenProviderMode mode)
+        async Task<ISubscriptionEvents> SubscribeAsync(TokenProvider.TokenProviderMode mode)
         {
             if (m_Wire == null)
             {
@@ -83,7 +84,7 @@ namespace Unity.Services.CloudCode
             ValidateRequiredDependencies();
 
             var channel = m_Wire.CreateChannel(new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
-            var subscriptionsChannel = new SubscriptionChannel(channel, callbacks);
+            var subscriptionsChannel = new SubscriptionChannel(channel);
             await subscriptionsChannel.SubscribeAsync();
             return subscriptionsChannel;
         }
@@ -128,13 +129,13 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args)
+        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope)
         {
             ValidateRequiredDependencies();
 
             try
             {
-                return await GetModuleResponseAsync(module, function, args);
+                return await GetModuleResponseAsync(module, function, args, scope);
             }
             catch (HttpException<BasicErrorResponse> e)
             {
@@ -234,9 +235,9 @@ namespace Unity.Services.CloudCode
             return await task;
         }
 
-        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args)
+        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope)
         {
-            var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>());
+            var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>(), scope == null ? null : new RunModuleArgumentsScope(scope.ToInternalType(), scope.Id));
             var runScript = new RunModuleRequest(m_CloudProjectId.GetCloudProjectId(), module, function, runArgs);
             var task = m_ApiClient.RunModuleAsync(runScript);
 

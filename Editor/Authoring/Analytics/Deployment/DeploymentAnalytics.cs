@@ -1,7 +1,7 @@
 using System;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Logging;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Editor.Shared.Logging;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 using UnityEngine.Analytics;

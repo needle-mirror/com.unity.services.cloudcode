@@ -1,14 +1,15 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "2.10.2",
-  "unity": "2021.3",
+  "version": "3.0.0-exp.3",
+  "unity": "6000.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
     "com.unity.services.authentication": "3.5.1",
     "com.unity.services.core": "1.15.1",
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.nuget.newtonsoft-json": "3.0.2",
+    "com.unity.services.deployment": "1.6.2",
     "com.unity.services.wire": "1.2.3"
   },
   "_upm": {
@@ -25,7 +26,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Fixed\n- Signing package\n- Fixed assets being loaded despite being of the incorrect type"
+    "changelog": "- Releasing public experimental exp-3."
   },
   "samples": [
     {
@@ -40,15 +41,15 @@
     }
   ],
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "2.10.2"
+    "com.unity.services.cloudcode.tests": "3.0.0-exp.3"
   },
   "upmCi": {
-    "footprint": "03dde10d4a63c6175444e44e1f6b5a226a3cd4de"
+    "footprint": "f7ff1c44e6f99ab712078dc95836d8facbd4b58d"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.10/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "66937b580338881ce21c8755d7dc740be0bcc69b"
+    "revision": "e1892d854d3de2b7ac295c95ebb8657f973c0fa1"
   }
 }

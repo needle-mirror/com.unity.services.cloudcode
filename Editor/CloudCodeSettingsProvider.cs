@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 #if DEPLOYMENT_API_AVAILABLE_V1_0
 using Unity.Services.CloudCode.Authoring.Editor.Modules.UI;
 #endif
@@ -28,24 +26,23 @@ namespace Unity.Services.CloudCode.Settings
         protected override string Title => k_Title;
         protected override string Description => "Connect your game's frameworks through the cloud. Create scripts, interact with your backend services, and effortlessly scale your code based on demand.";
 
-#if DEPLOYMENT_API_AVAILABLE_V1_0
-
-        static CloudCodeModuleGenerateBindingsVisualElement Element { get; set; }
-#endif
-
         public CloudCodeSettingsProvider(SettingsScope scopes)
             : base(GenerateProjectSettingsPath(k_Title), scopes) {}
 
         protected override VisualElement GenerateServiceDetailUI()
         {
+            var root = new VisualElement();
+
 #if DEPLOYMENT_API_AVAILABLE_V1_0
-            if (Element == null)
+            if (root.childCount == 0)
             {
-                Element = new CloudCodeModuleGenerateBindingsVisualElement();
+                root.Add(new CloudCodeModuleGenerateBindingsVisualElement());
+                root.Add(new CloudCodeLocalDebuggerVisualElement());
             }
-            return Element;
+
+            return root;
 #else
-            return new VisualElement();
+            return root;
 #endif
         }
 

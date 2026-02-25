@@ -1,6 +1,6 @@
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Infrastructure.IO;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
 using UnityEngine;

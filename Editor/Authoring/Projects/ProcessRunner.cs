@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
@@ -13,7 +14,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             string stdIn = default,
             CancellationToken cancellationToken = default,
             TimeSpan timeout = default);
+
+        Process RunAsyncFireAndForget(
+            ProcessStartInfo startInfo,
+            Action<string> outputHandler);
         bool Start(ProcessStartInfo startInfo);
+        void Stop(int processId);
     }
 
     struct ProcessOutput
@@ -31,11 +37,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             CancellationToken cancellationToken = default,
             TimeSpan timeout = default)
         {
-            startInfo.UseShellExecute = false;
             startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            startInfo.CreateNoWindow = true;
 
             using var process = new Process();
             var exitTask = WrapProcessInTask(process, cancellationToken);
@@ -62,7 +66,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
                 await process.StandardInput.WriteAsync(stdIn);
                 process.StandardInput.Close();
             }
-
             await HandleExit(process, exitTask, timeout);
 
             return new ProcessOutput
@@ -71,6 +74,41 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
                 StdOut = stdOut.ToString(),
                 StdErr = stdErr.ToString(),
             };
+        }
+
+        public Process RunAsyncFireAndForget(
+            ProcessStartInfo startInfo,
+            Action<string> outputHandler)
+        {
+            // Redirect all Standard outputs
+            startInfo.RedirectStandardInput = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+
+            // Create the process
+            var process = new Process();
+            process.StartInfo = startInfo;
+            process.EnableRaisingEvents = true;
+            process.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    outputHandler?.Invoke(args.Data);
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    outputHandler?.Invoke(e.Data);
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            return process;
         }
 
         static async Task HandleExit(
@@ -96,8 +134,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         static Task WrapProcessInTask(Process process, CancellationToken cancellationToken = default)
         {
-            var t = new Task(process.WaitForExit);
-            return t;
+            return new Task(process.WaitForExit, cancellationToken);
+        }
+
+        public void Stop(int processID)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(processID);
+                if (process.HasExited)
+                    return;
+
+                process.Kill();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
     }
 }

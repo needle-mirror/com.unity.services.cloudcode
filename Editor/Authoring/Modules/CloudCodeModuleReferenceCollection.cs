@@ -1,4 +1,4 @@
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {

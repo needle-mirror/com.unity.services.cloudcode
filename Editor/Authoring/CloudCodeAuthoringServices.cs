@@ -17,6 +17,8 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Solution;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.IO;
@@ -27,19 +29,20 @@ using Unity.Services.CloudCode.Authoring.Editor.Parameters;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.Assets;
-using Unity.Services.CloudCode.Authoring.Editor.Shared.UI;
 using Unity.Services.CloudCode.Authoring.Editor.UI;
+using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.Clients;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
+using Unity.Services.CloudCode.Editor.Shared.UI;
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.Core.Editor.OrganizationHandler;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
-using static Unity.Services.CloudCode.Authoring.Editor.Shared.DependencyInversion.Factories;
+using static Unity.Services.CloudCode.Editor.Shared.DependencyInversion.Factories;
 using IDeploymentEnvironmentProvider = Unity.Services.DeploymentApi.Editor.IEnvironmentProvider;
 using ICoreLogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 using IEnvironmentProvider = Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.IEnvironmentProvider;
@@ -69,7 +72,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
         protected override void Register(ServiceCollection collection)
         {
-            collection.RegisterSingleton(Default<ICloudCodeProjectSettings, CloudCodeProjectSettings>);
+            collection.RegisterSingleton(Default<ICloudCodePreferences, CloudCodePreferences>);
             collection.Register(Default<IProcessRunner, ProcessRunner>);
             collection.Register(Default<INodeJsRunner, NodePackageManager>);
             collection.Register(Default<INpmScriptRunner, NodePackageManager>);
@@ -97,13 +100,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(Default<IDotnetRunner, DotnetRunner>);
             collection.Register(Default<IFileStream, CloudCodeFileStream>);
-            collection.Register(Default<IFileContentRetriever, FileContentRetriever>);
             collection.Register(Default<IModuleZipper, ModuleZipper>);
             collection.Register(Default<ISolutionPublisher, SolutionPublisher>);
             collection.Register(Default<IFileSystem, FileSystem>);
-            collection.Register(Default<IPathResolver, PathResolver>);
             collection.Register(Default<ITemplateInfo, TemplateInfo>);
-            collection.Register(Default<IFileCopier, FileCopier>);
             collection.Register(Default<IModuleProjectRetriever, ModuleProjectRetriever>);
             collection.Register(Default<IModuleBuilder, ModuleBuilder>);
             collection.Register(Default<CloudCodeModuleSolutionGenerator>);
@@ -111,12 +111,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(Default<EditorCloudCodeDeploymentHandler>);
             collection.Register(Default<EditorCloudCodeModuleDeploymentHandler>);
+            collection.Register(Default<EditorCloudCodeLocalModuleDeploymentHandler>);
             collection.Register(Default<DeployCommand>);
             collection.Register(Default<OpenCommand>);
             collection.Register(Default<GenerateSolutionCommand>);
             collection.Register(Default<CloudCodeModuleDeployCommand>);
+            collection.Register(Default<CloudCodeLocalModuleDeployCommand>);
             collection.Register(Default<OpenScriptDashboardCommand>);
             collection.Register(Default<OpenModuleDashboardCommand>);
+            collection.RegisterStartupSingleton(Default<ICloudCodeLocalServer, CloudCodeLocalServer>);
 
             collection.Register(Default<JsAssetHandler>);
             collection.Register(Default<IExternalCodeEditor, ExternalCodeEditor>);
@@ -125,7 +128,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.RegisterStartupSingleton(Default<DeploymentProvider, CloudCodeDeploymentProvider>);
             collection.RegisterStartupSingleton(Default<CloudCodeModuleDeploymentProvider>);
 
-            collection.Register(_ => new Configuration(null, null, null, null));
+            collection.Register(_ => new Configuration(ServiceHost(), null, null, null));
             collection.Register(Default<IRetryPolicyProvider, RetryPolicyProvider>);
             collection.Register(Default<IHttpClient, HttpClient>);
             collection.Register(Default<IDefaultApiClient, DefaultApiClient>);
@@ -150,6 +153,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IDashboardUrlResolver, DashboardUrlResolver>);
             collection.Register(_ => EnvironmentsApi.Instance);
             collection.Register(Default<IProjectID, ProjectIdentifierProvider>);
+        }
+
+        string ServiceHost()
+        {
+            if (CloudEnvironmentConfigProvider.IsStaging())
+            {
+                return "https://staging.services.unity.com";
+            }
+
+            return null; // use default host
         }
     }
 }
