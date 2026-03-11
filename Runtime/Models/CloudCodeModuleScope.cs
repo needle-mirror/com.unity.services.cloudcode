@@ -18,6 +18,11 @@ namespace Unity.Services.CloudCode.Models
         /// </summary>
         public string Id { get; }
 
+        /// <summary>
+        /// Initializes a new <see cref="CloudCodeModuleScope"/> with the specified scope type and ID.
+        /// </summary>
+        /// <param name="type">The scope type for the module.</param>
+        /// <param name="id">The scope identifier.</param>
         public CloudCodeModuleScope(ScopeType type, string id)
         {
             Type = type;

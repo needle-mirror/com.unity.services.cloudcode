@@ -7,9 +7,58 @@ using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
+#if UNITY_6000_5_OR_NEWER
+
+    class CreateCloudCodeModuleReference : AssetCreationEndAction
+    {
+        const string k_DefaultReferenceName = "new_module_reference";
+        static readonly string k_MonoDefinitionPath =
+            Path.Combine(CloudCodePackage.EditorPath, "Authoring/Modules/CloudCodeModuleReference.cs");
+
+        [MenuItem("Assets/Create/Services/Cloud Code C# Module Reference", false, 81)]
+        public static void CreateModuleReferenceFile()
+        {
+            var filePath = k_DefaultReferenceName + CloudCodeModuleReferenceResources.FileExtension;
+            var icon = CloudCodeModuleReferenceResources.Icon;
+
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
+                EntityId.None,
+                CreateInstance<CreateCloudCodeModuleReference>(),
+                filePath,
+                icon,
+                null);
+        }
+
+        [InitializeOnLoadMethod]
+        static void SetMonoDefinitionIcon()
+        {
+            var monoImporter = (MonoImporter)AssetImporter.GetAtPath(k_MonoDefinitionPath);
+            var monoScript = monoImporter.GetScript();
+            EditorGUIUtility.SetIconForObject(monoScript,  CloudCodeModuleReferenceResources.Icon);
+        }
+
+        public override void Action(EntityId entityId, string pathName, string resourceFile)
+        {
+            var reference = CreateInstance<CloudCodeModuleReference>();
+            reference.Name =  Path.GetFileName(pathName);
+            reference.ModulePath =
+                Path.Combine(
+                    PathUtils.GetRelativePath(pathName, Application.dataPath),
+                    Path.GetFileNameWithoutExtension(reference.Name));
+            File.WriteAllText(pathName, reference.ToJson());
+
+            CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendReferenceCreatedEvent();
+
+            AssetDatabase.Refresh();
+        }
+    }
+
+#else
+
     class CreateCloudCodeModuleReference : EndNameEditAction
     {
         const string k_DefaultReferenceName = "new_module_reference";
+
         static readonly string k_MonoDefinitionPath =
             Path.Combine(CloudCodePackage.EditorPath, "Authoring/Modules/CloudCodeModuleReference.cs");
 
@@ -32,13 +81,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         {
             var monoImporter = (MonoImporter)AssetImporter.GetAtPath(k_MonoDefinitionPath);
             var monoScript = monoImporter.GetScript();
-            EditorGUIUtility.SetIconForObject(monoScript,  CloudCodeModuleReferenceResources.Icon);
+            EditorGUIUtility.SetIconForObject(monoScript, CloudCodeModuleReferenceResources.Icon);
         }
 
         public override void Action(int instanceId, string pathName, string resourceFile)
         {
             var reference = CreateInstance<CloudCodeModuleReference>();
-            reference.Name =  Path.GetFileName(pathName);
+            reference.Name = Path.GetFileName(pathName);
             reference.ModulePath =
                 Path.Combine(
                     PathUtils.GetRelativePath(pathName, Application.dataPath),
@@ -50,4 +99,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             AssetDatabase.Refresh();
         }
     }
+
+#endif
 }

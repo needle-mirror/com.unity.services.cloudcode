@@ -38,6 +38,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             m_CodeEditor = codeEditor;
         }
 
+#if UNITY_6000_5_OR_NEWER
+
+        [OnOpenAssetAttribute]
+        public static bool OpenAsset(EntityId entityId, int line)
+        {
+            var obj = EditorUtility.EntityIdToObject(entityId);
+            var filePath = AssetDatabase.GetAssetPath(obj);
+            if (CloudCodeFileExtensions.SupportedExtensions(Application.unityVersion)
+                .Any(extension => filePath.EndsWith(extension)))
+            {
+                var assetHandler = CloudCodeAuthoringServices.Instance.GetService<JsAssetHandler>();
+                assetHandler.OpenFile(filePath);
+                return true;
+            }
+
+            return false;
+        }
+
+#else
+
         [OnOpenAsset]
         static bool OpenAsset(int instanceID, int line)
         {
@@ -53,6 +73,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
             return false;
         }
+
+#endif
 
         public void OpenFile(string filePath)
         {

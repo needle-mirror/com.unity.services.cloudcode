@@ -28,7 +28,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
         }
 
         public async Task CreateCloudCodeModuleFromSolution(
-            IModuleItem deploymentItem,
+            ISolutionModuleItem deploymentItem,
             CancellationToken cancellationToken = default,
             string operatingSystem = "linux-x64",
             string configuration = "Release")
@@ -66,7 +66,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
             await m_FileSystem.DeleteDirectory(slnOutputPath, true);
         }
 
-        bool SetAndValidateEntryProject(IModuleItem deploymentItem)
+        bool SetAndValidateEntryProject(ISolutionModuleItem deploymentItem)
         {
             try
             {
@@ -80,7 +80,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
             }
         }
 
-        async Task<bool> Publish(IModuleItem deploymentItem, string slnOutputPath, CancellationToken cancellationToken, string operatingSystem = "linux-x64", string configuration = "Release")
+        async Task<bool> Publish(ISolutionModuleItem deploymentItem, string slnOutputPath, CancellationToken cancellationToken, string operatingSystem = "linux-x64", string configuration = "Release")
         {
             try
             {
@@ -95,7 +95,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
             }
         }
 
-        async Task Zip(IModuleItem deploymentItem, string slnOutputPath, string tempFolderPath, CancellationToken cancellationToken)
+        async Task Zip(ISolutionModuleItem deploymentItem, string slnOutputPath, string tempFolderPath, CancellationToken cancellationToken)
         {
             try
             {
@@ -113,13 +113,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGenera
             }
         }
 
-        static void UpdateStatusAndProgress(IModuleItem item, float progress, string statusMessage)
+        static void UpdateStatusAndProgress(ISolutionModuleItem item, float progress, string statusMessage)
         {
             item.Progress = progress;
             item.UpdateLogStatus(new DeploymentStatus(statusMessage));
         }
 
-        static void UpdateStatusFailed(IModuleItem item, string statusMessage, string errorMessage)
+        static void UpdateStatusFailed(ISolutionModuleItem item, string statusMessage, string errorMessage)
         {
             item.UpdateLogStatus(new DeploymentStatus(statusMessage, errorMessage, SeverityLevel.Error));
         }

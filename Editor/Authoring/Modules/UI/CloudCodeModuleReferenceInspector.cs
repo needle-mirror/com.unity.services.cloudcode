@@ -219,7 +219,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 var taskResult = await CloudCodeAuthoringServices.Instance
                     .GetService<ICloudCodeModuleBindingsGenerator>()
-                        .GenerateModuleBindings(new List<IModuleItem>() { ModuleReference }, CancellationToken.None);
+                        .GenerateModuleBindings(new List<ISolutionModuleItem>() { ModuleReference }, CancellationToken.None);
 
                 var generationResult = taskResult.First();
                 if (generationResult.IsSuccessful)

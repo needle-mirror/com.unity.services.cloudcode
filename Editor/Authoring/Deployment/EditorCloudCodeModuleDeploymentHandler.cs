@@ -6,14 +6,14 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
-using Unity.Services.CloudCode.Authoring.Editor.Modules;
+using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 {
     class EditorCloudCodeModuleDeploymentHandler : CloudCodeDeploymentHandler
     {
-        List<CloudCodeModuleReference> m_ReferenceFiles;
+        List<IModuleItem> m_ReferenceFiles;
 
         public EditorCloudCodeModuleDeploymentHandler(
             ICloudCodeModulesClient client,
@@ -22,16 +22,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             IPreDeployValidator validator) :
             base(client, deploymentAnalytics, logger, validator)
         {
-            m_ReferenceFiles = new List<CloudCodeModuleReference>();
+            m_ReferenceFiles = null;
         }
 
-        public void SetReferenceFiles(List<CloudCodeModuleReference> referenceFiles)
+        public void SetReferenceFiles(List<IModuleItem> referenceFiles)
         {
             m_ReferenceFiles = referenceFiles;
         }
 
         protected override void UpdateScriptProgress(IScript script, float progress)
         {
+            if (m_ReferenceFiles == null)
+                return;
+
             foreach (var reference in m_ReferenceFiles.Where(reference => IsSameModule(script, reference)))
             {
                 //Modules start at 66 (compiling + zipping)
@@ -44,6 +47,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             string detail,
             StatusSeverityLevel level = StatusSeverityLevel.None)
         {
+            if (m_ReferenceFiles == null)
+                return;
+
             foreach (var reference in m_ReferenceFiles.Where(reference => IsSameModule(script, reference)))
             {
                 reference.UpdateLogStatus(new DeploymentStatus(
@@ -53,9 +59,28 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             }
         }
 
-        bool IsSameModule(IScript script, CloudCodeModuleReference reference)
+        internal static IScript GenerateModule(string moduleName, string filePath)
         {
-            return reference.ModuleName == script.Name.ToString();
+            var name = new ScriptName(moduleName);
+            var script = new Script(filePath)
+            {
+                Name = name,
+                Body = string.Empty,
+                Parameters = new List<CloudCodeParameter>(),
+                Language = Language.CS
+            };
+
+            return script;
+        }
+
+        bool IsSameModule(IScript script, IModuleItem reference)
+        {
+            // If this is a Solution Module Item, we compare its Module Name.
+            if (reference is ISolutionModuleItem solutionModuleItem)
+                return solutionModuleItem.ModuleName == script.Name.ToString();
+
+            // Else compare the name by default.
+            return reference.Name == script.Name.ToString();
         }
 
         protected override void UpdateValidationStatus(

@@ -25,5 +25,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         TextAsset GetSecretsFile();
         void SetSecretsFile(TextAsset path);
         int GetServerPid();
+        void ClearServerState();
     }
 }

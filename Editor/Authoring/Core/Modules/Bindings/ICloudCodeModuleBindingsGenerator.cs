@@ -8,7 +8,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings
     interface ICloudCodeModuleBindingsGenerator
     {
         public Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings(
-            IEnumerable<IModuleItem> moduleItems,
+            IEnumerable<ISolutionModuleItem> moduleItems,
             CancellationToken cancellationToken = default);
     }
 }

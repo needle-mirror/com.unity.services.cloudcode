@@ -64,6 +64,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             var provider = Instance.GetService<CloudCodeModuleDeploymentProvider>();
             Deployments.Instance.DeploymentProviders.Add(provider);
+            Deployments.Instance.DeploymentProviders.Add(Instance.GetService<NativeModuleDeploymentProvider>());
 
             var deploymentItemProvider = Instance.GetService<DeploymentProvider>();
             ((CloudCodeDeploymentProvider)deploymentItemProvider).ValidateDeploymentStatus();
@@ -85,6 +86,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(col => (ObservableCloudCodeScripts)col.GetService(typeof(ObservableCollection<IDeploymentItem>)));
             collection.RegisterStartupSingleton(Default<DuplicateNameValidator>);
             collection.RegisterStartupSingleton(Default<CloudCodeModuleReferenceCollection>);
+            collection.RegisterStartupSingleton(Default<NativeModuleReferenceCollection>);
 
             collection.Register(Default<IAccessTokens, AccessTokens>);
 
@@ -116,6 +118,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<OpenCommand>);
             collection.Register(Default<GenerateSolutionCommand>);
             collection.Register(Default<CloudCodeModuleDeployCommand>);
+            collection.Register(Default<NativeModuleDeployCommand>);
             collection.Register(Default<CloudCodeLocalModuleDeployCommand>);
             collection.Register(Default<OpenScriptDashboardCommand>);
             collection.Register(Default<OpenModuleDashboardCommand>);
@@ -127,6 +130,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.RegisterStartupSingleton(Default<DeploymentProvider, CloudCodeDeploymentProvider>);
             collection.RegisterStartupSingleton(Default<CloudCodeModuleDeploymentProvider>);
+            collection.RegisterStartupSingleton(Default<NativeModuleDeploymentProvider>);
 
             collection.Register(_ => new Configuration(ServiceHost(), null, null, null));
             collection.Register(Default<IRetryPolicyProvider, RetryPolicyProvider>);
@@ -150,6 +154,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<InScriptParamsUIHandler>);
 
             collection.Register(Default<CloudCodeModuleGenerateBindingsCommand>);
+            collection.Register(Default<NativeModuleGenerateBindingsCommand>);
             collection.Register(Default<IDashboardUrlResolver, DashboardUrlResolver>);
             collection.Register(_ => EnvironmentsApi.Instance);
             collection.Register(Default<IProjectID, ProjectIdentifierProvider>);

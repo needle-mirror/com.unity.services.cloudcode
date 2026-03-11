@@ -26,6 +26,15 @@
             <ui:Button name="server-action-btn" class="popup-row-sever-action__button" />
         </ui:VisualElement>
 
+        <ui:VisualElement class="popup-row-divider__image" />
+
+        <!-- Data Persistence controls-->
+        <ui:VisualElement class="popup-row__container">
+            <ui:TextElement name="server-reset-btn-txt" class="popup-row-server-title__text" />
+            <ui:Button name="server-reset-btn" text="Reset Data" class="popup-row-state-reset__container" />
+        </ui:VisualElement>
+
+
         <!-- Local Cloud Code Edit Mode only info box -->
         <ui:HelpBox name="server-edit-only-info-box" class="popup-row-server-edit-only__infobox" message-type="Info" />
     </ui:VisualElement>

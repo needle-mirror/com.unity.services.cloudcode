@@ -5,14 +5,34 @@ using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 {
+    /// <summary>
+    /// IModuleItem serves as the base interface for deployable Cloud Code modules and is referenced
+    /// by deployment handlers. It extends IDeploymentItem to integrate with the deployment window while
+    /// expanding on progression and status logs unique to all modules.
+    /// </summary>
     interface IModuleItem : IDeploymentItem, ITypedItem
     {
-        string SolutionPath { get; }
-        string CcmPath { get; set; }
-        string ModuleName { get; set; }
+        // Status Log as viewed in the Deployment Window.
         List<(DateTime, DeploymentStatus)> StatusLog { get; }
 
+        // Progression as viewed in the Deployment Window.
         new float Progress { get; set; }
+    }
+
+    /// <summary>
+    /// ISolutionModuleItem extends IModuleItem to include solution specific properties that are
+    /// specifically required by Cloud Code Module References (referenced modules).
+    /// </summary>
+    interface ISolutionModuleItem : IModuleItem
+    {
+        // Name of the Module as set by the Module Builder, for example: "module.ccm"
+        string ModuleName { get; set; }
+
+        // Absolute path to the external C# Solution representing this module item.
+        string SolutionPath { get; }
+
+        // Absolute path to the zipped, compiled output as set by the Module Builder.
+        string CcmPath { get; set; }
     }
 
     static class IModuleItemExtensions

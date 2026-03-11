@@ -45,7 +45,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
         }
 
         public async Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings(
-            IEnumerable<IModuleItem> moduleItems,
+            IEnumerable<ISolutionModuleItem> moduleItems,
             CancellationToken cancellationToken = default)
         {
             var moduleItemsList = moduleItems.EnumerateOnce();
@@ -126,7 +126,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         internal async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateModuleBindings(
-            IModuleItem moduleItem,
+            ISolutionModuleItem moduleItem,
             CancellationToken cancellationToken = default)
         {
             try
@@ -280,7 +280,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
         internal static string GetBindingsGenerationOutputTempFolder(string moduleName)
             => Path.Combine(Path.GetTempPath(), "bindings-generation-" + moduleName);
 
-        internal string GetModuleOutputFolder(IModuleItem moduleItem)
+        internal string GetModuleOutputFolder(ISolutionModuleItem moduleItem)
             => Path.Combine(k_BindingsOutputFolder, m_ModuleProjectRetriever.GetMainEntryProjectName(moduleItem.SolutionPath));
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,11 +8,13 @@ using System.Net.NetworkInformation;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 #if UNITY_6000_3_OR_NEWER
 using Unity.Multiplayer.PlayMode;
 #endif
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
@@ -34,17 +37,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         const string K_ServerPidKey = "LOCAL_CLOUD_CODE_PID";
         const string K_ServerStatus = "LOCAL_CLOUD_CODE_STATUS";
         const string K_ServerFailure = "LOCAL_CLOUD_CODE_FAILURE";
+        static readonly string k_CloudCodeLocalStatePath = Path.Combine("Orleans", "GrainState", "v1");
 
         // Required dependencies
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly ILogger m_Logger;
         readonly IProcessRunner m_ProcessRunner;
         readonly CloudCodeLocalModuleDeployCommand m_CloudCodeLocalDeployCommand;
+        readonly NativeModuleDeployCommand m_NativeDeployCommand;
         readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
         readonly IAccessTokens m_AccessTokens;
         readonly ICloudCodePreferences m_Preferences;
         readonly ICloudCodeLocalServerApi m_LocalServerClient;
         readonly CloudCodeModuleReferenceCollection m_CloudCodeModuleReferenceCollection;
+        readonly NativeModuleReferenceCollection m_NativeModuleReferenceCollection;
 
         // Handling of Server status and states
         LocalCloudCodeServerStatus m_CurrentServerStatus;
@@ -71,21 +77,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             ILogger logger,
             IProcessRunner processRunner,
             CloudCodeLocalModuleDeployCommand cloudCodeLocalDeployCommand,
+            NativeModuleDeployCommand nativeDeployCommand,
             EditorCloudCodeLocalModuleDeploymentHandler deployHandler,
             IEnvironmentsApi environmentsApi,
             IAccessTokens mAccessTokens,
             ICloudCodePreferences preferences,
-            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection)
+            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection,
+            NativeModuleReferenceCollection nativeModuleReferenceCollection)
         {
             m_AccessTokens = mAccessTokens;
             m_Logger = logger;
             m_ProcessRunner = processRunner;
             m_CloudCodeLocalDeployCommand = cloudCodeLocalDeployCommand;
+            m_NativeDeployCommand = nativeDeployCommand;
             m_DeployHandler = deployHandler;
             m_EnvironmentsApi = environmentsApi;
             m_CancellationTokenSource = new CancellationTokenSource();
             m_Preferences = preferences;
             m_CloudCodeModuleReferenceCollection = cloudCodeModuleReferenceCollection;
+            m_NativeModuleReferenceCollection = nativeModuleReferenceCollection;
 
             // Local debug server client setup with the current port configuration
             var endpoint = $"{k_ServerUrl}:{GetPort()}";
@@ -182,6 +192,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             return m_CurrentServerPid;
         }
 
+        public void ClearServerState()
+        {
+            var modulesPath = EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir();
+            var serverStatePath = Path.Combine(modulesPath, k_CloudCodeLocalStatePath);
+
+            try
+            {
+                if (Directory.Exists(serverStatePath))
+                {
+                    Directory.Delete(serverStatePath, true);
+                }
+            }
+            catch (Exception e)
+            {
+                m_Logger.LogError($"Error when clearing local server state: {e.Message}");
+            }
+        }
+
         public LocalCloudCodeServerStatus GetCurrentServerStatus()
         {
             return m_CurrentServerStatus;
@@ -213,14 +241,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
                 cancelToken.ThrowIfCancellationRequested();
 
+                m_DeployHandler.UpdateDeployStatuses(GetAllModules(), "Queued", severity: SeverityLevel.Info, shouldLog: false);
+
                 // Create a token should the user want to cancel mid-launch.
-                // Generate the Compile modules in preparation for Local CC Deploy
-                var compiledModuleDir = await GenerateAndCompileAllModules(cancelToken);
+                // Generate the Deploy all modules (native and referenced) in preparation for Local CC Deploy
+                var deployedLocation = await CompileAndDeployAllModules(cancelToken);
 
                 cancelToken.ThrowIfCancellationRequested();
 
                 // Now start the server pointed to the compiled module directories
-                await StartLocalServer(compiledModuleDir, cancelToken);
+                await StartLocalServer(deployedLocation, cancelToken);
             }
             catch (Exception e)
             {
@@ -267,14 +297,42 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 #region ModuleGeneration
 
         // Generates and compiles modules in preparation for Local CC Server deployment
-        async Task<string> GenerateAndCompileAllModules(CancellationToken cancellationToken)
+        async Task<string> CompileAndDeployAllModules(CancellationToken cancellationToken)
         {
             await m_EnvironmentsApi.RefreshAsync();
-            var ccmrs = m_CloudCodeModuleReferenceCollection.ToList();
-
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await m_CloudCodeLocalDeployCommand.CompileAndDeployAsync(ccmrs, cancellationToken);
+            var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
+            var referencedModulesDir =
+                await m_CloudCodeLocalDeployCommand.CompileAndDeployAsync(referencedModules, cancellationToken);
+
+            // Abort early if a cancellation request was done.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var nativeModules = m_NativeModuleReferenceCollection.ToList();
+            var nativeModulesDir = await m_NativeDeployCommand.GenerateAndDeployToLocalAsync(nativeModules, cancellationToken);
+
+            // If we have native and reference modules, ensure they are deployed to the same location.
+            if (!string.IsNullOrEmpty(referencedModulesDir) &&
+                !string.IsNullOrEmpty(nativeModulesDir) &&
+                referencedModulesDir != nativeModulesDir)
+            {
+                throw new Exception("Deployment Failure: Mismatched deployed locations for Native and Referenced modules.");
+            }
+
+            // Now start the server pointed to the compiled module directories
+            return referencedModulesDir ?? nativeModulesDir;
+        }
+
+        List<IModuleItem> GetAllModules()
+        {
+            var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
+            var nativeModules = m_NativeModuleReferenceCollection.ToList();
+
+            List<IModuleItem> allModuleItems = new List<IModuleItem>();
+            allModuleItems.AddRange(referencedModules);
+            allModuleItems.AddRange(nativeModules);
+            return allModuleItems;
         }
 
 #endregion
@@ -305,7 +363,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 CreateNoWindow = false,
                 UseShellExecute = false,
                 FileName = m_Preferences.DotnetPath,
-                Arguments = $"{compiledCloudCodeServerPath} run" +
+                Arguments = $"\"{compiledCloudCodeServerPath}\" run" +
                             $" -p \"{compiledModuleDir}\"" +
                             $" --port {port}" +
                             (string.IsNullOrEmpty(secretsPath) ? "" : $" -s \"{secretsPath}\"")
@@ -623,14 +681,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
     void SetDeployStatusWithState(string message, string messageDetail, SeverityLevel messageSeverity)
     {
-        var ccmrs = m_CloudCodeModuleReferenceCollection.ToList();
-        m_DeployHandler.SetDeployStatusWithState(ccmrs, message, messageDetail, messageSeverity);
+        var ccms = GetAllModules();
+        m_DeployHandler.SetDeployStatusesWithState(ccms, message, messageDetail, messageSeverity);
     }
 
     void ClearDeploymentStatus()
     {
-        var ccmrs = m_CloudCodeModuleReferenceCollection.ToList();
-        m_DeployHandler.ClearDeploymentStatus(ccmrs);
+        var ccms = GetAllModules();
+        m_DeployHandler.ClearDeploymentStatuses(ccms);
     }
 
 #endregion

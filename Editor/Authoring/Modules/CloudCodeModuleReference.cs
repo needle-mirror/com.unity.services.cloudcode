@@ -17,7 +17,7 @@ using SystemPath = System.IO.Path;
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html")]
-    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, IModuleItem
+    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
         {

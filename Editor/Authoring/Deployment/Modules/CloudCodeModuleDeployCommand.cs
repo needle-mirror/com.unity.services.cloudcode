@@ -7,7 +7,6 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
@@ -48,7 +47,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var cloudCodeModuleReferences = items.ToList();
             OnDeploy(cloudCodeModuleReferences);
             var compiled = await Compile(cloudCodeModuleReferences, cancellationToken);
-            m_EditorCloudCodeDeploymentHandler.SetReferenceFiles(cloudCodeModuleReferences);
+
+            List<IModuleItem> moduleItems = cloudCodeModuleReferences.Cast<IModuleItem>().ToList();
+            m_EditorCloudCodeDeploymentHandler.SetReferenceFiles(moduleItems);
             await m_EditorCloudCodeDeploymentHandler.DeployAsync(compiled, m_Reconcile, m_DryRun);
         }
 
@@ -75,7 +76,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                         continue;
                     }
 
-                    generationList.Add(GenerateModule(ccmr.ModuleName, ccmr.CcmPath));
+                    var moduleToDeploy = EditorCloudCodeModuleDeploymentHandler.GenerateModule(ccmr.ModuleName, ccmr.CcmPath);
+                    generationList.Add(moduleToDeploy);
                 }
                 catch (Exception e)
                 {
@@ -84,20 +86,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             }
 
             return generationList;
-        }
-
-        static IScript GenerateModule(string moduleName, string filePath)
-        {
-            var name = new ScriptName(moduleName);
-            var script = new Script(filePath)
-            {
-                Name = name,
-                Body = string.Empty,
-                Parameters = new List<CloudCodeParameter>(),
-                Language = Language.CS
-            };
-
-            return script;
         }
     }
 }

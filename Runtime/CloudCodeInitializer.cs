@@ -23,6 +23,7 @@ namespace Unity.Services.CloudCode
         internal const ushort k_DefaultLocalCloudCodeServerPort = 5000;
         const string k_LocalCloudCodePidPrefs = "LOCAL_CLOUD_CODE_PID";
         const int k_ConfigurationReqTimeoutSec = 30;
+        const string k_PackageName = "com.unity.services.cloudcode";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void InitializeOnLoad()
@@ -67,7 +68,9 @@ namespace Unity.Services.CloudCode
             var externalUserId = registry.GetServiceComponent<IExternalUserId>();
             var wire = registry.GetServiceComponent<IWire>();
 
-            var configuration = new Configuration(GetHost(projectConfiguration), GetTimeout(), null, GetServiceHeaders(installationId, externalUserId));
+            var configuration = new Configuration(GetHost(projectConfiguration), k_ConfigurationReqTimeoutSec, null, GetServiceHeaders(installationId, externalUserId));
+            var packageVersion = projectConfiguration.GetString($"{k_PackageName}.version", "unknown");
+            configuration.Headers["User-Agent"] = BuildUserAgent(k_PackageName, packageVersion);
             externalUserId.UserIdChanged += id => UpdateExternalUserId(configuration, id);
 
             ICloudCodeApiClient cloudCodeApiClient = new CloudCodeApiClient(
@@ -142,6 +145,11 @@ namespace Unity.Services.CloudCode
                 default:
                     return "https://cloud-code.services.api.unity.com";
             }
+        }
+
+        internal static string BuildUserAgent(string packageName, string packageVersion)
+        {
+            return $"UnityPlayer/{Application.unityVersion} ({packageName}/{packageVersion})";
         }
     }
 }

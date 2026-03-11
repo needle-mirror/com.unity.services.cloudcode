@@ -5,13 +5,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings
 {
     class CloudCodeModuleBindingsGenerationResult
     {
-        public IModuleItem ModuleItem { get; }
+        public ISolutionModuleItem ModuleItem { get; }
         public string OutputPath { get; set; }
         public bool IsSuccessful { get; }
         public Exception Exception { get; }
 
         public CloudCodeModuleBindingsGenerationResult(
-            IModuleItem moduleItem,
+            ISolutionModuleItem moduleItem,
             string outputPath,
             bool isSuccessful,
             Exception exception = null)

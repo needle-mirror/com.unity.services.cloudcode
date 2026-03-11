@@ -28,25 +28,25 @@ All local server settings and operations can be accessed through the Cloud Code 
 default, and can be enabled through the main toolbar menu (Top right Toolbar Context Menu > Services > Cloud Code).
 If enabled, you should see a Cloud Code icon appear in the top right area of the toolbar in the editor.
 
-![img.png](./images/cloud-code-toolbar-enabling.png)
+![img.png](images/cloud-code-toolbar-enabling.png)
 
 ## Executing Modules on the local server
 
 To execute C# server functions on the local server from your game, we must first start the local server and deploy your 
 Cloud Code Modules onto it. This can be done via the Start local Server button in the Cloud Code toolbar's popup window controls.
 
-![img.png](./images/cloud-code-toolbar-start.png)
+![img.png](images/cloud-code-toolbar-start.png)
 
 Starting the local server automatically compiles and deploys all Cloud Code Module References in your project 
 onto that server. Take note that the state of the local server, if it's currently idle, starting, or running (its PID is shown), 
 is shown both within the popup window and toolbar icon.
 
-![img.png](./images/cloud-code-toolbar-started.png)
+![img.png](images/cloud-code-toolbar-started.png)
 
 Alternatively, any subsequent code changes to your modules can be 'hot reloaded' onto the started server by simply 
 restarting the server, or redeploying the desired module through the deployment window:
 
-![img.png](./images/cloud-code-deployment-window.png)
+![img.png](images/cloud-code-deployment-window.png)
 
 With your deployed C# modules on the local server, server calls made from your game in play mode are now redirected to
 the local server. It is important to note: The determination of "local vs remote" server call switch is made right
@@ -63,7 +63,7 @@ if the local server is not running as you enter play mode - all server calls are
 You can also configure the local server _before_ starting it with additional settings. This can be accessed through 
 (File > Project Settings > Services > Cloud Code).
 
-![img.png](./images/cloud-code-settings.png)
+![img.png](images/cloud-code-settings.png)
 
 * **Port** - The local port on your machine on which your local server will listen for calls.
 * **Secrets File** - A Json asset containing Key-Value secret pairs to be [retrieved](https://docs.unity.com/ugs/en-us/manual/secret-manager/manual/tutorials/integrations/cloud-code/modules) from in your Cloud functions.

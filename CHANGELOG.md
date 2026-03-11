@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-exp.4] - 2026-03-11
+### Added
+- Implement the Resetting of Scope State and persistence for Local CC Debugging.
+
+### Fixed
+- Fixed local server start failure due to unescaped parameters.
+- Fixed Cloud Code fields in Project Settings to show their own descriptive tooltips.
+- Fixed debugger tooltip to indicate debug fields are read-only once the local server starts.
+
 ## [3.0.0-exp.3] - 2026-02-25
 - Releasing public experimental exp-3.
 

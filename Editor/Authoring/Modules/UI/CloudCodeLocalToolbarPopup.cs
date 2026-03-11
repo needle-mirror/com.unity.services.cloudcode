@@ -1,6 +1,7 @@
 ﻿#if UNITY_6000_3_OR_NEWER
 
 using System.IO;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -22,8 +23,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             Path.Combine(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerIconsLight.uss");
 
         // Constants identifying visual assets used by Local Cloud Code Popup window
-        const string k_PopupWindowStyle = "popup-column__container";
-        const string k_PopupWindowStyleExtended = "popup-column__container-extended";
         const string k_ServerIconStyleIdle = "server-status-idle__icon";
         const string k_ServerIconStyleStarting = "server-status-starting__icon";
         const string k_ServerIconStyleStarted = "server-status-started__icon";
@@ -38,6 +37,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         const string k_ServerSettingsBtnName = "server-settings-btn";
         const string k_ServerPidTxtName = "server-pid-txt";
         const string k_ServerPidCopyButtonName = "server-pid-copy-btn";
+        const string k_ServerResetBtn = "server-reset-btn";
+        const string k_ServerResetBtnText = "server-reset-btn-txt";
 
         // Constant values for visual text elements
         static readonly string k_ServerActionButtonTextIdle = L10n.Tr("Start Local Server");
@@ -48,13 +49,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ServerStatusTextStarting = L10n.Tr("Starting");
         static readonly string k_ServerStatusTextStopping = L10n.Tr("Stopping");
         static readonly string k_ServerStatusTextError = L10n.Tr("Error");
-        static readonly string k_ServerSettingsTitleText = L10n.Tr("Project Settings...");
+        static readonly string k_ServerSettingsTitleText = L10n.Tr("Project Settings");
         static readonly string k_ServerStatusTitleText = L10n.Tr("Local Cloud Code Server");
         static readonly string k_ServerEditOnlyHelpBoxText =
             L10n.Tr("Local Cloud Code server can only be started or stopped when not in play mode.");
+        static readonly string k_ServerResetButtonTitle = L10n.Tr("Local Server State");
+        static readonly string k_ServerResetButtonTextAction = L10n.Tr("Clear");
+        static readonly string k_ServerResetButtonTextPending = L10n.Tr("Clearing");
+        static readonly string k_ServerResetButtonToolTip = L10n.Tr("Clear data will require a local server restart. " +
+                                                                    "This can only be performed while the server is " +
+                                                                    "not running.");
 
         // Visual elements of the Local Cloud Code Popup window
-        VisualElement m_ServerPopupWindow;
         VisualElement m_ServerStatusIcon;
         TextElement m_ServerStatusText;
         Button m_ServerActionButton;
@@ -62,6 +68,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         Label m_ServerPidText;
         VisualElement m_ServerPidCopyButton;
         HelpBox m_ServerEditOnlyHelpbox;
+        TextElement m_ServerResetButtonTitle;
+        Button m_ServerResetButton;
 
         CloudCodeLocalToolbarController m_ToolbarController;
         const string k_CloudCodeProjectSettingsPath = "Project/Services/Cloud Code";
@@ -83,7 +91,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_Root.styleSheets.Add(stylesheet);
 
             // Bind and initialize views to current sever state
-            m_ServerPopupWindow = m_Root.Q<VisualElement>(k_ServerPopupWindowName);
             m_ServerStatusText = m_Root.Q<TextElement>(k_ServerStatusTxtName);
             m_ServerStatusIcon = m_Root.Q<VisualElement>(K_ServerStatusIconName);
 
@@ -111,6 +118,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ServerEditOnlyHelpbox = m_Root.Q<HelpBox>(k_ServerEditOnlyHelpBoxName);
             m_ServerEditOnlyHelpbox.text = k_ServerEditOnlyHelpBoxText;
 
+            // Bind reset server state controls
+            m_ServerResetButtonTitle = m_Root.Q<TextElement>(k_ServerResetBtnText);
+            m_ServerResetButtonTitle.text = k_ServerResetButtonTitle;
+            m_ServerResetButton = m_Root.Q<Button>(k_ServerResetBtn);
+            m_ServerResetButton.text = k_ServerResetButtonTextAction;
+            m_ServerResetButton.clicked += async () =>
+            {
+                m_ServerResetButton.enabledSelf = false;
+                m_ServerResetButton.text = k_ServerResetButtonTextPending;
+                m_ToolbarController.GetLocalServer().ClearServerState();
+
+                // Add custom delay for visual feedback since clearing can be quick.
+                await Task.Delay(500);
+
+                m_ServerResetButton.enabledSelf = true;
+                m_ServerResetButton.text = k_ServerResetButtonTextAction;
+            };
+            m_ServerResetButton.tooltip = k_ServerResetButtonToolTip;
+            m_ServerResetButtonTitle.tooltip = k_ServerResetButtonToolTip;
+
             RefreshPopupUI();
             return m_Root;
         }
@@ -127,6 +154,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             UpdateServerStatusIcon(currentStatus, failure);
             UpdateServerStatusPid(currentStatus);
             UpdateServerToggleability(currentStatus);
+            UpdateServerAdditionalSettings(currentStatus);
         }
 
         void UpdateServerStatusText(LocalCloudCodeServerStatus status, string failure)
@@ -213,11 +241,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ServerEditOnlyHelpbox.style.display = isInPlayMode ? DisplayStyle.Flex : DisplayStyle.None;
             m_ServerActionButton.enabledSelf = !isInPlayMode;
 
-            // Manually control the popup window size. This is required as flex-grow has bugs
-            // that introduces visual defects when toggling display styles of child elements.
-            m_ServerPopupWindow.ClearClassList();
-            m_ServerPopupWindow.AddToClassList(isInPlayMode ? k_PopupWindowStyleExtended : k_PopupWindowStyle);
-
             switch (status)
             {
                 case LocalCloudCodeServerStatus.Idle:
@@ -238,6 +261,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                     Debug.LogError("Unknown LocalCloudCodeServerStatus found in Toolbar.");
                     break;
             }
+        }
+
+        void UpdateServerAdditionalSettings(LocalCloudCodeServerStatus status)
+        {
+            var isIdle = status == LocalCloudCodeServerStatus.Idle;
+            m_ServerResetButton.enabledSelf = isIdle;
         }
 
         void OnServerActionButtonClicked()
