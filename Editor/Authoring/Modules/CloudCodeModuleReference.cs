@@ -16,7 +16,8 @@ using SystemPath = System.IO.Path;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html")]
+    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
+     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
     class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
@@ -169,7 +170,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-#region Serialization Wrappers
+        #region Serialization Wrappers
 
         // Required as ObservableCollection fails Unity serialization of its items across Domain Reloads
         [Serializable]
@@ -199,7 +200,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             }
         }
 
-#endregion
-
+        #endregion
     }
 }

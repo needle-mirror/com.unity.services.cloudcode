@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Editor.Shared.Clients;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.Core.Editor.OrganizationHandler;
 
@@ -39,16 +40,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         static async Task<string> GetDashboardUrl(string itemName, string baseUrl, ICloudCodeClient client)
         {
-            try
-            {
-                // check existence of item
-                await client.Get(new ScriptName(itemName));
-            }
-            catch (Exception)
-            {
-                // fallback to generic url
-                return baseUrl;
-            }
             // return item url
             return $"{baseUrl}/{itemName}";
         }
@@ -58,7 +49,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             var projectId = m_ProjectIdProvider.ProjectId;
             var envId = m_EnvironmentsApi.ActiveEnvironmentId;
             var orgId = m_OrganizationHandler.Key;
-            return $"https://cloud.unity.com/home/organizations/{orgId}/projects/{projectId}/environments/{envId}/cloud-code";
+            var host = CloudEnvironmentConfigProvider.IsStaging()
+                ? "https://staging.cloud.unity.com"
+                : "https://cloud.unity.com";
+            return $"{host}/home/organizations/{orgId}/projects/{projectId}/environments/{envId}/cloud-code";
         }
 
         public async Task<string> CloudCodeScript(string name)
@@ -71,6 +65,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         {
             var url = $"{GetBaseUrl()}/modules";
             return await GetDashboardUrl(name, url, m_ModuleClient);
+        }
+
+        public Task<string> CloudCodeModules()
+        {
+            return Task.FromResult($"{GetBaseUrl()}/modules");
+        }
+
+        public Task<string> CloudCodeOverview()
+        {
+            return Task.FromResult($"{GetBaseUrl()}/overview");
         }
     }
 }

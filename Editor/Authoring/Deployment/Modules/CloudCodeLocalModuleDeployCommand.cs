@@ -1,3 +1,4 @@
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
@@ -98,11 +100,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
                         continue;
                     }
 
-                    var moduleToDeploy = EditorCloudCodeModuleDeploymentHandler.GenerateModule(ccmr.ModuleName, ccmr.CcmPath);
+                    var moduleToDeploy = CloudCodeModuleDeployCommand.GenerateModule(ccmr);
                     allReferencedModulesToDeploy.Add(ccmr, moduleToDeploy);
 
                     // Do not continue if a cancellation was requested
                     cancellationToken.ThrowIfCancellationRequested();
+                }
+                catch (OperationCanceledException e)
+                {
+                    m_DeployHandler.UpdateDeployStatuses(items, "Cancelled", e.Message, severity: SeverityLevel.Warning);
+                    throw;
                 }
                 catch (Exception e)
                 {
@@ -114,3 +121,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         }
     }
 }
+#endif

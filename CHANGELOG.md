@@ -4,6 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-exp.5] - 2026-04-22
+### Added
+- Added custom icon form Cloud Code Module Reference (.ccmr) and Cloud Code Javascript (.js) files
+- Added a console log with a "View on Dashboard" link upon successful deployment of Cloud Code Modules.
+- Added "Deployment Window" shortcut to the Local Cloud Code Server toolbar popup.
+- Scoped invocations are supported for Local Cloud Code Debugging and remote.
+
+### Changed
+- Updated the "Go to Dashboard" link in Project Settings for Cloud Code to point to Cloud Code Overview page.
+- Improve discoverability of Cloud Code in the Unity Package Manager.
+
+### Fixed
+- Fixed an issue where rapidly starting and stopping the local Cloud Code server incorrectly produced console error logs.
+- Added checks to prevent Users from setting invalid Ports for the local Cloud Code server. 
+- Added .Net path setting validation when starting the local Cloud Code server.
+
 ## [3.0.0-exp.4] - 2026-03-11
 ### Added
 - Implement the Resetting of Scope State and persistence for Local CC Debugging.
@@ -28,7 +44,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Enable the Local Cloud Code Toolbar via (Top right Toolbar Context Menu > Services > Cloud Code)
   - Start or stop the local server via the toolbar and attach local debuggers through Visual Studio or Rider.
   - Deploy C# modules to the local server via the deployment window (Services > Deployment) to be executed.
-
 - Implemented support for Stateful Cloud Code with Player and Multiplayer Session scoped invocations, enabling users
   to simplify state management for event-driven games. Note that this is only supported for Local Cloud Code Debugging and
   not remote.

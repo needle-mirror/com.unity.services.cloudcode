@@ -4,7 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.AdminApi;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.Collections;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
@@ -13,7 +14,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 {
     class DeployCommand : Command
     {
-        readonly EditorCloudCodeDeploymentHandler m_EditorCloudCodeDeploymentHandler;
+        readonly CloudCodeDeploymentHandler m_EditorCloudCodeDeploymentHandler;
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
         readonly IScriptReader m_ScriptReader;
 
@@ -22,7 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public override string Name => L10n.Tr("Deploy");
 
         public DeployCommand(
-            EditorCloudCodeDeploymentHandler editorCloudCodeDeploymentHandler,
+            CloudCodeDeploymentHandler editorCloudCodeDeploymentHandler,
             IDeploymentAnalytics deploymentAnalytics,
             IScriptReader scriptReader)
         {

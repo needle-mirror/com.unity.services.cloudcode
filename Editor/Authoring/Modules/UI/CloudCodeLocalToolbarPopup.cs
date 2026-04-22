@@ -1,12 +1,14 @@
-﻿#if UNITY_6000_3_OR_NEWER
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
+#if UNITY_6000_3_OR_NEWER
 
-using System.IO;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
+using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using LocalCloudCodeServerStatus =
-    Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.LocalCloudCodeServerStatus;
+        Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.LocalCloudCodeServerStatus;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
@@ -14,13 +16,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     {
         // Constants to uxml and style asset paths
         static readonly string k_CloudCodeLocalAssetPath =
-            Path.Combine(CloudCodePackage.EditorPath, "Authoring", "Modules", "UI", "Assets");
+            PathUtils.Join(CloudCodePackage.EditorPath, "Authoring", "Modules", "UI", "Assets");
         static readonly string k_UxmlPath =
-            Path.Combine(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerPopup.uxml");
+            PathUtils.Join(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerPopup.uxml");
         static readonly string k_StylesheetDarkPath =
-            Path.Combine(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerIconsDark.uss");
+            PathUtils.Join(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerIconsDark.uss");
         static readonly string k_StylesheetLightPath =
-            Path.Combine(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerIconsLight.uss");
+            PathUtils.Join(k_CloudCodeLocalAssetPath, "CloudCodeLocalServerIconsLight.uss");
 
         // Constants identifying visual assets used by Local Cloud Code Popup window
         const string k_ServerIconStyleIdle = "server-status-idle__icon";
@@ -39,6 +41,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         const string k_ServerPidCopyButtonName = "server-pid-copy-btn";
         const string k_ServerResetBtn = "server-reset-btn";
         const string k_ServerResetBtnText = "server-reset-btn-txt";
+        const string k_DeploymentWindowBtnName = "deployment-window-btn";
 
         // Constant values for visual text elements
         static readonly string k_ServerActionButtonTextIdle = L10n.Tr("Start Local Server");
@@ -50,6 +53,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ServerStatusTextStopping = L10n.Tr("Stopping");
         static readonly string k_ServerStatusTextError = L10n.Tr("Error");
         static readonly string k_ServerSettingsTitleText = L10n.Tr("Project Settings");
+        static readonly string k_DeploymentWindowTitleText = L10n.Tr("Deployment Window");
         static readonly string k_ServerStatusTitleText = L10n.Tr("Local Cloud Code Server");
         static readonly string k_ServerEditOnlyHelpBoxText =
             L10n.Tr("Local Cloud Code server can only be started or stopped when not in play mode.");
@@ -57,8 +61,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ServerResetButtonTextAction = L10n.Tr("Clear");
         static readonly string k_ServerResetButtonTextPending = L10n.Tr("Clearing");
         static readonly string k_ServerResetButtonToolTip = L10n.Tr("Clear data will require a local server restart. " +
-                                                                    "This can only be performed while the server is " +
-                                                                    "not running.");
+            "This can only be performed while the server is " +
+            "not running.");
 
         // Visual elements of the Local Cloud Code Popup window
         VisualElement m_ServerStatusIcon;
@@ -108,6 +112,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ServerActionButton = m_Root.Q<Button>(k_ServerActionBtnName);
             m_ServerActionButton.clicked += OnServerActionButtonClicked;
 
+            var deploymentWindowBtn = m_Root.Q<Button>(k_DeploymentWindowBtnName);
+            deploymentWindowBtn.clicked += () => Deployments.Instance.DeploymentWindow.OpenWindow();
+            deploymentWindowBtn.text = k_DeploymentWindowTitleText;
+
             var serverSettings = m_Root.Q<Button>(k_ServerSettingsBtnName);
             serverSettings.clicked += OnServerSettingsClicked;
             serverSettings.text = k_ServerSettingsTitleText;
@@ -123,7 +131,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ServerResetButtonTitle.text = k_ServerResetButtonTitle;
             m_ServerResetButton = m_Root.Q<Button>(k_ServerResetBtn);
             m_ServerResetButton.text = k_ServerResetButtonTextAction;
-            m_ServerResetButton.clicked += async () =>
+            m_ServerResetButton.clicked += async() =>
             {
                 m_ServerResetButton.enabledSelf = false;
                 m_ServerResetButton.text = k_ServerResetButtonTextPending;
@@ -292,4 +300,5 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     }
 }
 
+#endif
 #endif

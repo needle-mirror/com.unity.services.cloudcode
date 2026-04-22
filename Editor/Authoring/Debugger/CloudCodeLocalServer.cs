@@ -1,3 +1,4 @@
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -44,13 +45,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         readonly ILogger m_Logger;
         readonly IProcessRunner m_ProcessRunner;
         readonly CloudCodeLocalModuleDeployCommand m_CloudCodeLocalDeployCommand;
-        readonly NativeModuleDeployCommand m_NativeDeployCommand;
-        readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
+            readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
         readonly IAccessTokens m_AccessTokens;
         readonly ICloudCodePreferences m_Preferences;
         readonly ICloudCodeLocalServerApi m_LocalServerClient;
         readonly CloudCodeModuleReferenceCollection m_CloudCodeModuleReferenceCollection;
-        readonly NativeModuleReferenceCollection m_NativeModuleReferenceCollection;
 
         // Handling of Server status and states
         LocalCloudCodeServerStatus m_CurrentServerStatus;
@@ -77,25 +76,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             ILogger logger,
             IProcessRunner processRunner,
             CloudCodeLocalModuleDeployCommand cloudCodeLocalDeployCommand,
-            NativeModuleDeployCommand nativeDeployCommand,
             EditorCloudCodeLocalModuleDeploymentHandler deployHandler,
             IEnvironmentsApi environmentsApi,
             IAccessTokens mAccessTokens,
             ICloudCodePreferences preferences,
-            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection,
-            NativeModuleReferenceCollection nativeModuleReferenceCollection)
+            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection)
         {
             m_AccessTokens = mAccessTokens;
             m_Logger = logger;
             m_ProcessRunner = processRunner;
             m_CloudCodeLocalDeployCommand = cloudCodeLocalDeployCommand;
-            m_NativeDeployCommand = nativeDeployCommand;
             m_DeployHandler = deployHandler;
             m_EnvironmentsApi = environmentsApi;
             m_CancellationTokenSource = new CancellationTokenSource();
             m_Preferences = preferences;
             m_CloudCodeModuleReferenceCollection = cloudCodeModuleReferenceCollection;
-            m_NativeModuleReferenceCollection = nativeModuleReferenceCollection;
 
             // Local debug server client setup with the current port configuration
             var endpoint = $"{k_ServerUrl}:{GetPort()}";
@@ -103,6 +98,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
             Initialize();
         }
+
 
         void Initialize()
         {
@@ -223,7 +219,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         public async Task StartCompilationAndService(bool restore)
         {
             // Sanity check
-            if (!restore && m_CurrentServerStatus != LocalCloudCodeServerStatus.Idle)
+            if (!restore && m_CurrentServerStatus != LocalCloudCodeServerStatus.Idle || !ValidateSettings())
                 return;
 
             SetAndTrackServerStatus(LocalCloudCodeServerStatus.Preparing);
@@ -294,7 +290,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             }
         }
 
-#region ModuleGeneration
+        private bool ValidateSettings()
+        {
+            // Fail fast if no .NET was set.
+            if (string.IsNullOrEmpty(m_Preferences.DotnetPath) || !File.Exists(m_Preferences.DotnetPath))
+            {
+                m_Logger.LogError($"Invalid .NET path was set. Please set a valid .NET path at" +
+                                  $"Preferences > CloudCode > .NET Path");
+                return false;
+            }
+
+            return true;
+        }
+
+        #region ModuleGeneration
 
         // Generates and compiles modules in preparation for Local CC Server deployment
         async Task<string> CompileAndDeployAllModules(CancellationToken cancellationToken)
@@ -309,389 +318,379 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // Abort early if a cancellation request was done.
             cancellationToken.ThrowIfCancellationRequested();
 
-            var nativeModules = m_NativeModuleReferenceCollection.ToList();
-            var nativeModulesDir = await m_NativeDeployCommand.GenerateAndDeployToLocalAsync(nativeModules, cancellationToken);
-
-            // If we have native and reference modules, ensure they are deployed to the same location.
-            if (!string.IsNullOrEmpty(referencedModulesDir) &&
-                !string.IsNullOrEmpty(nativeModulesDir) &&
-                referencedModulesDir != nativeModulesDir)
-            {
-                throw new Exception("Deployment Failure: Mismatched deployed locations for Native and Referenced modules.");
-            }
-
-            // Now start the server pointed to the compiled module directories
-            return referencedModulesDir ?? nativeModulesDir;
+            return referencedModulesDir;
         }
 
         List<IModuleItem> GetAllModules()
         {
             var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
-            var nativeModules = m_NativeModuleReferenceCollection.ToList();
-
             List<IModuleItem> allModuleItems = new List<IModuleItem>();
             allModuleItems.AddRange(referencedModules);
-            allModuleItems.AddRange(nativeModules);
             return allModuleItems;
         }
 
-#endregion
+        #endregion
 
-#region Local Server
+        #region Local Server
 
-    async Task StartLocalServer(string compiledModuleDir, CancellationToken cancellationToken)
-    {
-        SetAndTrackServerStatus(LocalCloudCodeServerStatus.Starting);
-
-        // Start the Local Cloud Code Server process, point it to modules
-        try
+        async Task StartLocalServer(string compiledModuleDir, CancellationToken cancellationToken)
         {
-            // TODO MTT-13965: Perform Logging Initialization before process start.
+            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Starting);
 
-            var compiledCloudCodeServerPath = GetLocalCloudCodeServerPath();
-            var secretsFile = GetSecretsFile();
-            var secretsPath = "";
-            if(secretsFile != null)
+            // Start the Local Cloud Code Server process, point it to modules
+            try
             {
-                // Have to call GetDirectoryName() because GetAssetPath() returns a value relative to the parent directory of Application.dataPath
-                secretsPath = Path.GetFullPath(FileUtil.GetPhysicalPath(AssetDatabase.GetAssetPath(secretsFile)), Path.GetDirectoryName(Application.dataPath));
-            };
-            var port = GetPort();
-            var startInfo = new ProcessStartInfo()
+                // TODO MTT-13965: Perform Logging Initialization before process start.
+
+                var compiledCloudCodeServerPath = GetLocalCloudCodeServerPath();
+                var secretsFile = GetSecretsFile();
+                var secretsPath = "";
+                if (secretsFile != null)
+                {
+                    // Have to call GetDirectoryName() because GetAssetPath() returns a value relative to the parent directory of Application.dataPath
+                    secretsPath = Path.GetFullPath(FileUtil.GetPhysicalPath(AssetDatabase.GetAssetPath(secretsFile)), Path.GetDirectoryName(Application.dataPath));
+                }
+                ;
+                var port = GetPort();
+                var logfile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "UnityCloudCode",
+                    "Logs", "server.log");
+                var startInfo = new ProcessStartInfo()
+                {
+                    WindowStyle = ProcessWindowStyle.Normal,
+                    CreateNoWindow = false,
+                    UseShellExecute = false,
+                    FileName = m_Preferences.DotnetPath,
+                    Arguments = $"\"{compiledCloudCodeServerPath}\" run" +
+                        $" -p \"{compiledModuleDir}\"" +
+                        $" --log-file \"{logfile}\"" +
+                        $" --port {port}" +
+                        (string.IsNullOrEmpty(secretsPath) ? "" : $" -s \"{secretsPath}\"")
+                };
+
+                m_Logger.LogInfo($"Starting local server with arguments {startInfo.FileName} {startInfo.Arguments}");
+
+                startInfo.EnvironmentVariables["GATEWAY_JWT"] = await m_AccessTokens.GetServicesGatewayTokenAsync();
+
+                // Fail fast if selected port is in use.
+                if (!await IsPortAvailable(GetPort(), cancellationToken))
+                    throw new Exception($"Server Port {GetPort()} is not available.");
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Reset the Client's configuration to point to the new port
+                ((CloudCodeLocalServerApi)m_LocalServerClient).Configuration.BasePath = $"{k_ServerUrl}:{port}";
+                EditorPrefs.SetInt("CLOUD_CODE_DEBUG_PORT", port);
+
+                // Start the process and track its PID
+                var process = m_ProcessRunner.RunAsyncFireAndForget(startInfo, OnServerStdOut);
+                SetAndTrackServerPid(process.Id);
+
+                // If the user force cancels, abort
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Perform health checks until the Server is fully running, or timeout.
+                await m_LocalServerClient.HealthCheck(cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Else the server had started successfully.
+                SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
+                _ = Task.Run(() => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
+                    cancellationToken);
+                m_Logger.LogVerbose("Local CC Server has Started.");
+            }
+            catch (Exception e)
             {
-                WindowStyle = ProcessWindowStyle.Normal,
-                CreateNoWindow = false,
-                UseShellExecute = false,
-                FileName = m_Preferences.DotnetPath,
-                Arguments = $"\"{compiledCloudCodeServerPath}\" run" +
-                            $" -p \"{compiledModuleDir}\"" +
-                            $" --port {port}" +
-                            (string.IsNullOrEmpty(secretsPath) ? "" : $" -s \"{secretsPath}\"")
-            };
+                if (e is not OperationCanceledException)
+                {
+                    SetAndTrackServerFailure(e.Message);
+                    SetDeployStatusWithState("Local Server Error", e.Message, SeverityLevel.Error);
+                }
 
-            m_Logger.LogInfo($"Starting local server with arguments {startInfo.FileName} {startInfo.Arguments}");
-
-            startInfo.EnvironmentVariables["GATEWAY_JWT"] = await m_AccessTokens.GetServicesGatewayTokenAsync();
-
-            // Fail fast if selected port is in use.
-            if (!await IsPortAvailable(GetPort(), cancellationToken))
-                throw new Exception($"Server Port {GetPort()} is not available.");
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Reset the Client's configuration to point to the new port
-            ((CloudCodeLocalServerApi)m_LocalServerClient).Configuration.BasePath = $"{k_ServerUrl}:{port}";
-            EditorPrefs.SetInt("CLOUD_CODE_DEBUG_PORT", port);
-
-            // Start the process and track its PID
-            var process = m_ProcessRunner.RunAsyncFireAndForget(startInfo, OnServerStdOut);
-            SetAndTrackServerPid(process.Id);
-
-            // If the user force cancels, abort
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Perform health checks until the Server is fully running, or timeout.
-            await m_LocalServerClient.HealthCheck(cancellationToken);
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Else the server had started successfully.
-            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
-            _ = Task.Run(() => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
-                                                       cancellationToken);
-            m_Logger.LogVerbose("Local CC Server has Started.");
+                // In an event of failure, ensure that any resources are stopped
+                ForceStopLocalServerSafe();
+                throw;
+            }
         }
-        catch (Exception e)
+
+        async Task StopLocalServer()
         {
-            if (e is not OperationCanceledException)
+            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Stopping);
+
+            try
+            {
+                // Cancel any running tasks if not yet already
+                if (!m_CancellationTokenSource.IsCancellationRequested)
+                    m_CancellationTokenSource.Cancel();
+
+                // Process Sanity check using the PID
+                using var process = Process.GetProcessById(m_CurrentServerPid);
+                if (process.HasExited)
+                    throw new Exception($"Server has already stopped with exit code {process.ExitCode}.");
+
+                // Perform graceful termination, wait for the server to gracefully stop
+                // If the server had not yet stopped, force kill it.
+                await RequestShutdownAndCheck();
+                if (!process.HasExited)
+                    throw new Exception("Server has failed to stop.");
+
+                if (process.ExitCode != 0)
+                    m_Logger.LogError($"Server has exited with an error ExitCode: {process.ExitCode}");
+
+                // TODO MTT-13965: Cleanup Logging. Might want to retain logs if ExitCode != 0
+
+                SetAndTrackServerPid(k_InvalidPID);
+                SetAndTrackServerStatus(LocalCloudCodeServerStatus.Idle);
+                m_Logger.LogVerbose("Local Server has Stopped.");
+            }
+            catch (Exception e)
             {
                 SetAndTrackServerFailure(e.Message);
-                SetDeployStatusWithState("Local Server Error", e.Message, SeverityLevel.Error);
+
+                // In an event of failure, ensure that any resources are stopped
+                ForceStopLocalServerSafe();
             }
-
-            // In an event of failure, ensure that any resources are stopped
-            ForceStopLocalServerSafe();
-            throw;
         }
-    }
 
-    async Task StopLocalServer()
-    {
-        SetAndTrackServerStatus(LocalCloudCodeServerStatus.Stopping);
-
-        try
+        async Task RequestShutdownAndCheck()
         {
-            // Cancel any running tasks if not yet already
-            if (!m_CancellationTokenSource.IsCancellationRequested)
-                m_CancellationTokenSource.Cancel();
+            // Sanity check, return if no process tracked.
+            if (m_CurrentServerPid == k_InvalidPID)
+                return;
 
-            // Process Sanity check using the PID
+            // Sanity check, return if already exited.
             using var process = Process.GetProcessById(m_CurrentServerPid);
-            if (process.HasExited)
-                throw new Exception($"Server has already stopped with exit code {process.ExitCode}.");
-
-            // Perform graceful termination, wait for the server to gracefully stop
-            // If the server had not yet stopped, force kill it.
-            await RequestShutdownAndCheck();
-            if (!process.HasExited)
-                throw new Exception("Server has failed to stop.");
-
-            if (process.ExitCode != 0)
-                m_Logger.LogError($"Server has exited with an error ExitCode: {process.ExitCode}");
-
-            // TODO MTT-13965: Cleanup Logging. Might want to retain logs if ExitCode != 0
-
-            SetAndTrackServerPid(k_InvalidPID);
-            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Idle);
-            m_Logger.LogVerbose("Local Server has Stopped.");
-        }
-        catch (Exception e)
-        {
-            SetAndTrackServerFailure(e.Message);
-
-            // In an event of failure, ensure that any resources are stopped
-            ForceStopLocalServerSafe();
-        }
-    }
-
-    async Task RequestShutdownAndCheck()
-    {
-        // Sanity check, return if no process tracked.
-        if (m_CurrentServerPid == k_InvalidPID)
-            return;
-
-        // Sanity check, return if already exited.
-        using var process = Process.GetProcessById(m_CurrentServerPid);
-        if (process.HasExited)
-            return;
-
-        // Signal shutdown and check.
-        var gracefulTimeoutSeconds = await m_LocalServerClient.Shutdown(CancellationToken.None);
-        for (int i = 0; i < gracefulTimeoutSeconds.shutdowntimeoutSeconds; i++)
-        {
             if (process.HasExited)
                 return;
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-    }
+            // Signal shutdown and check.
+            var gracefulTimeoutSeconds = await m_LocalServerClient.Shutdown(CancellationToken.None);
+            for (int i = 0; i < gracefulTimeoutSeconds.shutdowntimeoutSeconds; i++)
+            {
+                if (process.HasExited)
+                    return;
 
-    void ForceStopLocalServerSafe()
-    {
-        try
-        {
-            if (!m_CancellationTokenSource.IsCancellationRequested)
-                m_CancellationTokenSource.Cancel();
-
-            // Kill the tracked PID if we have it
-            if (m_CurrentServerPid != k_InvalidPID)
-                m_ProcessRunner.Stop(m_CurrentServerPid);
-        }
-        catch (Exception)
-        {
-            // Force stopping here. No-op.
-        }
-        finally
-        {
-            SetAndTrackServerPid(k_InvalidPID);
-            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Idle);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
         }
 
-        m_Logger.LogVerbose("Local Server has Force Stopped.");
-    }
-
-    void RestoreLocalServer(CancellationToken cancellationToken)
-    {
-        // Sanity check, No pid was set, no server was started.
-        if (m_CurrentServerPid == k_InvalidPID &&
-            m_CurrentServerStatus == LocalCloudCodeServerStatus.Idle &&
-            m_LastKnownFailure == null)
+        void ForceStopLocalServerSafe()
         {
-            ClearDeploymentStatus();
-            return;
+            try
+            {
+                if (!m_CancellationTokenSource.IsCancellationRequested)
+                    m_CancellationTokenSource.Cancel();
+
+                // Kill the tracked PID if we have it
+                if (m_CurrentServerPid != k_InvalidPID)
+                    m_ProcessRunner.Stop(m_CurrentServerPid);
+            }
+            catch (Exception)
+            {
+                // Force stopping here. No-op.
+            }
+            finally
+            {
+                SetAndTrackServerPid(k_InvalidPID);
+                SetAndTrackServerStatus(LocalCloudCodeServerStatus.Idle);
+            }
+
+            m_Logger.LogVerbose("Local Server has Force Stopped.");
         }
 
-        // Do not restore failures
-        if (m_LastKnownFailure != null)
+        void RestoreLocalServer(CancellationToken cancellationToken)
         {
-            // In failure situations, always ensure Local CC server is restartable
-            ForceStopLocalServerSafe();
-            return;
+            // Sanity check, No pid was set, no server was started.
+            if (m_CurrentServerPid == k_InvalidPID &&
+                m_CurrentServerStatus == LocalCloudCodeServerStatus.Idle &&
+                m_LastKnownFailure == null)
+            {
+                ClearDeploymentStatus();
+                return;
+            }
+
+            // Do not restore failures
+            if (m_LastKnownFailure != null)
+            {
+                // In failure situations, always ensure Local CC server is restartable
+                ForceStopLocalServerSafe();
+                return;
+            }
+
+            // If restoring from a compilation stage, start from the beginning.
+            if (m_CurrentServerPid == k_InvalidPID && m_CurrentServerStatus == LocalCloudCodeServerStatus.Preparing)
+            {
+                _ = StartCompilationAndService(true);
+                return;
+            }
+
+            try
+            {
+                using var process = Process.GetProcessById(m_CurrentServerPid);
+                if (process.HasExited)
+                    throw new Exception("Local Server has Exited.");
+
+                // At this point we have a PID, look at the current status.
+                // If we were restoring to a stopping state, stop the server.
+                if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Stopping)
+                {
+                    m_Logger.LogVerbose("Local Server has Restored to a Stopping State.");
+                    _ = StopLocalServer();
+                    return;
+                }
+
+                // TODO MTT-13965: Restore Logging
+
+                // Resume Health check.
+                SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
+                _ = Task.Run(
+                    () => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
+                    cancellationToken);
+
+                m_Logger.LogVerbose("Local Server has Restored to a Started State.");
+            }
+            catch (Exception e)
+            {
+                if (e is not OperationCanceledException && e is not ArgumentException)
+                {
+                    SetAndTrackServerFailure(e.Message);
+                    SetDeployStatusWithState("Local Server Error", e.Message, SeverityLevel.Error);
+                    m_Logger.LogError($"Local Server Restore Failed: {e}");
+                }
+
+                // In an event of failure, ensure that any resources are stopped
+                ForceStopLocalServerSafe();
+            }
         }
 
-        // If restoring from a compilation stage, start from the beginning.
-        if (m_CurrentServerPid == k_InvalidPID && m_CurrentServerStatus == LocalCloudCodeServerStatus.Preparing)
+        string GetLocalCloudCodeServerPath()
         {
-            _ = StartCompilationAndService(true);
-            return;
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(GetType().Assembly);
+            return Path.Combine(packageInfo.resolvedPath, "Editor", "CloudCodeDebugger~", "CloudCodeDebugger.dll");
         }
 
-        try
+        void OnHealthCheckPingsFail()
         {
-            using var process = Process.GetProcessById(m_CurrentServerPid);
-            if (process.HasExited)
-                throw new Exception("Local Server has Exited.");
-
-            // At this point we have a PID, look at the current status.
-            // If we were restoring to a stopping state, stop the server.
+            // Sanity check. If a late health check ping returns with a failure in the middle
+            // of the process of stopping, filter that out.
             if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Stopping)
-            {
-                m_Logger.LogVerbose("Local Server has Restored to a Stopping State.");
-                _ = StopLocalServer();
                 return;
-            }
 
-            // TODO MTT-13965: Restore Logging
+            const string kHealthCheckFailedMessage = "Local server health check failed";
+            SetAndTrackServerFailure(kHealthCheckFailedMessage);
 
-            // Resume Health check.
-            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
-            _ = Task.Run(
-                () => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
-                                              cancellationToken);
+            // Post successful server launch, we need to clear deployment status before updating with warning
+            SetDeployStatusWithState("Local Server Offline ", kHealthCheckFailedMessage, SeverityLevel.Error);
 
-            m_Logger.LogVerbose("Local Server has Restored to a Started State.");
-        }
-        catch (Exception e)
-        {
-            if (e is not OperationCanceledException && e is not ArgumentException)
-            {
-                SetAndTrackServerFailure(e.Message);
-                SetDeployStatusWithState("Local Server Error", e.Message, SeverityLevel.Error);
-                m_Logger.LogError( $"Local Server Restore Failed: {e}");
-            }
-
-            // In an event of failure, ensure that any resources are stopped
+            // Finally Force stop any pending processes
             ForceStopLocalServerSafe();
+            m_Logger.LogError(kHealthCheckFailedMessage);
         }
-    }
 
-    string GetLocalCloudCodeServerPath()
-    {
-        var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(GetType().Assembly);
-        return Path.Combine(packageInfo.resolvedPath, "Editor", "CloudCodeDebugger~", "CloudCodeDebugger.dll");
-    }
-
-    void OnHealthCheckPingsFail()
-    {
-        // Sanity check. If a late health check ping returns with a failure in the middle
-        // of the process of stopping, filter that out.
-        if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Stopping)
-            return;
-
-        const string kHealthCheckFailedMessage = "Local server health check failed";
-        SetAndTrackServerFailure(kHealthCheckFailedMessage);
-
-        // Post successful server launch, we need to clear deployment status before updating with warning
-        SetDeployStatusWithState("Local Server Offline ", kHealthCheckFailedMessage, SeverityLevel.Error);
-
-        // Finally Force stop any pending processes
-        ForceStopLocalServerSafe();
-        m_Logger.LogError(kHealthCheckFailedMessage);
-    }
-
-    // TODO MTT-13965: Figure out Local CC Server logging - we can't use console out.
-    void OnServerStdOut(string output)
-    {
-        m_Logger.LogInfo($"[Local Server] {output}");
-    }
-
-    void SetAndTrackServerPid(int value)
-    {
-        EditorPrefs.SetInt(K_ServerPidKey, value);
-        m_CurrentServerPid = value;
-        m_Logger.LogVerbose($"Local Server tracked with PID: {value}");
-    }
-
-    void SetAndTrackServerStatus(LocalCloudCodeServerStatus value)
-    {
-        EditorPrefs.SetString(K_ServerStatus, value.ToString());
-        m_CurrentServerStatus = value;
-        m_Logger.LogVerbose($"Local Server tracked with State: {value}");
-        OnServerStatusChanged?.Invoke(this, value);
-    }
-
-    void SetAndTrackServerFailure(string value)
-    {
-        EditorPrefs.SetString(K_ServerFailure, value);
-        m_LastKnownFailure = value;
-
-        if (value != null)
-            m_Logger.LogVerbose($"Local Server tracked with Failure: {value}");
-    }
-
-    static async Task PeriodicHealthCheckTask(ICloudCodeLocalServerApi client, Action onFail, CancellationToken cancellationToken)
-    {
-        try
+        // TODO MTT-13965: Figure out Local CC Server logging - we can't use console out.
+        void OnServerStdOut(string output)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            m_Logger.LogInfo($"[Local Server] {output}");
+        }
+
+        void SetAndTrackServerPid(int value)
+        {
+            EditorPrefs.SetInt(K_ServerPidKey, value);
+            m_CurrentServerPid = value;
+            m_Logger.LogVerbose($"Local Server tracked with PID: {value}");
+        }
+
+        void SetAndTrackServerStatus(LocalCloudCodeServerStatus value)
+        {
+            EditorPrefs.SetString(K_ServerStatus, value.ToString());
+            m_CurrentServerStatus = value;
+            m_Logger.LogVerbose($"Local Server tracked with State: {value}");
+            OnServerStatusChanged?.Invoke(this, value);
+        }
+
+        void SetAndTrackServerFailure(string value)
+        {
+            EditorPrefs.SetString(K_ServerFailure, value);
+            m_LastKnownFailure = value;
+
+            if (value != null)
+                m_Logger.LogVerbose($"Local Server tracked with Failure: {value}");
+        }
+
+        static async Task PeriodicHealthCheckTask(ICloudCodeLocalServerApi client, Action onFail, CancellationToken cancellationToken)
+        {
+            try
             {
-                await client.HealthCheck(cancellationToken);
-                await Task.Delay(k_HealthCheckIntervalMs, cancellationToken);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await client.HealthCheck(cancellationToken);
+                    await Task.Delay(k_HealthCheckIntervalMs, cancellationToken);
+                }
             }
+            catch (Exception e)
+            {
+                // Ignore if cancelled, else continue assuming health check failed
+                if (e is OperationCanceledException)
+                    return;
+            }
+
+            // Else a health check failure may be an indication where:
+            // 1 - The Server hanged, but process is running
+            // 2 - The Server process suddenly stopped without warning.
+            // 3 - Network issues prevent us from communicating with the server.
+            // Regardless, we need to properly force terminate to enable users to retry.
+            await Task.Factory.StartNew(onFail, CancellationToken.None, TaskCreationOptions.None,
+                MainThreadScheduler.ThreadHelper.TaskScheduler);
         }
-        catch (Exception e)
+
+        async Task<bool> IsPortAvailable(int port, CancellationToken cancellationToken = default)
         {
-            // Ignore if cancelled, else continue assuming health check failed
-            if (e is OperationCanceledException)
-                return;
-        }
-
-        // Else a health check failure may be an indication where:
-        // 1 - The Server hanged, but process is running
-        // 2 - The Server process suddenly stopped without warning.
-        // 3 - Network issues prevent us from communicating with the server.
-        // Regardless, we need to properly force terminate to enable users to retry.
-        await Task.Factory.StartNew(onFail, CancellationToken.None, TaskCreationOptions.None,
-            MainThreadScheduler.ThreadHelper.TaskScheduler);
-    }
-
-    async Task<bool> IsPortAvailable(int port, CancellationToken cancellationToken = default)
-    {
 #if UNITY_EDITOR_WIN
-        IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-        TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
+            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
 
-        foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
-        {
-            if (tcpi.LocalEndPoint.Port == port && tcpi.State == TcpState.Listen)
+            foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
             {
-                return await Task.FromResult(false);
+                if (tcpi.LocalEndPoint.Port == port && tcpi.State == TcpState.Listen)
+                {
+                    return await Task.FromResult(false);
+                }
             }
+
+            return await Task.FromResult(true);
+#else
+            var lsofStartInfo = new ProcessStartInfo
+            {
+                FileName = "lsof",
+                Arguments = $"-i :{port} -s TCP:LISTEN",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = false
+            };
+
+            var lsofProcess = await m_ProcessRunner.RunAsync(lsofStartInfo, cancellationToken: cancellationToken);
+            return lsofProcess.ExitCode == 1;
+#endif
         }
 
-        return await Task.FromResult(true);
-#else
-        var lsofStartInfo = new ProcessStartInfo
+        #endregion
+
+        #region Deployment Status Helper
+
+        void SetDeployStatusWithState(string message, string messageDetail, SeverityLevel messageSeverity)
         {
-            FileName = "lsof",
-            Arguments = $"-i :{port} -s TCP:LISTEN",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = false
-        };
+            var ccms = GetAllModules();
+            m_DeployHandler.SetDeployStatusesWithState(ccms, message, messageDetail, messageSeverity);
+        }
 
-        var lsofProcess = await m_ProcessRunner.RunAsync(lsofStartInfo, cancellationToken: cancellationToken);
-        return lsofProcess.ExitCode == 1;
-#endif
-    }
+        void ClearDeploymentStatus()
+        {
+            var ccms = GetAllModules();
+            m_DeployHandler.ClearDeploymentStatuses(ccms);
+        }
 
-#endregion
-
-#region Deployment Status Helper
-
-    void SetDeployStatusWithState(string message, string messageDetail, SeverityLevel messageSeverity)
-    {
-        var ccms = GetAllModules();
-        m_DeployHandler.SetDeployStatusesWithState(ccms, message, messageDetail, messageSeverity);
-    }
-
-    void ClearDeploymentStatus()
-    {
-        var ccms = GetAllModules();
-        m_DeployHandler.ClearDeploymentStatuses(ccms);
-    }
-
-#endregion
-
+        #endregion
     }
 }
+#endif

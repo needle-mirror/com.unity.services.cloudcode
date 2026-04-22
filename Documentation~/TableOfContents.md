@@ -1,6 +1,1 @@
 * [Cloud Code](index)
-* [Author In Unity](Authoring/index)
-  * [Cloud Code Scripts](Authoring/cloud_code_scripts.md)
-  * [Cloud Code Modules](Authoring/cloud_code_modules.md)
-  * [JavaScript Project](Authoring/javascript_project.md)
-  * [Local Cloud Code Debugging](Authoring/cloud_code_local_server.md)

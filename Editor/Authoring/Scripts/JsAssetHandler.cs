@@ -16,7 +16,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         const string k_SolutionPath = "$(SolutionPath)";
         const string k_EditorExePath = "$(EditorExePath)";
 
-        readonly ICloudCodePreferences m_Preferences;
+        readonly ICloudCodePreferences m_ProjectSettings;
         readonly IProcessRunner m_ProcessRunner;
         readonly IExternalCodeEditor m_CodeEditor;
 
@@ -29,39 +29,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         };
 
         public JsAssetHandler(
-            ICloudCodePreferences preferences,
+            ICloudCodePreferences projectSettings,
             IProcessRunner processRunner,
             IExternalCodeEditor codeEditor)
         {
-            m_Preferences = preferences;
+            m_ProjectSettings = projectSettings;
             m_ProcessRunner = processRunner;
             m_CodeEditor = codeEditor;
         }
 
-#if UNITY_6000_5_OR_NEWER
-
-        [OnOpenAssetAttribute]
-        public static bool OpenAsset(EntityId entityId, int line)
-        {
-            var obj = EditorUtility.EntityIdToObject(entityId);
-            var filePath = AssetDatabase.GetAssetPath(obj);
-            if (CloudCodeFileExtensions.SupportedExtensions(Application.unityVersion)
-                .Any(extension => filePath.EndsWith(extension)))
-            {
-                var assetHandler = CloudCodeAuthoringServices.Instance.GetService<JsAssetHandler>();
-                assetHandler.OpenFile(filePath);
-                return true;
-            }
-
-            return false;
-        }
-
-#else
-
         [OnOpenAsset]
         static bool OpenAsset(int instanceID, int line)
         {
+#if UNITY_6000_4_OR_NEWER
+            var obj = EditorUtility.EntityIdToObject(new UnityEngine.EntityId());
+#else
             var obj = EditorUtility.InstanceIDToObject(instanceID);
+#endif
             var filePath = AssetDatabase.GetAssetPath(obj);
             if (CloudCodeFileExtensions.SupportedExtensions(Application.unityVersion)
                 .Any(extension => filePath.EndsWith(extension)))
@@ -73,15 +57,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
             return false;
         }
-
-#endif
 
         public void OpenFile(string filePath)
         {
             OpenFile(
                 filePath,
-                m_Preferences.ExternalEditorPath,
-                m_Preferences.ExternalEditorArgsFormat);
+                m_ProjectSettings.ExternalEditorPath,
+                m_ProjectSettings.ExternalEditorArgsFormat);
         }
 
         internal void OpenFile(

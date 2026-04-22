@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEngine;
@@ -51,6 +52,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             var newAsset = ScriptableObject.CreateInstance<CloudCodeScript>();
             newAsset.Model = asset.Model;
             asset = newAsset;
+            if (asset.Model.Name.GetNameWithoutExtension() == null)
+            {
+                asset.Model.Name = ScriptName.FromPath(asset.Path);
+            }
+
             return asset;
         }
 

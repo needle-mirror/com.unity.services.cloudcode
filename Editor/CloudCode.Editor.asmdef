@@ -5,6 +5,7 @@
         "Unity.Services.Core.Editor",
         "Unity.Services.Core",
         "Unity.Services.CloudCode.Authoring.Editor",
+        "Unity.Services.CloudCode.Editor.Shared",
         "Unity.Services.CloudCode"
     ],
     "includePlatforms": [

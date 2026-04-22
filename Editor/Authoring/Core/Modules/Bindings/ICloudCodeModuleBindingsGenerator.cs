@@ -10,5 +10,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings
         public Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings(
             IEnumerable<ISolutionModuleItem> moduleItems,
             CancellationToken cancellationToken = default);
+
+        public Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateNativeModuleBindings(
+            IEnumerable<INativeModuleItem> moduleItems,
+            CancellationToken cancellationToken = default);
     }
 }

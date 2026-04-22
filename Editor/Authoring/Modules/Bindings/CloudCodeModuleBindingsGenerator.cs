@@ -44,16 +44,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             m_Logger = logger;
         }
 
-        public async Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings(
+        public Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateNativeModuleBindings(
+            IEnumerable<INativeModuleItem> moduleItems,
+            CancellationToken cancellationToken = default)
+            => GenerateModuleBindings(moduleItems, CompileAndGenerateNativeModuleBindings, cancellationToken);
+
+        public Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings(
             IEnumerable<ISolutionModuleItem> moduleItems,
             CancellationToken cancellationToken = default)
+            => GenerateModuleBindings(moduleItems, CompileAndGenerateModuleBindings, cancellationToken);
+
+        async Task<List<CloudCodeModuleBindingsGenerationResult>> GenerateModuleBindings<T>(
+            IEnumerable<T> moduleItems,
+            Func<T, CancellationToken, Task<CloudCodeModuleBindingsGenerationResult>> compileAndGenerate,
+            CancellationToken cancellationToken) where T : IModuleItem
         {
             var moduleItemsList = moduleItems.EnumerateOnce();
             if (!moduleItemsList.Any())
             {
-                m_Logger.LogInfo($"No Cloud Code Module Reference file was found in the project." +
-                    $" To create one right-click in the Project window, then select Create > Services > Cloud Code C# Module Reference.");
-                return new List<CloudCodeModuleBindingsGenerationResult>() {};
+                m_Logger.LogInfo("No Cloud Code Module Reference file was found in the project." +
+                    " To create one right-click in the Project window, then select Create > Services > Cloud Code C# Module Reference.");
+                return new List<CloudCodeModuleBindingsGenerationResult>();
             }
 
             m_Logger.LogInfo($"Generating Cloud Code Module Bindings for: {GetModuleItemNames(moduleItemsList)}.");
@@ -62,7 +73,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             var generationTasks = new List<Task<CloudCodeModuleBindingsGenerationResult>>();
             foreach (var item in moduleItemsList)
             {
-                generationTasks.Add(CompileAndGenerateModuleBindings(item, cancellationToken));
+                generationTasks.Add(compileAndGenerate(item, cancellationToken));
             }
 
             var generationResults = await Task.WhenAll(generationTasks);
@@ -113,18 +124,30 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             }
         }
 
-        static string GetModuleItemNames(IEnumerable<IModuleItem> moduleItems)
+        static string GetModuleItemNames<T>(IEnumerable<T> moduleItems) where T : IModuleItem
+            => string.Join(", ", moduleItems.Select(item => item.Name));
+
+        internal async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateNativeModuleBindings(
+            INativeModuleItem moduleItem,
+            CancellationToken cancellationToken = default)
         {
-            var allNames = string.Join(", ", moduleItems.Select(item => item.Name));
-            return allNames;
+            try
+            {
+                var moduleName = moduleItem.Name;
+                var compilationOutputPath = GetSolutionCompilationOutputPath(moduleItem.AssemblyPath);
+                return await CompileAndGenerateBindings(
+                    moduleItem,
+                    moduleName,
+                    compilationOutputPath,
+                    (tempFolder, ct) => GenerateNativeBindings(moduleItem, tempFolder, ct),
+                    cancellationToken);
+            }
+            catch (Exception e)
+            {
+                return new CloudCodeModuleBindingsGenerationResult(moduleItem, "", false, e);
+            }
         }
 
-        /// <summary>
-        /// Generates the Cloud Code Bindings for a C# Module
-        /// </summary>
-        /// <param name="moduleItem"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
         internal async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateModuleBindings(
             ISolutionModuleItem moduleItem,
             CancellationToken cancellationToken = default)
@@ -132,26 +155,43 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             try
             {
                 var moduleName = m_ModuleProjectRetriever.GetMainEntryProjectName(moduleItem.SolutionPath);
-                var tempFolder = GetBindingsGenerationOutputTempFolder(moduleName);
-                var solutionCompilationOutputPath = GetSolutionCompilationOutputPath(moduleItem.SolutionPath);
-
-                try
-                {
-                    await DeleteExistingDirectory(solutionCompilationOutputPath);
-                    await CompileSolution(moduleItem.SolutionPath, cancellationToken);
-                    await GenerateBindings(moduleItem.SolutionPath, tempFolder, cancellationToken);
-                }
-                finally
-                {
-                    await DeleteExistingDirectory(solutionCompilationOutputPath);
-                }
-
-                return new CloudCodeModuleBindingsGenerationResult(moduleItem, tempFolder, true);
+                var compilationOutputPath = GetSolutionCompilationOutputPath(moduleItem.SolutionPath);
+                return await CompileAndGenerateBindings(
+                    moduleItem,
+                    moduleName,
+                    compilationOutputPath,
+                    async(tempFolder, ct) =>
+                    {
+                        await CompileSolution(moduleItem.SolutionPath, ct);
+                        await GenerateBindings(moduleItem.SolutionPath, tempFolder, ct);
+                    },
+                    cancellationToken);
             }
             catch (Exception e)
             {
                 return new CloudCodeModuleBindingsGenerationResult(moduleItem, "", false, e);
             }
+        }
+
+        async Task<CloudCodeModuleBindingsGenerationResult> CompileAndGenerateBindings(
+            IModuleItem moduleItem,
+            string moduleName,
+            string compilationOutputPath,
+            Func<string, CancellationToken, Task> compileAndGenerate,
+            CancellationToken cancellationToken)
+        {
+            var tempFolder = GetBindingsGenerationOutputTempFolder(moduleName);
+            try
+            {
+                await DeleteExistingDirectory(compilationOutputPath);
+                await compileAndGenerate(tempFolder, cancellationToken);
+            }
+            finally
+            {
+                await DeleteExistingDirectory(compilationOutputPath);
+            }
+
+            return new CloudCodeModuleBindingsGenerationResult(moduleItem, tempFolder, true);
         }
 
         async Task DeleteExistingDirectory(string dirPath)
@@ -209,24 +249,48 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
                 var moduleDllPath =
                     GetSolutionGeneratedDllPath(GetSolutionCompilationOutputPath(solutionPath), moduleName);
 
-                if (!m_FileSystem.FileExists(moduleDllPath))
-                {
-                    throw new FileNotFoundException($"Generated binaries for the '{solutionPath}' " +
-                        $"solution were not found at the expected '${moduleDllPath}' path.");
-                }
-
-                await m_FileSystem.CreateDirectory(bindingsOutputFolderPath);
-
-                var versionSelect = await GetVersionString(cancellationToken);
-
-                await m_DotnetRunner.ExecuteDotnetAsync(
-                    new[] {$"{versionSelect}", $"\"{GetGeneratorPath()}\"", $"\"{moduleDllPath}\"", $"\"{bindingsOutputFolderPath}\""},
-                    cancellationToken);
+                await GenerateBindingsFromDll(moduleName, moduleDllPath, bindingsOutputFolderPath, cancellationToken);
             }
             catch (Exception e)
             {
                 throw new FailedToGenerateBindingsException(solutionPath, e);
             }
+        }
+
+        internal async Task GenerateNativeBindings(
+            INativeModuleItem moduleItem,
+            string bindingsOutputFolderPath,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await GenerateBindingsFromDll(moduleItem.Name, moduleItem.AssemblyPath, bindingsOutputFolderPath, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                throw new FailedToGenerateBindingsException(moduleItem.Name, e);
+            }
+        }
+
+        async Task GenerateBindingsFromDll(
+            string moduleName,
+            string moduleDllPath,
+            string bindingsOutputFolderPath,
+            CancellationToken cancellationToken)
+        {
+            if (!m_FileSystem.FileExists(moduleDllPath))
+            {
+                throw new FileNotFoundException($"Generated binaries for the '{moduleName}' " +
+                    $"solution were not found at the expected '${moduleDllPath}' path.");
+            }
+
+            await m_FileSystem.CreateDirectory(bindingsOutputFolderPath);
+
+            var versionSelect = await GetVersionString(cancellationToken);
+
+            await m_DotnetRunner.ExecuteDotnetAsync(
+                new[] {$"{versionSelect}", $"\"{GetGeneratorPath()}\"", $"\"{moduleDllPath}\"", $"\"{bindingsOutputFolderPath}\""},
+                cancellationToken);
         }
 
         async Task GenerateAssemblyDefinition(string bindingsOutputFolderPath, CancellationToken cancellationToken)
@@ -280,7 +344,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
         internal static string GetBindingsGenerationOutputTempFolder(string moduleName)
             => Path.Combine(Path.GetTempPath(), "bindings-generation-" + moduleName);
 
-        internal string GetModuleOutputFolder(ISolutionModuleItem moduleItem)
-            => Path.Combine(k_BindingsOutputFolder, m_ModuleProjectRetriever.GetMainEntryProjectName(moduleItem.SolutionPath));
+        internal string GetModuleOutputFolder(IModuleItem moduleItem)
+        {
+            if (moduleItem is INativeModuleItem nmi)
+            {
+                return Path.Combine(k_BindingsOutputFolder, nmi.Name);
+            }
+            else if (moduleItem is ISolutionModuleItem smi)
+            {
+                return Path.Combine(k_BindingsOutputFolder,
+                    m_ModuleProjectRetriever.GetMainEntryProjectName(smi.SolutionPath));
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown module item type: {moduleItem.GetType()}");
+            }
+        }
     }
 }

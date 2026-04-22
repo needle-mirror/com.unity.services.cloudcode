@@ -1,18 +1,21 @@
 using System.IO;
 using UnityEditor;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
-using UnityEditor.ProjectWindowCallback;
-using UnityEngine;
+
+#if UNITY_6000_4_OR_NEWER
+using BaseClass = UnityEditor.ProjectWindowCallback.AssetCreationEndAction;
+using ActionIdentifier = UnityEngine.EntityId;
+#else
+using BaseClass = UnityEditor.ProjectWindowCallback.EndNameEditAction;
+using ActionIdentifier = System.Int32;
+#endif
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
 {
-#if UNITY_6000_5_OR_NEWER
-
-    class CreateCloudCodeScript : AssetCreationEndAction
+    class CreateCloudCodeScript : BaseClass
     {
-        const string k_TemplatePath = "Authoring/Scripts/Templates/new_cloud_code_script.js.txt";
+        const string k_TemplatePath = "Authoring/Scripts/Templates~/new_cloud_code_script.js.txt";
         static readonly string k_DefaultFileName = "new_cloud_code_script";
-        static readonly string k_MonoDefinitionPath = Path.Combine(CloudCodePackage.EditorPath, "Authoring/Scripts/CloudCodeScript.cs");
 
         [MenuItem("Assets/Create/Services/Cloud Code Js Script", false, 81)]
         public static void CreateScript()
@@ -24,75 +27,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
         static void CreateScriptInternal()
         {
             var filePath = k_DefaultFileName + CloudCodeFileExtensions.Preferred();
-            var icon = CloudCodeResources.Icon;
 
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
-                EntityId.None,
-                CreateInstance<CreateCloudCodeScript>(),
-                filePath,
-                icon,
-                null);
-        }
-
-        [InitializeOnLoadMethod]
-        static void SetMonoDefinitionIcon()
-        {
-            var monoImporter = (MonoImporter)AssetImporter.GetAtPath(k_MonoDefinitionPath);
-            var monoScript = monoImporter.GetScript();
-            EditorGUIUtility.SetIconForObject(monoScript,  CloudCodeResources.Icon);
-        }
-
-        public override void Action(EntityId entityId, string pathName, string resourceFile)
-        {
-            var templatePath = Path.Combine(CloudCodePackage.EditorPath, k_TemplatePath);
-            File.WriteAllText(pathName, File.ReadAllText(templatePath));
-            AssetDatabase.Refresh();
-        }
-    }
-
+#if UNITY_6000_4_OR_NEWER
+            UnityEngine.EntityId instanceId = new UnityEngine.EntityId();
 #else
-
-    class CreateCloudCodeScript : EndNameEditAction
-    {
-        const string k_TemplatePath = "Authoring/Scripts/Templates/new_cloud_code_script.js.txt";
-        static readonly string k_DefaultFileName = "new_cloud_code_script";
-        static readonly string k_MonoDefinitionPath = Path.Combine(CloudCodePackage.EditorPath, "Authoring/Scripts/CloudCodeScript.cs");
-
-        [MenuItem("Assets/Create/Services/Cloud Code Js Script", false, 81)]
-        public static void CreateScript()
-        {
-            CreateScriptInternal();
-            CloudCodeAuthoringServices.Instance.GetService<CloudScriptCreationAnalytics>().SendCreatedEvent();
-        }
-
-        static void CreateScriptInternal()
-        {
-            var filePath = k_DefaultFileName + CloudCodeFileExtensions.Preferred();
-            var icon = CloudCodeResources.Icon;
+            int instanceId = 0;
+#endif
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
-                0,
+                instanceId,
                 CreateInstance<CreateCloudCodeScript>(),
                 filePath,
-                icon,
+                null,
                 null);
         }
 
-        [InitializeOnLoadMethod]
-        static void SetMonoDefinitionIcon()
-        {
-            var monoImporter = (MonoImporter)AssetImporter.GetAtPath(k_MonoDefinitionPath);
-            var monoScript = monoImporter.GetScript();
-            EditorGUIUtility.SetIconForObject(monoScript,  CloudCodeResources.Icon);
-        }
-
-        public override void Action(int instanceId, string pathName, string resourceFile)
+        public override void Action(ActionIdentifier instanceId, string pathName, string resourceFile)
         {
             var templatePath = Path.Combine(CloudCodePackage.EditorPath, k_TemplatePath);
             File.WriteAllText(pathName, File.ReadAllText(templatePath));
             AssetDatabase.Refresh();
         }
     }
-
-#endif
 }

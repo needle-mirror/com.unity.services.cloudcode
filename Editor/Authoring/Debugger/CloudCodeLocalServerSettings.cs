@@ -1,3 +1,4 @@
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         const string k_SettingsProviderPath = "Assets/CloudCode/CloudCodeLocalServerSettings.asset";
 
         [SerializeField]
+        [Range(ushort.MinValue, ushort.MaxValue)]
         [Tooltip("The local port on your machine on which the local Cloud Code server will listen for calls.")]
         private ushort m_Port = CloudCodeInitializer.k_DefaultLocalCloudCodeServerPort;
 
@@ -97,3 +99,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         }
     }
 }
+#endif

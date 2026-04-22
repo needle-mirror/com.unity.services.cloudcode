@@ -37,7 +37,9 @@ namespace Unity.Services.CloudCode.Settings
             if (root.childCount == 0)
             {
                 root.Add(new CloudCodeModuleGenerateBindingsVisualElement());
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
                 root.Add(new CloudCodeLocalDebuggerVisualElement());
+#endif
             }
 
             return root;

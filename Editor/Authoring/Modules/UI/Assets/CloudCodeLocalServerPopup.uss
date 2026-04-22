@@ -30,14 +30,22 @@
 
 .popup-row-settings-title__button{
     font-size: 12px;
-    padding-left: 0px;
-    padding-right: 30px;
+    padding-left: 4px;
+    padding-right: 0px;
     background-color: rgba(0, 0, 0, 0);
     background-image: none;
     border-width: 0;
     border-radius: 0;
-    margin-left: 0px;
-    margin-right: 0px;
+    margin-left: -5px;
+    margin-right: -5px;
+    flex-grow: 1;
+    width: 100%;
+    -unity-text-align: middle-left;
+}
+
+.popup-row-settings-title__button:hover {
+    background-color: var(--unity-colors-highlight-background-hover);
+    border-radius: 0;
 }
 
 .popup-row-sever-action__button {
@@ -65,6 +73,6 @@
 .popup-row-state-reset__container {
     margin: 0px;
     height: 18px;
-    width: 75px;
+    width: 98px;
     margin-left: auto;
 }

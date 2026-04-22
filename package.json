@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "3.0.0-exp.4",
+  "version": "3.0.0-exp.5",
   "unity": "6000.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -14,8 +14,10 @@
   },
   "_upm": {
     "gameService": {
+      "genericDashboardUrl": "https://dashboard.unity3d.com/cloud-code",
       "projectDashboardUrl": "https://dashboard.unity3d.com/organizations/{0}/projects/{1}/cloud-code/about",
-      "projectDashboardUrlType": "OrganizationKeyAndProjectGuid"
+      "projectDashboardUrlType": "OrganizationKeyAndProjectGuid",
+      "groupId": "game-backend"
     },
     "supportedPlatforms": [
       "Android",
@@ -26,7 +28,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Added\n- Implement the Resetting of Scope State and persistence for Local CC Debugging.\n\n### Fixed\n- Fixed local server start failure due to unescaped parameters.\n- Fixed Cloud Code fields in Project Settings to show their own descriptive tooltips.\n- Fixed debugger tooltip to indicate debug fields are read-only once the local server starts."
+    "changelog": "### Added\n- Added custom icon form Cloud Code Module Reference (.ccmr) and Cloud Code Javascript (.js) files\n- Added a console log with a \"View on Dashboard\" link upon successful deployment of Cloud Code Modules.\n- Added \"Deployment Window\" shortcut to the Local Cloud Code Server toolbar popup.\n- Scoped invocations are supported for Local Cloud Code Debugging and remote.\n\n### Changed\n- Updated the \"Go to Dashboard\" link in Project Settings for Cloud Code to point to Cloud Code Overview page.\n- Improve discoverability of Cloud Code in the Unity Package Manager.\n\n### Fixed\n- Fixed an issue where rapidly starting and stopping the local Cloud Code server incorrectly produced console error logs.\n- Added checks to prevent Users from setting invalid Ports for the local Cloud Code server. \n- Added .Net path setting validation when starting the local Cloud Code server."
   },
   "samples": [
     {
@@ -41,15 +43,15 @@
     }
   ],
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "3.0.0-exp.4"
+    "com.unity.services.cloudcode.tests": "3.0.0-exp.5"
   },
   "upmCi": {
-    "footprint": "de22b524eceaa4f36a61543892b49ab9e87060bd"
+    "footprint": "81c5e8479dc400f00c17748b7b5df93c0c124e08"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "6e4fecdbec8959c2b0d760cc8385546b47645264"
+    "revision": "f3632e4b8318cd92c5e55699b01f37156c3eff52"
   }
 }

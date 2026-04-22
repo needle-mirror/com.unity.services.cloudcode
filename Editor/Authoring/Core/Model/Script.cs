@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.DeploymentApi.Editor;
-using UnityEngine;
 using CoreLanguage = Unity.Services.CloudCode.Authoring.Editor.Core.Model.Language;
 
-namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
+namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 {
     [Serializable]
-    class Script : IScript, IDeploymentItem, ISerializationCallbackReceiver, ITypedItem
+    class Script : IScript, IDeploymentItem, ITypedItem
     {
         float m_Progress;
+
         DeploymentStatus m_Status;
         string m_Path;
         string m_Type = "JavaScript";
@@ -24,8 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         public string Body { get; set; }
         public List<CloudCodeParameter> Parameters { get; internal set; }
 
-        string IDeploymentItem.Name => Name.ToString();
-
+        string IDeploymentItem.Name => Name.ToString() ?? (m_Path != null ? ScriptName.FromPath(m_Path).ToString() : string.Empty);
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ScriptName Name
@@ -56,13 +54,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             set => SetField(ref m_Type, value);
         }
 
-        public float Progress
+        public virtual float Progress
         {
             get { return m_Progress; }
             set { SetField(ref m_Progress, value); }
         }
 
-        public DeploymentStatus Status
+        public virtual DeploymentStatus Status
         {
             get { return m_Status; }
             set { SetField(ref m_Status, value); }
@@ -91,19 +89,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             Name = name;
             Body = body;
             Parameters = parameters;
-        }
-
-        public void OnBeforeSerialize()
-        {
-            // empty since name is derived and does not need to be stored
-        }
-
-        public void OnAfterDeserialize()
-        {
-            if (Path != null)
-            {
-                Name = ScriptName.FromPath(Path);
-            }
         }
 
         void OnPathChanged(string newPath)

@@ -1,3 +1,4 @@
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System;
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
@@ -55,14 +56,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
                 var sp = CloudCodeLocalServerSettings.GetOrCreate();
                 var inspectorElement = new InspectorElement(sp);
-                inspectorElement.RegisterCallbackOnce<AttachToPanelEvent, InspectorElement>((_, element) =>
-                {
-                    var scriptField = element.Q<PropertyField>("PropertyField:m_Script");
-                    if (scriptField != null)
-                    {
-                        scriptField.style.display = DisplayStyle.None;
-                    }
-                }, inspectorElement);
 
                 Foldout = containerUI.Q<Foldout>("debugger-foldout");
                 Foldout.tooltip = k_FoldoutTooltip;
@@ -111,3 +104,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         }
     }
 }
+#endif

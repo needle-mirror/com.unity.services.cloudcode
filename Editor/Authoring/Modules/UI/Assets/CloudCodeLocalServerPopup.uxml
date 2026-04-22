@@ -5,7 +5,7 @@
     <Style src="CloudCodeLocalServerPopup.uss" />
     <ui:VisualElement name="popup-window-container" class="popup-column__container">
 
-        <!-- Local CLoud Code Server Status -->
+        <!-- Local Cloud Code Server Status -->
         <ui:VisualElement class="popup-row__container">
             <ui:TextElement name="server-status-title-txt" class="popup-row-server-title__text" />
             <ui:VisualElement class="popup-row-sever-status__container">
@@ -16,24 +16,28 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Local CLoud Code Settings Shortcut -->
+        <!-- Data Persistence controls -->
         <ui:VisualElement class="popup-row__container">
-            <ui:Button name="server-settings-btn" class="popup-row-settings-title__button" />
+            <ui:TextElement name="server-reset-btn-txt" class="popup-row-server-title__text" />
+            <ui:Button name="server-reset-btn" text="Reset Data" class="popup-row-state-reset__container" />
         </ui:VisualElement>
 
-        <!-- Local CLoud Code Server Start / Stop controls -->
+        <!-- Local Cloud Code Server Start / Stop controls -->
         <ui:VisualElement class="popup-row__container">
             <ui:Button name="server-action-btn" class="popup-row-sever-action__button" />
         </ui:VisualElement>
 
         <ui:VisualElement class="popup-row-divider__image" />
 
-        <!-- Data Persistence controls-->
+        <!-- Deployment Window Shortcut -->
         <ui:VisualElement class="popup-row__container">
-            <ui:TextElement name="server-reset-btn-txt" class="popup-row-server-title__text" />
-            <ui:Button name="server-reset-btn" text="Reset Data" class="popup-row-state-reset__container" />
+            <ui:Button name="deployment-window-btn" class="popup-row-settings-title__button" />
         </ui:VisualElement>
 
+        <!-- Local Cloud Code Settings Shortcut -->
+        <ui:VisualElement class="popup-row__container">
+            <ui:Button name="server-settings-btn" class="popup-row-settings-title__button" />
+        </ui:VisualElement>
 
         <!-- Local Cloud Code Edit Mode only info box -->
         <ui:HelpBox name="server-edit-only-info-box" class="popup-row-server-edit-only__infobox" message-type="Info" />

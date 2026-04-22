@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Parameters.UI;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using UnityEditor;
 
 

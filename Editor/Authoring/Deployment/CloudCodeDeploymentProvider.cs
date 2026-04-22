@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using UnityEditor;
 using UnityEngine;
 using Unity.Services.DeploymentApi.Editor;

@@ -1,3 +1,4 @@
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
 using UnityEngine;
 

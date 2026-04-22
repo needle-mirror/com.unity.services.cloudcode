@@ -1,3 +1,4 @@
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -50,6 +51,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 m_Root.Add(objectField);
             }
 
+            // For the range ports, remove the slider in favor of just showing the text field.
+            m_Root.RegisterCallback<GeometryChangedEvent, VisualElement>((_, arg) =>
+            {
+                var portField = arg.Q<PropertyField>("PropertyField:m_Port");
+                var slider = portField?.Q("unity-drag-container");
+                if (slider != null)
+                {
+                    slider.style.display = DisplayStyle.None;
+                }
+                var textInput = portField?.Q("unity-text-field");
+                if (textInput  != null)
+                {
+                    textInput.style.marginLeft = 0f;
+                    textInput.style.flexGrow = 1f;
+                }
+            }, m_Root);
+
             UpdateFieldsEnabledState(m_LocalServer?.GetCurrentServerStatus() ??
                 ICloudCodeLocalServer.LocalCloudCodeServerStatus.Idle);
 
@@ -69,3 +87,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         }
     }
 }
+#endif

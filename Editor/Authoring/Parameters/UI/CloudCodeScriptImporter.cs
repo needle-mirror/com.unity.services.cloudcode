@@ -51,7 +51,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 
             var path = ctx.assetPath; //getter must be called on the main thread
             jsScript.name = jsScript.Model.Name.GetNameWithoutExtension();
-            ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript, CloudCodeResources.Icon);
+            ctx.AddObjectToAsset(k_JsScriptAssetIdentifier, jsScript);
             ctx.SetMainObject(jsScript);
             RemoveFailedToLoadParametersState(jsScript.Model);
 

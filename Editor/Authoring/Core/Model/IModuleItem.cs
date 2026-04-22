@@ -35,6 +35,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         string CcmPath { get; set; }
     }
 
+    interface INativeModuleItem : IModuleItem
+    {
+        // Absolute path to the output assembly
+        string AssemblyPath { get; }
+    }
+
     static class IModuleItemExtensions
     {
         public static void UpdateLogStatus(this IModuleItem self, DeploymentStatus status)

@@ -1,8 +1,10 @@
-﻿#if UNITY_6000_3_OR_NEWER
+#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
+#if UNITY_6000_3_OR_NEWER
 
 using System;
-using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
+using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using UnityEditor;
 using UnityEditor.Toolbars;
 using UnityEngine;
@@ -15,7 +17,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     {
         // Constants to uxml paths and assets
         static readonly string k_CloudCodeLocalToolbarIconsPath =
-            Path.Combine(CloudCodePackage.EditorPath, "Authoring", "Modules", "UI", "Assets", "Icons");
+            PathUtils.Join(CloudCodePackage.EditorPath, "Authoring", "Modules", "UI", "Assets", "Icons");
         static readonly string k_ToolbarIdleIcon = "ToolbarIdle.png";
         static readonly string k_ToolbarStartedIcon = "ToolbarStarted.png";
         static readonly string k_ToolbarLoadingIcon = "ToolbarLoading.png";
@@ -38,6 +40,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         MainToolbarContent m_MainToolbarContent;
         CloudCodeLocalToolbarPopup m_PopupWindow;
         ICloudCodeLocalServer m_LocalServer;
+        bool m_WaitingForAssetImport;
+        AssetPostprocessorProxy m_AssetPostprocessorProxy;
 
         internal event Action OnToolbarInvalidated;
 
@@ -54,6 +58,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             OnToolbarInvalidated?.Invoke();
         }
 
+        void OnAssetsImported(object sender, PostProcessEventArgs e)
+        {
+            OnToolbarInvalidated?.Invoke();
+        }
+
         internal ICloudCodeLocalServer GetLocalServer()
         {
             return m_LocalServer;
@@ -65,6 +74,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                                                m_LocalServer.GetLastServerFailure()) as Texture2D;
             m_MainToolbarContent = new MainToolbarContent(icon);
 
+            if (icon == null && !m_WaitingForAssetImport)
+            {
+                m_WaitingForAssetImport = true;
+                m_AssetPostprocessorProxy = new AssetPostprocessorProxy();
+                m_AssetPostprocessorProxy.AllAssetsPostprocessed += OnAssetsImported;
+            }
+            else if (icon != null && m_WaitingForAssetImport)
+            {
+                m_WaitingForAssetImport = false;
+                m_AssetPostprocessorProxy.AllAssetsPostprocessed -= OnAssetsImported;
+            }
+
             UpdateToolbarIconTooltip();
             return m_MainToolbarContent;
         }
@@ -75,8 +96,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             if (status == LocalCloudCodeServerStatus.Idle && lastKnownServerFailure != null)
             {
                 var errorIcon = EditorGUIUtility.isProSkin ? $"d_{k_ToolbarErrorIcon}" : k_ToolbarErrorIcon;
-                var errorPath = Path.Combine(k_CloudCodeLocalToolbarIconsPath, errorIcon);
-                return AssetDatabase.LoadAssetAtPath<Texture2D>(errorPath);
+                var errorPath = PathUtils.Join(k_CloudCodeLocalToolbarIconsPath, errorIcon);
+                return EditorGUIUtility.Load(errorPath) as Texture2D;
             }
 
             // Else show the Local CC icon based on server status
@@ -100,8 +121,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             }
 
             iconPath = EditorGUIUtility.isProSkin ? $"d_{iconPath}" : iconPath;
-            iconPath = Path.Combine(k_CloudCodeLocalToolbarIconsPath, iconPath);
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(iconPath);
+            iconPath = PathUtils.Join(k_CloudCodeLocalToolbarIconsPath, iconPath);
+            return EditorGUIUtility.Load(iconPath) as Texture2D;
         }
 
         void UpdateToolbarIconTooltip()
@@ -145,4 +166,5 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     }
 }
 
+#endif
 #endif

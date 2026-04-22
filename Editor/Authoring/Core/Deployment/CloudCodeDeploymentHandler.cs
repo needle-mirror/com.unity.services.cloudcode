@@ -6,6 +6,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.DeploymentTask;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
@@ -177,24 +178,34 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                         invalidScript.Key,
                         DeploymentStatuses.DeployFailed,
                         exception.ShortMessage,
-                        StatusSeverityLevel.Error);
+                        SeverityLevel.Error);
                 }
             }
         }
 
-        protected virtual void UpdateScriptProgress(IScript script, float progress)  {}
+        protected virtual void UpdateScriptProgress(IScript script, float progress)
+        {
+            ((Script)script).Progress = progress; 
+        }
 
-        protected virtual void UpdateScriptStatus(IScript script,
+        protected virtual void UpdateScriptStatus(
+            IScript script,
             string message,
             string detail,
-            StatusSeverityLevel level = StatusSeverityLevel.None) {}
+            SeverityLevel level = SeverityLevel.None)
+        {
+            ((Script)script).Status = new DeploymentStatus(
+                message,
+                detail,
+                level);
+        }
 
         void OnPublishFailed(IScript script, Exception e)
         {
             UpdateScriptStatus(script,
                 DeploymentStatuses.PublishFailed,
                 e.Message,
-                StatusSeverityLevel.Error);
+                SeverityLevel.Error);
         }
 
         async Task<IScript> UploadFile(IScript script)
@@ -206,7 +217,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                     GetFileSize(script.Path),
                     GetFileType(script.Language));
 
-                UpdateScriptStatus(script, "Uploading...", string.Empty, StatusSeverityLevel.Info);
+                UpdateScriptStatus(script, "Uploading...", string.Empty, SeverityLevel.Info);
                 await m_Client.UploadFromFile(script);
 
                 //Only dispose the timer if the upload was successful
@@ -220,7 +231,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 UpdateScriptStatus(script,
                     DeploymentStatuses.DeployFailed,
                     e.Message,
-                    StatusSeverityLevel.Error);
+                    SeverityLevel.Error);
                 m_Logger.LogError(e.Message ?? e.InnerException?.Message);
                 throw;
             }
@@ -254,16 +265,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 UpdateScriptStatus(script,
                     $"Publishing {script.Name}...",
                     string.Empty,
-                    StatusSeverityLevel.Success);
+                    SeverityLevel.Success);
                 m_Logger.LogVerbose($"[Publishing] Publishing {script.Name}");
-                await m_Client.Publish(script.Name);
+                
+                if (script.Language != Language.CS)
+                {
+                    await m_Client.Publish(script.Name);
+                }
+                
                 m_DeploymentAnalytics.SendSuccessfulPublishEvent();
 
                 UpdateScriptProgress(script, 100f);
                 UpdateScriptStatus(script,
                     "Up to date",
                     string.Empty,
-                    StatusSeverityLevel.Success);
+                    SeverityLevel.Success);
             }
             catch (Exception e)
             {
@@ -324,7 +340,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                         script,
                         DeploymentStatuses.DeployFailed,
                         e.Message,
-                        StatusSeverityLevel.Error);
+                        SeverityLevel.Error);
                 }
                 throw;
             }

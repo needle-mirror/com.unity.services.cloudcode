@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Authoring.Editor.Scripts;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
 {
