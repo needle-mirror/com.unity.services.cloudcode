@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "3.0.0-exp.5",
+  "version": "3.0.0-exp.6",
   "unity": "6000.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -28,7 +28,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Added\n- Added custom icon form Cloud Code Module Reference (.ccmr) and Cloud Code Javascript (.js) files\n- Added a console log with a \"View on Dashboard\" link upon successful deployment of Cloud Code Modules.\n- Added \"Deployment Window\" shortcut to the Local Cloud Code Server toolbar popup.\n- Scoped invocations are supported for Local Cloud Code Debugging and remote.\n\n### Changed\n- Updated the \"Go to Dashboard\" link in Project Settings for Cloud Code to point to Cloud Code Overview page.\n- Improve discoverability of Cloud Code in the Unity Package Manager.\n\n### Fixed\n- Fixed an issue where rapidly starting and stopping the local Cloud Code server incorrectly produced console error logs.\n- Added checks to prevent Users from setting invalid Ports for the local Cloud Code server. \n- Added .Net path setting validation when starting the local Cloud Code server."
+    "changelog": "### Fixed\n- Fixed an issue where .net path checks were not account for dotnet cli commands.\n\n### Added\n- Added Cloud Code Debugger that needs to be enabled by adding `UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL` under Project Settings > Player > Scripting Define Symbols."
   },
   "samples": [
     {
@@ -43,15 +43,15 @@
     }
   ],
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "3.0.0-exp.5"
+    "com.unity.services.cloudcode.tests": "3.0.0-exp.6"
   },
   "upmCi": {
-    "footprint": "81c5e8479dc400f00c17748b7b5df93c0c124e08"
+    "footprint": "cc81c3dbaf43a6278fbca086f77d74e0b67a4c3c"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "f3632e4b8318cd92c5e55699b01f37156c3eff52"
+    "revision": "dca456bdb08ba87346743df625ddf7a9f3e792eb"
   }
 }

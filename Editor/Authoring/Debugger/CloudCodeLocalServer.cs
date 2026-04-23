@@ -293,10 +293,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         private bool ValidateSettings()
         {
             // Fail fast if no .NET was set.
-            if (string.IsNullOrEmpty(m_Preferences.DotnetPath) || !File.Exists(m_Preferences.DotnetPath))
+            if (string.IsNullOrEmpty(m_Preferences.DotnetPath))
             {
                 m_Logger.LogError($"Invalid .NET path was set. Please set a valid .NET path at" +
-                                  $"Preferences > CloudCode > .NET Path");
+                    $"Preferences > CloudCode > .NET Path");
                 return false;
             }
 
