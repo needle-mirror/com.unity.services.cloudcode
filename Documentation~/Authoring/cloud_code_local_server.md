@@ -15,8 +15,8 @@ To use Local Cloud Code Debugging, ensure that you have the following setup:
 1. A Unity Editor version of at least 6000.3 and up. 
 2. Followed the setup prerequisites for [Cloud Code Modules](./cloud_code_modules.md#prerequisites)
 3. If you have existing Modules, ensure the following Nuget packages are referenced:
-   1. com.unity.services.cloudcode.apis - v0.0.22
-   2. com.unity.services.cloudcode.core - v0.0.3
+   1. com.unity.services.cloudcode.apis - v0.0.26
+   2. com.unity.services.cloudcode.core - v0.0.4
 4. You have [.Net 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) installed on your machine. 
 
 > [!NOTE]

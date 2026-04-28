@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-exp.7] - 2026-04-28
+
+### Changed
+- Updated templates setup and dependencies to use Cloud Code APIs v0.0.26 and Core v0.0.4.
+- Updated the local server debugger.
+
 ## [3.0.0-exp.6] - 2026-04-23
 
 ### Fixed

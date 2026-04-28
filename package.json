@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "3.0.0-exp.6",
+  "version": "3.0.0-exp.7",
   "unity": "6000.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -28,7 +28,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Fixed\n- Fixed an issue where .net path checks were not account for dotnet cli commands.\n\n### Added\n- Added Cloud Code Debugger that needs to be enabled by adding `UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL` under Project Settings > Player > Scripting Define Symbols."
+    "changelog": "### Changed\n- Updated templates setup and dependencies to use Cloud Code APIs v0.0.26 and Core v0.0.4.\n- Updated the local server debugger."
   },
   "samples": [
     {
@@ -43,15 +43,15 @@
     }
   ],
   "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "3.0.0-exp.6"
+    "com.unity.services.cloudcode.tests": "3.0.0-exp.7"
   },
   "upmCi": {
-    "footprint": "cc81c3dbaf43a6278fbca086f77d74e0b67a4c3c"
+    "footprint": "f1639343ad8f444dbbd0b50344c7f1d0d26021fa"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "dca456bdb08ba87346743df625ddf7a9f3e792eb"
+    "revision": "dbf7f595e4b90e4b115efa7b3e712726c081197d"
   }
 }
