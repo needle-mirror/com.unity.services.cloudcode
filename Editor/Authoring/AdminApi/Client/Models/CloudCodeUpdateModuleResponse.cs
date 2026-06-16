@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "dateCreated", EmitDefaultValue = false)]
         public DateTime? DateCreated{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeUpdateModuleResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -73,7 +73,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var dateCreatedStringValue = DateCreated.ToString();
                 dictionary.Add("dateCreated", dateCreatedStringValue);
             }
-            
+
             return dictionary;
         }
     }

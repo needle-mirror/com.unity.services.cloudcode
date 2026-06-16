@@ -30,12 +30,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Solution
             await UpdateProjectName(dstDirectory, moduleName, cancellationToken);
         }
 
-        async Task CopyFilesFromTemplate(string dstDirectory, string moduleName, CancellationToken cancellationToken)
+        Task CopyFilesFromTemplate(string dstDirectory, string moduleName, CancellationToken cancellationToken)
         {
             var srcSlnFile = m_TemplateInfo.PathSolution;
             var srcDir = Path.GetDirectoryName(srcSlnFile);
 
             m_FileSystem.CopyDirectory(srcDir, dstDirectory);
+            return Task.CompletedTask;
         }
 
         async Task UpdateProjectName(string dstDirectory, string moduleName, CancellationToken cancellationToken)

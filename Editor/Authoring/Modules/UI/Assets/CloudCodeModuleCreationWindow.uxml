@@ -1,0 +1,78 @@
+<ui:UXML
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xmlns="UnityEngine.UIElements">
+    <Style src="CloudCodeModuleCreationWindow.uss" />
+    <ui:VisualElement name="creation-window-container" class="creation-window-row__container">
+
+        <!-- Creation info text -->
+        <ui:TextElement name="create-info-title" class="creation-window-header__text" />
+        <ui:TextElement name="create-info-message" class="creation-window-header-content__text" />
+
+        <ui:VisualElement class="creation-window-divider__image" />
+
+        <ui:TabView class="creation-window-tab">
+            <ui:Tab name="cloud-tab">
+
+                <ui:TextElement name="create-cloud-header" class="creation-window-subheader__text" style="margin-top:12px;" />
+                <ui:TextElement name="create-cloud-subheader" class="creation-window-subheader__text" />
+
+                <!--Directory elements for Cloud Server Asset Creation -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="cloud-directory-label" class="creation-window-input__text" />
+                    <ui:VisualElement name="cloud-directory-icon" />
+                    <ui:TextElement  name="cloud-directory-input" class="creation-window-input__field" />
+                </ui:VisualElement>
+
+                <!-- Input elements for Cloud Server Script Creation -->
+                <ui:VisualElement class="creation-window-column__container" >
+                    <ui:TextElement name="cloud-script-name-label" class="creation-window-input__text" />
+                    <ui:TextField  name="cloud-script-name-input" class="creation-window-input__field" />
+                </ui:VisualElement>
+
+                <!-- Input elements for Cloud Server Module Creation -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="cloud-module-name-label" class="creation-window-input__text" />
+                    <ui:TextField name="cloud-module-name-input" class="creation-window-input__field" />
+                </ui:VisualElement>
+
+                <!-- Input elements for Cloud Server Assembly Creation unity-text-element -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="cloud-assembly-label" class="creation-window-input__text" />
+                    <ui:TextElement name="cloud-assembly-input" class="creation-window-input__field" />
+                </ui:VisualElement>
+            </ui:Tab>
+
+            <ui:Tab name="client-tab">
+                <ui:TextElement name="create-client-header" class="creation-window-subheader__text" style="margin-top:12px;" />
+
+                <!-- Directory elements for Client Asset Creation -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="client-directory-label" class="creation-window-input__text" />
+                    <ui:VisualElement name="client-directory-icon" />
+                    <ui:TextElement  name="client-directory-input" class="creation-window-input__field" />
+                </ui:VisualElement>
+
+                <!-- Input elements for Client Script Creation -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="client-bindings-label" class="creation-window-input__text" />
+                    <ui:TextElement name="client-bindings-input" class="creation-window-input__text" />
+                </ui:VisualElement>
+
+                <!-- Input elements for Client Assembly Creation -->
+                <ui:VisualElement class="creation-window-column__container">
+                    <ui:TextElement name="client-assembly-label" class="creation-window-input__text" />
+                    <ui:TextElement name="client-assembly-input" class="creation-window-input__text" />
+                </ui:VisualElement>
+            </ui:Tab>
+
+        </ui:TabView>
+
+        <!-- Cancel / submission elements -->
+        <ui:VisualElement style="margin-top: 10px;" class="creation-window-column__container">
+            <ui:Button name="cancel-btn" class="creation-window-action__button" />
+            <ui:Button name="confirm-btn" style="margin-left: auto;" class="creation-window-action__button" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

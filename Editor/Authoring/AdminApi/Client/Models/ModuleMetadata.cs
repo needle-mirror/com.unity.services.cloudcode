@@ -54,42 +54,42 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", EmitDefaultValue = false)]
         public string Name{ get; }
-        
+
         /// <summary>
         /// The language of a Cloud Code module.
         /// </summary>
         [Preserve]
         [DataMember(Name = "language", EmitDefaultValue = false)]
         public string Language{ get; }
-        
+
         /// <summary>
         /// A set of user-defined tags in the form of string key-value pairs.
         /// </summary>
         [Preserve]
         [DataMember(Name = "tags", EmitDefaultValue = false)]
         public Dictionary<string, string> Tags{ get; }
-        
+
         /// <summary>
         /// Signed URL for time-limited access to the binary contents of the module.
         /// </summary>
         [Preserve]
         [DataMember(Name = "signedDownloadURL", EmitDefaultValue = false)]
         public string SignedDownloadURL{ get; }
-        
+
         /// <summary>
         /// Date time in ISO 8601 format. Null if there is no associated value.
         /// </summary>
         [Preserve]
         [DataMember(Name = "dateCreated", EmitDefaultValue = false)]
         public DateTime? DateCreated{ get; }
-        
+
         /// <summary>
         /// Date time in ISO 8601 format. Null if there is no associated value.
         /// </summary>
         [Preserve]
         [DataMember(Name = "dateModified", EmitDefaultValue = false)]
         public DateTime? DateModified{ get; }
-    
+
         /// <summary>
         /// Formats a ModuleMetadata into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -138,37 +138,37 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-            
+
             if (Language != null)
             {
                 var languageStringValue = Language.ToString();
                 dictionary.Add("language", languageStringValue);
             }
-            
+
             if (Tags != null)
             {
                 var tagsStringValue = Tags.ToString();
                 dictionary.Add("tags", tagsStringValue);
             }
-            
+
             if (SignedDownloadURL != null)
             {
                 var signedDownloadURLStringValue = SignedDownloadURL.ToString();
                 dictionary.Add("signedDownloadURL", signedDownloadURLStringValue);
             }
-            
+
             if (DateCreated != null)
             {
                 var dateCreatedStringValue = DateCreated.ToString();
                 dictionary.Add("dateCreated", dateCreatedStringValue);
             }
-            
+
             if (DateModified != null)
             {
                 var dateModifiedStringValue = DateModified.ToString();
                 dictionary.Add("dateModified", dateModifiedStringValue);
             }
-            
+
             return dictionary;
         }
     }

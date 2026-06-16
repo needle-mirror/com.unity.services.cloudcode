@@ -1,4 +1,3 @@
-#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +18,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Projects;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
+using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.DeploymentApi.Editor;
@@ -38,18 +38,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         const string K_ServerPidKey = "LOCAL_CLOUD_CODE_PID";
         const string K_ServerStatus = "LOCAL_CLOUD_CODE_STATUS";
         const string K_ServerFailure = "LOCAL_CLOUD_CODE_FAILURE";
-        static readonly string k_CloudCodeLocalStatePath = Path.Combine("Orleans", "GrainState", "v1");
+        static readonly string k_CloudCodeLocalStatePath = PathUtils.Join("Orleans", "GrainState", "v1");
 
         // Required dependencies
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly ILogger m_Logger;
         readonly IProcessRunner m_ProcessRunner;
-        readonly CloudCodeLocalModuleDeployCommand m_CloudCodeLocalDeployCommand;
+        readonly CloudCodeModuleReferenceLocalDeployCommand m_CloudCodeLocalDeployCommand;
+            readonly CloudCodeModuleDeployCommand m_CloudCodeModuleDeployCommand;
             readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
-        readonly IAccessTokens m_AccessTokens;
+        internal IAccessTokens AccessTokens { get; set; }
         readonly ICloudCodePreferences m_Preferences;
         readonly ICloudCodeLocalServerApi m_LocalServerClient;
         readonly CloudCodeModuleReferenceCollection m_CloudCodeModuleReferenceCollection;
+        readonly CloudCodeModuleCollection m_CloudCodeModuleCollection;
 
         // Handling of Server status and states
         LocalCloudCodeServerStatus m_CurrentServerStatus;
@@ -75,22 +77,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         internal CloudCodeLocalServer(
             ILogger logger,
             IProcessRunner processRunner,
-            CloudCodeLocalModuleDeployCommand cloudCodeLocalDeployCommand,
+            CloudCodeModuleReferenceLocalDeployCommand cloudCodeLocalDeployCommand,
+            CloudCodeModuleDeployCommand cloudCodeModuleDeployCommand,
             EditorCloudCodeLocalModuleDeploymentHandler deployHandler,
             IEnvironmentsApi environmentsApi,
-            IAccessTokens mAccessTokens,
+            IAccessTokens accessTokens,
             ICloudCodePreferences preferences,
-            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection)
+            CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection,
+            CloudCodeModuleCollection cloudCodeModuleCollection)
         {
-            m_AccessTokens = mAccessTokens;
+            AccessTokens = accessTokens;
             m_Logger = logger;
             m_ProcessRunner = processRunner;
             m_CloudCodeLocalDeployCommand = cloudCodeLocalDeployCommand;
+            m_CloudCodeModuleDeployCommand = cloudCodeModuleDeployCommand;
             m_DeployHandler = deployHandler;
             m_EnvironmentsApi = environmentsApi;
             m_CancellationTokenSource = new CancellationTokenSource();
             m_Preferences = preferences;
             m_CloudCodeModuleReferenceCollection = cloudCodeModuleReferenceCollection;
+            m_CloudCodeModuleCollection = cloudCodeModuleCollection;
 
             // Local debug server client setup with the current port configuration
             var endpoint = $"{k_ServerUrl}:{GetPort()}";
@@ -191,7 +197,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         public void ClearServerState()
         {
             var modulesPath = EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir();
-            var serverStatePath = Path.Combine(modulesPath, k_CloudCodeLocalStatePath);
+            var serverStatePath = PathUtils.Join(modulesPath, k_CloudCodeLocalStatePath);
 
             try
             {
@@ -318,13 +324,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // Abort early if a cancellation request was done.
             cancellationToken.ThrowIfCancellationRequested();
 
-            return referencedModulesDir;
+            var cloudCodeModules = m_CloudCodeModuleCollection.ToList();
+            var cloudCodeModulesDir = await m_CloudCodeModuleDeployCommand.GenerateAndDeployToLocalAsync(cloudCodeModules, cancellationToken);
+
+            // If we have native and reference modules, ensure they are deployed to the same location.
+            if (!string.IsNullOrEmpty(referencedModulesDir) &&
+                !string.IsNullOrEmpty(cloudCodeModulesDir) &&
+                referencedModulesDir != cloudCodeModulesDir)
+            {
+                throw new Exception("Deployment Failure: Mismatched deployed locations for Cloud Code and Referenced modules.");
+            }
+
+            // Now start the server pointed to the compiled module directories
+            return referencedModulesDir ?? cloudCodeModulesDir;
         }
 
         List<IModuleItem> GetAllModules()
         {
             var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
             List<IModuleItem> allModuleItems = new List<IModuleItem>();
+            var cloudCodeModules = m_CloudCodeModuleCollection.ToList();
+            allModuleItems.AddRange(cloudCodeModules);
             allModuleItems.AddRange(referencedModules);
             return allModuleItems;
         }
@@ -352,7 +372,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 }
                 ;
                 var port = GetPort();
-                var logfile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                var logfile = PathUtils.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "UnityCloudCode",
                     "Logs", "server.log");
                 var startInfo = new ProcessStartInfo()
@@ -370,7 +390,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
                 m_Logger.LogInfo($"Starting local server with arguments {startInfo.FileName} {startInfo.Arguments}");
 
-                startInfo.EnvironmentVariables["GATEWAY_JWT"] = await m_AccessTokens.GetServicesGatewayTokenAsync();
+                startInfo.EnvironmentVariables["GATEWAY_JWT"] = await AccessTokens.GetServicesGatewayTokenAsync();
 
                 // Fail fast if selected port is in use.
                 if (!await IsPortAvailable(GetPort(), cancellationToken))
@@ -566,7 +586,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         string GetLocalCloudCodeServerPath()
         {
             var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(GetType().Assembly);
-            return Path.Combine(packageInfo.resolvedPath, "Editor", "CloudCodeDebugger~", "CloudCodeDebugger.dll");
+            return PathUtils.Join(packageInfo.resolvedPath, "Editor", "CloudCodeDebugger~", "CloudCodeDebugger.dll");
         }
 
         void OnHealthCheckPingsFail()
@@ -693,4 +713,3 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         #endregion
     }
 }
-#endif

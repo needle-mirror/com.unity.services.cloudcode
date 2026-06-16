@@ -35,7 +35,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         string CcmPath { get; set; }
     }
 
-    interface INativeModuleItem : IModuleItem
+    interface ICloudCodeModuleItem : IModuleItem
     {
         // Absolute path to the output assembly
         string AssemblyPath { get; }

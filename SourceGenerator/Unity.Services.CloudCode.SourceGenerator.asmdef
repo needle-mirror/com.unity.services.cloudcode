@@ -1,0 +1,14 @@
+{
+    "name": "Unity.Services.CloudCode.SourceGenerator",
+    "rootNamespace": "Unity.Services.CloudCode.SourceGenerator",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

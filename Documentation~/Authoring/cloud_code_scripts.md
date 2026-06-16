@@ -57,7 +57,7 @@ By default, parameters are not required.
 Both formats can be combined as desired:
 
 ```javascript
-module.exports.params = { 
+module.exports.params = {
   "echo" : "Boolean",
   "aParam" : { "type": "String", "required": true }
  }
@@ -66,8 +66,8 @@ module.exports.params = {
 If you are using in-script parameters, they will override previously defined
 inspector parameters.
 
-In-script parameters offer a simpler alternative to declaring parameters. 
-Deploying a file with in-script parameters will add the necessary parameters on the dashboard. 
+In-script parameters offer a simpler alternative to declaring parameters.
+Deploying a file with in-script parameters will add the necessary parameters on the dashboard.
 
 At the current time, **modifying in-script parameters in the dashboard is not supported**.
 
@@ -104,7 +104,7 @@ function rollDice(sides) {
 
 ## File Names
 
-Cloud Code assets use their file name 
+Cloud Code assets use their file name
 as the identifier when uploading to the service.
 
 ## Opening Cloud Code Assets
@@ -128,10 +128,10 @@ The following arguments will be handled:
 
 A few examples of possible set ups:
 
-* Rider (On Windows): 
+* Rider (On Windows):
   * Application: cmd.exe
   * Args: /C "$(EditorExePath) $(ProjectPath) $(File)"
-* VS Code: 
+* VS Code:
   * Application: Code.exe
   * Args: $(ProjectPath) $(File)"
 

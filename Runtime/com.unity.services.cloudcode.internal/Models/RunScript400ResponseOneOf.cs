@@ -51,9 +51,9 @@ namespace Unity.Services.CloudCode.Internal.Models
         {
             { "problems/basic", typeof(BasicErrorResponse) },
             { "problems/validation", typeof(ValidationErrorResponse) },
-            { "BasicErrorResponse", typeof(BasicErrorResponse) }, 
+            { "BasicErrorResponse", typeof(BasicErrorResponse) },
             { "ValidationErrorResponse", typeof(ValidationErrorResponse) }
-            
+
         };
         private static List<Type> PossibleTypes = new List<Type>(){ typeof(BasicErrorResponse) , typeof(ValidationErrorResponse)  };
 

@@ -41,19 +41,19 @@ namespace Unity.Services.CloudCode.Internal.Models
         }
 
         /// <summary>
-        /// Object containing key-value pairs that map on to the parameter definitions for the given function of a module. Parameters are required according to the arguments defined in the function signature. 
+        /// Object containing key-value pairs that map on to the parameter definitions for the given function of a module. Parameters are required according to the arguments defined in the function signature.
         /// </summary>
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]
         public IDeserializable Params{ get; }
-        
+
         /// <summary>
         /// Parameter scope of RunModuleArguments
         /// </summary>
         [Preserve]
         [DataMember(Name = "scope", EmitDefaultValue = false)]
         public RunModuleArgumentsScope Scope{ get; }
-    
+
         /// <summary>
         /// Formats a RunModuleArguments into a string of key-value pairs for use as a path parameter.
         /// </summary>

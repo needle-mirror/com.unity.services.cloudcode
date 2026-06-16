@@ -1,0 +1,19 @@
+{
+    "name": "Unity.Services.CloudCode.Core",
+    "rootNamespace": "Unity.Services.CloudCode.Core",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll",
+        "Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -48,21 +48,21 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "id", EmitDefaultValue = false)]
         public string Id{ get; }
-        
+
         /// <summary>
         /// The access token (JWT) for the newly created anonymous player
         /// </summary>
         [Preserve]
         [DataMember(Name = "token", EmitDefaultValue = false)]
         public string Token{ get; }
-        
+
         /// <summary>
         /// The Unix timestamp (in milliseconds) at which the access token expires
         /// </summary>
         [Preserve]
         [DataMember(Name = "expiresAt", EmitDefaultValue = false)]
         public int ExpiresAt{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeCreateAnonymousPlayerResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -96,16 +96,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var idStringValue = Id.ToString();
                 dictionary.Add("id", idStringValue);
             }
-            
+
             if (Token != null)
             {
                 var tokenStringValue = Token.ToString();
                 dictionary.Add("token", tokenStringValue);
             }
-            
+
             var expiresAtStringValue = ExpiresAt.ToString();
             dictionary.Add("expiresAt", expiresAtStringValue);
-            
+
             return dictionary;
         }
     }

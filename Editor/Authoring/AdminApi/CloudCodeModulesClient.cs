@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Client;
 using Unity.Services.CloudCode.Authoring.Client.Apis.Default;
 using Unity.Services.CloudCode.Authoring.Client.Default;
+using Unity.Services.CloudCode.Authoring.Client.ErrorMitigation;
 using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Client.Models;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
@@ -24,6 +25,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
     {
         const string k_ContentType = "Content-Type";
         const string k_ProblemJson = "application/problem+json";
+        const int k_ScriptExistsRetryCount = 2;
+        const int k_ScriptExistsRequestTimeoutSeconds = 30;
 
         readonly IAccessTokens m_TokenProvider;
         readonly IDefaultApiClient m_Client;
@@ -212,7 +215,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 scriptName.GetNameWithoutExtension());
 
             var res =
-                await WrapRequest(m_Client.GetModuleAsync(existsRequest));
+                await GetModuleWithRetry(existsRequest);
 
             switch (res.Status)
             {
@@ -223,6 +226,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 default:
                     throw new UnexpectedRemoteStatusCodeException(res.Status);
             }
+        }
+
+        async Task<Response<CloudCodeGetModuleResponse>> GetModuleWithRetry(GetModuleRequest request)
+        {
+            var retryPolicyConfig = new RetryPolicyConfig
+            {
+                MaxRetries = k_ScriptExistsRetryCount
+            };
+            var statusCodePolicyConfig = new StatusCodePolicyConfig();
+            statusCodePolicyConfig.HandleStatusCode(0);
+
+            var configuration = new Configuration(
+                null,
+                k_ScriptExistsRequestTimeoutSeconds,
+                null,
+                null,
+                retryPolicyConfig,
+                statusCodePolicyConfig);
+
+            return await WrapRequest(m_Client.GetModuleAsync(request, configuration));
         }
 
         static async Task<Response> WrapRequest(Task<Response> request)

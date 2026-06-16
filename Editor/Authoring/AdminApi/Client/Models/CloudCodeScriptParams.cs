@@ -48,7 +48,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-        
+
         /// <summary>
         /// The type of the parameter
         /// </summary>
@@ -56,14 +56,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", EmitDefaultValue = false)]
         public TypeOptions Type{ get; }
-        
+
         /// <summary>
         /// A flag indicating if the parameter is required when running a Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "required", EmitDefaultValue = true)]
         public bool Required{ get; }
-    
+
         /// <summary>
         /// The type of the parameter
         /// </summary>
@@ -129,13 +129,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-            
+
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-            
+
             var requiredStringValue = Required.ToString();
             dictionary.Add("required", requiredStringValue);
-            
+
             return dictionary;
         }
     }

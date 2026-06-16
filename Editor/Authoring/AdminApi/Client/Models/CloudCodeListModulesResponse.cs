@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "results", EmitDefaultValue = false)]
         public List<ModuleMetadata> Results{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeListModulesResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>

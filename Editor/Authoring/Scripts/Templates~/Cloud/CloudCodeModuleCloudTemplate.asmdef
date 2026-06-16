@@ -1,0 +1,22 @@
+{
+    "name": "CloudCodeModuleCloudTemplate",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7284d1e8423490b46bbb7a1cc15a31c4",
+        "GUID:3203a5bd0983b634e962989e5e53678e",
+        "GUID:dcea414711a1d417c899526c51c49ae6"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.Extensions.Logging.Abstractions.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

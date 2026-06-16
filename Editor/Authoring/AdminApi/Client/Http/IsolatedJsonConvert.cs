@@ -21,7 +21,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
     {
         [DebuggerStepThrough]
         public static string SerializeObject(object value) => SerializeObject(value, null, null);
-        
+
         [DebuggerStepThrough]
         public static string SerializeObject(object value, JsonSerializerSettings settings) => SerializeObject(value, null, settings);
 
@@ -46,7 +46,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
 
             return stringWriter.ToString();
         }
-        
+
         [DebuggerStepThrough]
         public static object DeserializeObject(string value, Type type) => DeserializeObject(value, type, null);
 

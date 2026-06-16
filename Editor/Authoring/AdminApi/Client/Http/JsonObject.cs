@@ -56,7 +56,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
                 {
                     return obj.ToString();
                 }
-                
+
                 return IsolatedJsonConvert.SerializeObject(obj);
             }
             catch (System.Exception)

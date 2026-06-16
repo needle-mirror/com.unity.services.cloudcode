@@ -63,17 +63,27 @@ namespace Unity.Services.CloudCode
             return DeserializeOutput<TResult>(result);
         }
 
-        public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync()
+        public Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync()
         {
-            return await SubscribeAsync(TokenProvider.TokenProviderMode.Player);
+            return SubscribeToPlayerMessagesAsync(new SubscriptionEventCallbacks());
         }
 
-        public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync()
+        public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks)
         {
-            return await SubscribeAsync(TokenProvider.TokenProviderMode.Project);
+            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
         }
 
-        async Task<ISubscriptionEvents> SubscribeAsync(TokenProvider.TokenProviderMode mode)
+        public Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync()
+        {
+            return SubscribeToProjectMessagesAsync(new SubscriptionEventCallbacks());
+        }
+
+        public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks)
+        {
+            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
+        }
+
+        async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, TokenProvider.TokenProviderMode mode)
         {
             if (m_Wire == null)
             {
@@ -84,7 +94,7 @@ namespace Unity.Services.CloudCode
             ValidateRequiredDependencies();
 
             var channel = m_Wire.CreateChannel(new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
-            var subscriptionsChannel = new SubscriptionChannel(channel);
+            var subscriptionsChannel = new SubscriptionChannel(channel, callbacks);
             await subscriptionsChannel.SubscribeAsync();
             return subscriptionsChannel;
         }

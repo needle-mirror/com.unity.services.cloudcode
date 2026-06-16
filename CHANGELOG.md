@@ -4,19 +4,37 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [3.0.0-exp.7] - 2026-04-28
+## [3.0.0-exp.8] - 2026-06-16
+### Added
+- Author Cloud Code Modules natively in the Unity Editor, with your cloud source code compiled automatically and fully
+  debuggable right where you work. There's no longer any need to regenerate bindings or maintain a separate solution
+  outside your Unity workspace - everything lives in one place. Writing, compiling, debugging, and deploying now happen
+  in a single workflow, enabling rapid iteration and faster deployment. Highlights include:
+  - Create new Cloud Code Modules quickly with a guided creation flow.
+  - Iterate rapidly and catch issues early with modules that compile in-editor as part of your project.
+  - Skip manual bindings regeneration - strongly-typed client bindings are generated and kept in sync automatically.
+  - Scoped Cloud Code is supported alongside standard modules.
 
+### Fixed
+- Added retries with a longer request timeout when checking whether a Cloud Code module exists during deployment.
+- Fixed Cloud Code Module deployment resolving required precompiled assemblies using Editor-loaded assembly paths on Unity 6000.5 or newer.
+
+### Changed
+- Renamed Native Modules to Cloud Code Modules; they now use the `.ccmu` file extension instead of generic `.asset` files. Recreate any existing modules.
+- Generating bindings will now includes enum values alongside their names.
+- Generating bindings dictionary keys now retain their original types instead of being converted to strings.
+
+## [3.0.0-exp.7] - 2026-04-28
 ### Changed
 - Updated templates setup and dependencies to use Cloud Code APIs v0.0.26 and Core v0.0.4.
 - Updated the local server debugger.
 
 ## [3.0.0-exp.6] - 2026-04-23
-
 ### Fixed
 - Fixed an issue where .net path checks were not account for dotnet cli commands.
 
 ### Added
-- Added Cloud Code Debugger that needs to be enabled by adding `UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL` under Project Settings > Player > Scripting Define Symbols. 
+- Added Cloud Code Debugger that needs to be enabled by adding `UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL` under Project Settings > Player > Scripting Define Symbols.
 
 ## [3.0.0-exp.5] - 2026-04-22
 ### Added
@@ -24,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added a console log with a "View on Dashboard" link upon successful deployment of Cloud Code Modules.
 - Added "Deployment Window" shortcut to the Local Cloud Code Server toolbar popup.
 - Scoped invocations are supported for Local Cloud Code Debugging and remote.
+- Added retries with a longer request timeout when checking whether a Cloud Code module exists during deployment.
 
 ### Changed
 - Updated the "Go to Dashboard" link in Project Settings for Cloud Code to point to Cloud Code Overview page.
@@ -31,8 +50,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fixed an issue where rapidly starting and stopping the local Cloud Code server incorrectly produced console error logs.
-- Added checks to prevent Users from setting invalid Ports for the local Cloud Code server. 
+- Added checks to prevent Users from setting invalid Ports for the local Cloud Code server.
 - Added .Net path setting validation when starting the local Cloud Code server.
+- Fixed usage of disallowed `Assembly.Location` API in Unity 6.5+
 
 ## [3.0.0-exp.4] - 2026-03-11
 ### Added
@@ -48,7 +68,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [3.0.0-exp.2] - 2026-02-12
 ### Fixed
-- Enable support for passing complex types for C# modules deployed onto the local Cloud Code server. 
+- Enable support for passing complex types for C# modules deployed onto the local Cloud Code server.
 
 ## [3.0.0-exp.1] - 2026-01-19
 ### Added
@@ -64,7 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Cloud Code event subscription only exposes event registration
-from within the returned subscription object
+  from within the returned subscription object
 
 ### Removed
 - Removed deprecated CloudCode API
@@ -90,9 +110,9 @@ from within the returned subscription object
 - Bumped dependency of Core package
 
 ### Fixed
--[Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)
-  -Changed exit condition , it seems [only indefinite wait for exit will always work](https://github.com/dotnet/runtime/issues/18789)
-  - Added timeout
+- [Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)
+- Changed exit condition , it seems [only indefinite wait for exit will always work](https://github.com/dotnet/runtime/issues/18789)
+- Added timeout
 - Tentative fix for occasional hang of dotnet when redirecting std output
 - Fixed documentation that still used `import` over `require` for bundling
 
@@ -209,13 +229,13 @@ from within the returned subscription object
 ## [2.2.4] - 2023-02-07
 
 ### Fixed
-- Fixed corrupted npm libraries used for services. 
+- Fixed corrupted npm libraries used for services.
 
 ## [2.2.2] - 2022-12-07
 
 ### Fixed
 - Missing logs in some failure cases are now handled
-- Added more verbose logging for diagnostics behind a preprocessor directive 
+- Added more verbose logging for diagnostics behind a preprocessor directive
 
 ## [2.2.1] - 2022-12-07
 
@@ -236,7 +256,7 @@ from within the returned subscription object
 
 ### Added
 - Integration with the `Deployment`  package for config-as-code which allows to edit and configure
-CloudCode scripts directly from the editor
+  CloudCode scripts directly from the editor
 
 ## [2.0.1] - 2022-06-13
 

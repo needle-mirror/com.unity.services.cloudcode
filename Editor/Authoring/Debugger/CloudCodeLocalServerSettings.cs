@@ -1,4 +1,3 @@
-#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -99,4 +98,3 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         }
     }
 }
-#endif

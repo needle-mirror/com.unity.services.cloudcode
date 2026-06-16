@@ -444,14 +444,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         public List<IMultipartFormSection> ConstructBody()
         {
             List<IMultipartFormSection> requestParts = new List<IMultipartFormSection>();
-            
+
             requestParts.Add(new MultipartFormDataSection("name", ConstructBody(Name), "text/plain"));
-            
+
             requestParts.Add(new MultipartFormDataSection("language", ConstructBody(Language), "text/plain"));
-            
+
             requestParts.Add(new MultipartFormDataSection("tags", ConstructBody(Tags), "application/octet-stream"));
             requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
-            
+
             return requestParts;
         }
 
@@ -1609,10 +1609,10 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         public List<IMultipartFormSection> ConstructBody()
         {
             List<IMultipartFormSection> requestParts = new List<IMultipartFormSection>();
-            
+
             requestParts.Add(new MultipartFormDataSection("tags", ConstructBody(Tags), "application/octet-stream"));
             requestParts.Add(GenerateMultipartFormFileSection("file", File, "application/octet-stream"));
-            
+
             return requestParts;
         }
 

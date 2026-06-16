@@ -5,8 +5,27 @@ using System.Text;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
+    /// <summary>
+    /// Converts arbitrary text into a valid C# identifier suitable for use as a class name.
+    /// Used by the Cloud Code module creation flow to derive class names from user-supplied input.
+    /// </summary>
     public static class ClassNameSanitizer
     {
+        /// <summary>
+        /// Sanitizes <paramref name="input"/> into a valid C# identifier.
+        /// </summary>
+        /// <remarks>
+        /// The input is normalized to Unicode Normalization Form C and formatting characters
+        /// (Unicode category <see cref="UnicodeCategory.Format"/>) are removed. Characters that are
+        /// not valid identifier parts are stripped; if the first remaining character is valid only as
+        /// an identifier part (not a start character), it is prefixed with an underscore. If the result
+        /// matches a C# keyword, it is escaped with an <c>@</c> prefix.
+        /// </remarks>
+        /// <param name="input">The text to sanitize. May be null, empty, or whitespace.</param>
+        /// <returns>
+        /// A valid C# identifier. Returns <c>"_DefaultClass"</c> when <paramref name="input"/> is null,
+        /// empty, whitespace, or reduces to no usable characters.
+        /// </returns>
         public static string Sanitize(string input)
         {
             if (string.IsNullOrWhiteSpace(input))

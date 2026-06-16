@@ -48,21 +48,21 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "code", IsRequired = true, EmitDefaultValue = true)]
         public string Code{ get; }
-        
+
         /// <summary>
         /// The version id of the active version of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "version", IsRequired = true, EmitDefaultValue = true)]
         public int Version{ get; }
-        
+
         /// <summary>
         /// Date time in ISO 8601 format. Null if there is no associated value.
         /// </summary>
         [Preserve]
         [DataMember(Name = "datePublished", IsRequired = true, EmitDefaultValue = true)]
         public DateTime? DatePublished{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeGetScriptResponseActiveScript into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -96,16 +96,16 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var codeStringValue = Code.ToString();
                 dictionary.Add("code", codeStringValue);
             }
-            
+
             var versionStringValue = Version.ToString();
             dictionary.Add("version", versionStringValue);
-            
+
             if (DatePublished != null)
             {
                 var datePublishedStringValue = DatePublished.ToString();
                 dictionary.Add("datePublished", datePublishedStringValue);
             }
-            
+
             return dictionary;
         }
     }

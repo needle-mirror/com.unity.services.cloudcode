@@ -1,4 +1,3 @@
-#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 #if UNITY_6000_3_OR_NEWER
 
 using System;
@@ -166,5 +165,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     }
 }
 
-#endif
 #endif

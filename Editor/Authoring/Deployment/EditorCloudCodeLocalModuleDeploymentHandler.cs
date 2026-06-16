@@ -1,10 +1,10 @@
-#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
@@ -19,15 +19,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly IFileSystem m_FileSystem;
         readonly ILogger m_logger;
+        readonly IDeploymentAnalytics m_DeploymentAnalytics;
 
         internal EditorCloudCodeLocalModuleDeploymentHandler(
             IEnvironmentsApi environmentsApi,
             IFileSystem fileSystem,
-            ILogger logger)
+            ILogger logger,
+            IDeploymentAnalytics deploymentAnalytics)
         {
             m_FileSystem = fileSystem;
             m_EnvironmentsApi = environmentsApi;
             m_logger = logger;
+            m_DeploymentAnalytics = deploymentAnalytics;
         }
 
         internal static string GetModuleDestinationDir()
@@ -40,31 +43,39 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         internal async Task<string> DeployAsync(Dictionary<IModuleItem, IScript> deploymentItems,
             CancellationToken cancellationToken)
         {
-            var envId = m_EnvironmentsApi.ActiveEnvironmentId;
-            if (envId == null)
+            try
             {
-                throw new EnvironmentNotFoundException("No active environment selected.");
+                var envId = m_EnvironmentsApi.ActiveEnvironmentId;
+                if (envId == null)
+                {
+                    throw new EnvironmentNotFoundException("No active environment selected.");
+                }
+
+                var moduleDestinationDir = GetModuleDestinationDir();
+
+                foreach (var deploymentItem in deploymentItems)
+                {
+                    var module = deploymentItem.Key;
+                    var scripts = deploymentItem.Value;
+                    UpdateDeployStatus(module, "Deploying...", severity: SeverityLevel.Info);
+
+                    await CopyToTempFolder(scripts.Path, Path.Combine(moduleDestinationDir, envId.ToString()), cancellationToken);
+
+                    UpdateDeployStatus(module, "Deployed Successfully", severity: SeverityLevel.Info);
+                    UpdateDeployStatus(module, "Up to date", severity: SeverityLevel.Success);
+                    SetDeployStatusWithState(module, "Deployed to Local Server", severity: SeverityLevel.Info);
+
+                    // Do not continue if a cancellation was requested
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+
+                return moduleDestinationDir;
             }
-
-            var moduleDestinationDir = GetModuleDestinationDir();
-
-            foreach (var deploymentItem in deploymentItems)
+            catch (Exception e)
             {
-                var module = deploymentItem.Key;
-                var scripts = deploymentItem.Value;
-                UpdateDeployStatus(module, "Deploying...", severity: SeverityLevel.Info);
-
-                await CopyToTempFolder(scripts.Path, Path.Combine(moduleDestinationDir, envId.ToString()), cancellationToken);
-
-                UpdateDeployStatus(module, "Deployed Successfully", severity: SeverityLevel.Info);
-                UpdateDeployStatus(module, "Up to date", severity: SeverityLevel.Success);
-                SetDeployStatusWithState(module, "Deployed to Local Server", severity: SeverityLevel.Info);
-
-                // Do not continue if a cancellation was requested
-                cancellationToken.ThrowIfCancellationRequested();
+                m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
+                throw;
             }
-
-            return moduleDestinationDir;
         }
 
         async Task CopyToTempFolder(string sourceFilePath, string destinationPath, CancellationToken cancellationToken)
@@ -136,4 +147,3 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         }
     }
 }
-#endif

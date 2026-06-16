@@ -1,0 +1,82 @@
+.creation-window-row__container {
+    flex-direction: column;
+    padding: 10px;
+    align-items: stretch;
+    background-color: var(--unity-colors-window-background);
+    height: 337px;
+}
+
+.creation-window-column__container {
+    display: flex;
+    flex-direction: row;
+    height: 25px;
+}
+
+.creation-window-divider__image {
+    height: 2px;
+    width: 400px;
+    background-color: var(--unity-colors-slider_groove-background);
+    margin-top: 0px;
+    margin-bottom: 5px;
+    margin-left: -10px;
+    margin-right: -10px;
+}
+
+.creation-window-header__text{
+    -unity-text-align: middle-left;
+    -unity-font-style: bold;
+}
+
+.creation-window-header-content__text{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    -unity-text-align: middle-left;
+}
+
+.creation-window-subheader__text{
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.creation-window-input__text{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+    flex-basis: 1px;
+}
+
+.creation-window-input__field {
+    flex-grow: 1;
+    flex-basis: 1px;
+    -unity-text-align: middle-left;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.creation-window-action__button {
+    width: 80px;
+    height: 20px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.creation-window-tab {
+    height: 220px;
+}
+
+.creation-window-tab .unity-tab-view__content-viewport{
+    background-color: var(--unity-colors-window-background);
+}
+
+.creation-window-tab .unity-tab__header {
+    background-color: var(--unity-colors-window-background);
+    width: 100px;
+    -unity-text-align: middle-center;
+    align-items: center;
+    align-content: center;
+}
+
+.creation-window-tab .unity-tab__header-label {
+    flex-grow: 1;
+}

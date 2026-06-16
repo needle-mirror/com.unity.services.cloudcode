@@ -185,7 +185,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 
         protected virtual void UpdateScriptProgress(IScript script, float progress)
         {
-            ((Script)script).Progress = progress; 
+            ((Script)script).Progress = progress;
         }
 
         protected virtual void UpdateScriptStatus(
@@ -267,12 +267,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                     string.Empty,
                     SeverityLevel.Success);
                 m_Logger.LogVerbose($"[Publishing] Publishing {script.Name}");
-                
+
                 if (script.Language != Language.CS)
                 {
                     await m_Client.Publish(script.Name);
                 }
-                
+
                 m_DeploymentAnalytics.SendSuccessfulPublishEvent();
 
                 UpdateScriptProgress(script, 100f);

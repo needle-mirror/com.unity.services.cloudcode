@@ -58,56 +58,56 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         [DataMember(Name = "type", IsRequired = true, EmitDefaultValue = true)]
         public string Type{ get; }
-        
+
         /// <summary>
         /// Parameter title of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "title", IsRequired = true, EmitDefaultValue = true)]
         public string Title{ get; }
-        
+
         /// <summary>
         /// Parameter status of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "status", IsRequired = true, EmitDefaultValue = true)]
         public int Status{ get; }
-        
+
         /// <summary>
         /// Parameter code of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "code", IsRequired = true, EmitDefaultValue = true)]
         public int Code{ get; }
-        
+
         /// <summary>
         /// Parameter detail of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "detail", IsRequired = true, EmitDefaultValue = true)]
         public string Detail{ get; }
-        
+
         /// <summary>
         /// Parameter instance of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "instance", EmitDefaultValue = false)]
         public string Instance{ get; }
-        
+
         /// <summary>
-        /// An identifier Unity uses internally to investigate what happened to a particular request that went through the Unity Services or Game API Gateway. 
+        /// An identifier Unity uses internally to investigate what happened to a particular request that went through the Unity Services or Game API Gateway.
         /// </summary>
         [Preserve]
         [DataMember(Name = "requestId", EmitDefaultValue = false)]
         public IDeserializable RequestId{ get; }
-        
+
         /// <summary>
         /// Parameter details of InvocationErrorResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "details", IsRequired = true, EmitDefaultValue = true)]
         public List<InvocationErrorResponseDetails> Details{ get; }
-    
+
         /// <summary>
         /// Formats a InvocationErrorResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -158,31 +158,31 @@ namespace Unity.Services.CloudCode.Internal.Models
                 var typeStringValue = Type.ToString();
                 dictionary.Add("type", typeStringValue);
             }
-            
+
             if (Title != null)
             {
                 var titleStringValue = Title.ToString();
                 dictionary.Add("title", titleStringValue);
             }
-            
+
             var statusStringValue = Status.ToString();
             dictionary.Add("status", statusStringValue);
-            
+
             var codeStringValue = Code.ToString();
             dictionary.Add("code", codeStringValue);
-            
+
             if (Detail != null)
             {
                 var detailStringValue = Detail.ToString();
                 dictionary.Add("detail", detailStringValue);
             }
-            
+
             if (Instance != null)
             {
                 var instanceStringValue = Instance.ToString();
                 dictionary.Add("instance", instanceStringValue);
             }
-            
+
             return dictionary;
         }
     }

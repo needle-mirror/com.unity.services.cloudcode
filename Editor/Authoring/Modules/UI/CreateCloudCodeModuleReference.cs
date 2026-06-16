@@ -18,16 +18,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
     {
         const string k_DefaultReferenceName = "new_module_reference";
 
-        [MenuItem("Assets/Create/Services/Cloud Code C# Module Reference", false, 81)]
+        [MenuItem("Assets/Create/Services/Cloud Code C# Module Reference", false, 69)]
         public static void CreateModuleReferenceFile()
         {
-            var filePath = k_DefaultReferenceName + CloudCodeModuleReferenceResources.FileExtension;
+            const string filePath = k_DefaultReferenceName + CloudCodeModuleReferenceResources.FileExtension;
 
-#if UNITY_6000_4_OR_NEWER
-            UnityEngine.EntityId instanceId = new UnityEngine.EntityId();
-#else
-            int instanceId = 0;
-#endif
+            // We use ActionIdentifier so the alias automatically
+            // resolves to the correct type based on the Unity version.
+            // ReSharper disable once PreferConcreteValueOverDefault
+            // ReSharper disable once ConvertToConstant.Local
+            var instanceId = new ActionIdentifier();
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
                 instanceId,

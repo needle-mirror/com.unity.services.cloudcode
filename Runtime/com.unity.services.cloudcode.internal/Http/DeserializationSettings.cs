@@ -29,5 +29,5 @@ namespace Unity.Services.CloudCode.Internal.Http
         /// <summary>MissingMemberHandling is set to Error by default.</summary>
         public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
     }
-    
+
 }

@@ -25,7 +25,7 @@ Scripts existing in the editor allows users
 to treat their source control as the source of truth.
 
 This means that rollbacks, bisection and other common version-control
-operations become trivial.  
+operations become trivial.
 For instance keeping client C# scripts in sync with CloudCode scripts
 becomes a simple task.
 

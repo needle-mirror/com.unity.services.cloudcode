@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "token", EmitDefaultValue = false)]
         public string Token{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeTestScriptRequestAsPlayer into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -73,7 +73,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var tokenStringValue = Token.ToString();
                 dictionary.Add("token", tokenStringValue);
             }
-            
+
             return dictionary;
         }
     }

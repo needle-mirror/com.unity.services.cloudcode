@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "logs", EmitDefaultValue = false)]
         public List<string> Logs{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeTestScriptErrorResponseAllOf into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -73,7 +73,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var logsStringValue = Logs.ToString();
                 dictionary.Add("logs", logsStringValue);
             }
-            
+
             return dictionary;
         }
     }

@@ -15,14 +15,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         public CloudCodeModuleDeploymentProvider(
             CloudCodeModuleDeployCommand deployCommand,
-            GenerateSolutionCommand generateSolutionCommand,
-            CloudCodeModuleGenerateBindingsCommand generateBindingsCommand,
             OpenModuleDashboardCommand openModuleDashboardCommand,
-            CloudCodeModuleReferenceCollection scripts)
+            CloudCodeModuleCollection scripts)
         {
             DeployCommand = deployCommand;
-            Commands.Add(generateBindingsCommand);
-            Commands.Add(generateSolutionCommand);
             Commands.Add(openModuleDashboardCommand);
 
             foreach (var script in scripts)
@@ -35,8 +31,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
-            var oldItems = args.OldItems?.Cast<CloudCodeModuleReference>() ?? Array.Empty<CloudCodeModuleReference>();
-            var newItems = args.NewItems?.Cast<CloudCodeModuleReference>() ?? Array.Empty<CloudCodeModuleReference>();
+            var oldItems = args.OldItems?.Cast<CloudCodeModule>() ?? Array.Empty<CloudCodeModule>();
+            var newItems = args.NewItems?.Cast<CloudCodeModule>() ?? Array.Empty<CloudCodeModule>();
 
             oldItems.ForEach(asset => DeploymentItems.Remove(asset));
             newItems.ForEach(asset => DeploymentItems.Add(asset));

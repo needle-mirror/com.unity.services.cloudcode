@@ -1,0 +1,87 @@
+// This file is generated. Do not modify by hand.
+// XML documentation file not found. To check if public methods have XML comments,
+// make sure the XML doc file is present and located next to the scraped dll
+namespace Unity.Services.CloudCode.Core
+{
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false)] public class CloudCodeFunctionAttribute : System.Attribute
+    {
+        public string Name { get; }
+        public CloudCodeFunctionAttribute(string functionName) {}
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Field|System.AttributeTargets.Property, Inherited = false)] public sealed class CloudCodeIgnorePropertyAttribute : System.Attribute
+    {
+        public CloudCodeIgnorePropertyAttribute() {}
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Field|System.AttributeTargets.Property, Inherited = false)] public sealed class CloudCodeSerializePropertyAttribute : System.Attribute
+    {
+        public CloudCodeSerializePropertyAttribute() {}
+    }
+
+    public interface ICancellation
+    {
+        public System.Threading.CancellationToken ShutdownToken { get; }
+        public System.Threading.CancellationToken Token { get; }
+    }
+
+    public interface ICloudCodeConfig
+    {
+        public Microsoft.Extensions.DependencyInjection.IServiceCollection Dependencies { get; }
+        public string GetString(string key, string defaultValue = @"");
+    }
+
+    public interface ICloudCodeSetup
+    {
+        public void Setup(ICloudCodeConfig config);
+    }
+
+    public interface ICloudCodeTimer
+    {
+        public bool Elapsed { get; }
+        public string TimerId { get; }
+        public void Cancel();
+        public System.TimeSpan RemainingTime();
+    }
+
+    public interface IExecutionContext
+    {
+        public string AccessToken { get; }
+        public string AnalyticsUserId { get; }
+        public string CorrelationId { get; }
+        public string EnvironmentId { get; }
+        public string EnvironmentName { get; }
+        public string Issuer { get; }
+        public string PlayerId { get; }
+        public string ProjectId { get; }
+        public string ScopeId { get; }
+        public string ServiceToken { get; }
+        public string UnityInstallationId { get; }
+        public string UserId { get; }
+    }
+
+    public interface IStateSerializer
+    {
+        public T Deserialize<T>(string json);
+        public void PopulateObject(string json, object instance);
+        public string Serialize<T>(object obj);
+    }
+
+    public interface ITimerService
+    {
+        public System.Threading.Tasks.Task<ICloudCodeTimer> Fetch(string timerId);
+        public System.Threading.Tasks.Task<string> Register(System.TimeSpan timeSpan, string functionName, System.Collections.Generic.Dictionary<string, object> paramsJson = default(System.Collections.Generic.Dictionary<string, object>));
+    }
+
+    public enum Scope
+    {
+        MultiplayerSession = 0,
+        Player = 1,
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Class)] public class StateScopeAttribute : System.Attribute
+    {
+        public Scope StateScope { get; }
+        public StateScopeAttribute(Scope scope) {}
+    }
+}

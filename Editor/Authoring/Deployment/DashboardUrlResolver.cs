@@ -38,10 +38,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             m_ScriptClient = scriptClient;
         }
 
-        static async Task<string> GetDashboardUrl(string itemName, string baseUrl, ICloudCodeClient client)
+        static Task<string> GetDashboardUrl(string itemName, string baseUrl, ICloudCodeClient client)
         {
             // return item url
-            return $"{baseUrl}/{itemName}";
+            return Task.FromResult($"{baseUrl}/{itemName}");
         }
 
         string GetBaseUrl()
@@ -55,16 +55,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             return $"{host}/home/organizations/{orgId}/projects/{projectId}/environments/{envId}/cloud-code";
         }
 
-        public async Task<string> CloudCodeScript(string name)
+        public Task<string> CloudCodeScript(string name)
         {
             var url = $"{GetBaseUrl()}/scripts";
-            return await GetDashboardUrl(name, url, m_ScriptClient);
+            return GetDashboardUrl(name, url, m_ScriptClient);
         }
 
-        public async Task<string> CloudCodeModule(string name)
+        public Task<string> CloudCodeModule(string name)
         {
             var url = $"{GetBaseUrl()}/modules";
-            return await GetDashboardUrl(name, url, m_ModuleClient);
+            return GetDashboardUrl(name, url, m_ModuleClient);
         }
 
         public Task<string> CloudCodeModules()

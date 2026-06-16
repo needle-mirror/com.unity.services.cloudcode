@@ -17,7 +17,7 @@ using SystemPath = System.IO.Path;
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
-     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
+     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeAsset.png")]
     class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
@@ -138,15 +138,33 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
                 k_JsonSerializerSettings);
         }
 
-        public void FromJson(string json)
+        public bool FromJson(string json)
         {
-            JsonConvert.PopulateObject(json, this, k_JsonSerializerSettings);
+            try
+            {
+                JsonConvert.PopulateObject(json, this, k_JsonSerializerSettings);
+                return true;
+            }
+            catch (JsonException e)
+            {
+                Debug.LogError($"Failed to parse Cloud Code Module Reference: {e.Message}");
+                return false;
+            }
         }
 
-        public void SaveChanges()
+        public bool SaveChanges()
         {
-            var json = ToJson();
-            File.WriteAllText(Path, json);
+            try
+            {
+                var json = ToJson();
+                File.WriteAllText(this.Path, json);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to save Cloud Code Module Reference: {e.Message}");
+                return false;
+            }
         }
 
         public void CopyTo(CloudCodeModuleReference value)

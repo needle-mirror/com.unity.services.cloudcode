@@ -1,4 +1,3 @@
-#if UNITY_SERVICES_CLOUDCODE_EXPERIMENTAL
 namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
 {
     abstract class LocalCloudCodeResponseBase{}
@@ -16,4 +15,3 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
         public int shutdowntimeoutSeconds;
     }
 }
-#endif

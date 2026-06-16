@@ -188,7 +188,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             // this stage, we will check this in the accessor.
             _configuration = configuration;
 
-            
+
         }
 
 

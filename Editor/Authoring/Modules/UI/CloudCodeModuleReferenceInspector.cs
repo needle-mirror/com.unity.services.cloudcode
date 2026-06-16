@@ -160,9 +160,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             if (IsPathValid(newObj.ModulePath))
             {
                 m_ChangeTracker.Apply();
-                ModuleReference.SaveChanges();
-                UpdateApplyRevertEnabled();
-                AssetDatabase.Refresh();
+                if (ModuleReference.SaveChanges())
+                {
+                    UpdateApplyRevertEnabled();
+                    AssetDatabase.Refresh();
+                }
             }
             else
             {
@@ -201,7 +203,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         void GenerateSolution()
         {
-            var task = GenerateSolutionCommand.GenerateSolution(ModuleReference);
+            var task = CloudCodeModuleReferenceGenerateSolutionCommand.GenerateSolution(ModuleReference);
             if (task.Exception != null)
             {
                 UpdateMessageBox("Solution failed to generate: " + task.Exception?.Message, true, HelpBoxMessageType.Error);
@@ -218,7 +220,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             try
             {
                 var taskResult = await CloudCodeAuthoringServices.Instance
-                    .GetService<ICloudCodeModuleBindingsGenerator>()
+                    .GetService<ICloudCodeModuleReferenceBindingsGenerator>()
                         .GenerateModuleBindings(new List<ISolutionModuleItem>() { ModuleReference }, CancellationToken.None);
 
                 var generationResult = taskResult.First();
@@ -242,7 +244,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 m_GenerateBindingsContainer.SetEnabled(true);
 
-                CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleBindingsGenerationAnalytics>()
+                CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleReferenceBindingsGenerationAnalytics>()
                     .SendCodeGenerationFromInspectorBtnEvent(ex);
             }
         }

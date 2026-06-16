@@ -47,14 +47,14 @@ namespace Unity.Services.CloudCode.Internal.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", EmitDefaultValue = false)]
         public TypeOptions Type{ get; }
-        
+
         /// <summary>
         /// The ID of the scope.
         /// </summary>
         [Preserve]
         [DataMember(Name = "id", EmitDefaultValue = false)]
         public string Id{ get; }
-    
+
         /// <summary>
         /// The type of scope.
         /// </summary>
@@ -101,13 +101,13 @@ namespace Unity.Services.CloudCode.Internal.Models
 
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-            
+
             if (Id != null)
             {
                 var idStringValue = Id.ToString();
                 dictionary.Add("id", idStringValue);
             }
-            
+
             return dictionary;
         }
     }

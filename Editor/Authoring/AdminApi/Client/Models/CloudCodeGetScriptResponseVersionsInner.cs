@@ -50,28 +50,28 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "code", IsRequired = true, EmitDefaultValue = true)]
         public string Code{ get; }
-        
+
         /// <summary>
         /// The version id of the version of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "version", IsRequired = true, EmitDefaultValue = true)]
         public int? Version{ get; }
-        
+
         /// <summary>
         /// A flag indicating if the Script is a draft Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "isDraft", IsRequired = true, EmitDefaultValue = true)]
         public bool IsDraft{ get; }
-        
+
         /// <summary>
         /// Date time in ISO 8601 format. Null if there is no associated value.
         /// </summary>
         [Preserve]
         [DataMember(Name = "dateUpdated", IsRequired = true, EmitDefaultValue = true)]
         public DateTime? DateUpdated{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeGetScriptResponseVersionsInner into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -109,22 +109,22 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var codeStringValue = Code.ToString();
                 dictionary.Add("code", codeStringValue);
             }
-            
+
             if (Version != null)
             {
                 var versionStringValue = Version.ToString();
                 dictionary.Add("version", versionStringValue);
             }
-            
+
             var isDraftStringValue = IsDraft.ToString();
             dictionary.Add("isDraft", isDraftStringValue);
-            
+
             if (DateUpdated != null)
             {
                 var dateUpdatedStringValue = DateUpdated.ToString();
                 dictionary.Add("dateUpdated", dateUpdatedStringValue);
             }
-            
+
             return dictionary;
         }
     }
