@@ -6,4 +6,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("GameIteration")]
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Authoring.Tests.Editor")]
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Editor")]
+[assembly: InternalsVisibleTo("CloudCode.Runtime.Tests")]
+[assembly: InternalsVisibleTo("CloudCode.Editor.Tests")]
 #endif

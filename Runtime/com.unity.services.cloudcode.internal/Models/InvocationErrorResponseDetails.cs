@@ -48,21 +48,21 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-        
+
         /// <summary>
         /// Parameter message of InvocationErrorResponseDetails
         /// </summary>
         [Preserve]
         [DataMember(Name = "message", IsRequired = true, EmitDefaultValue = true)]
         public string Message{ get; }
-        
+
         /// <summary>
         /// Parameter stackTrace of InvocationErrorResponseDetails
         /// </summary>
         [Preserve]
         [DataMember(Name = "stackTrace", IsRequired = true, EmitDefaultValue = true)]
         public List<string> StackTrace{ get; }
-    
+
         /// <summary>
         /// Formats a InvocationErrorResponseDetails into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -99,19 +99,19 @@ namespace Unity.Services.CloudCode.Internal.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-            
+
             if (Message != null)
             {
                 var messageStringValue = Message.ToString();
                 dictionary.Add("message", messageStringValue);
             }
-            
+
             if (StackTrace != null)
             {
                 var stackTraceStringValue = StackTrace.ToString();
                 dictionary.Add("stackTrace", stackTraceStringValue);
             }
-            
+
             return dictionary;
         }
     }

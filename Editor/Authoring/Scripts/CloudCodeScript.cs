@@ -4,8 +4,6 @@ using UnityEngine;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.10/manual/Authoring/cloud_code_scripts.html"),
-     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Scripts/UI/Assets/icon.png")]
     class CloudCodeScript : ScriptableObject, IPath
     {
         [SerializeField]

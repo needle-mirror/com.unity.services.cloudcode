@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "version", IsRequired = true, EmitDefaultValue = true)]
         public int Version{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodePublishScriptResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -67,7 +67,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
 
             var versionStringValue = Version.ToString();
             dictionary.Add("version", versionStringValue);
-            
+
             return dictionary;
         }
     }

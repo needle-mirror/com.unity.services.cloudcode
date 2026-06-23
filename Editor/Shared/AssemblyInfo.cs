@@ -7,4 +7,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Authoring.Tests.Editor")]
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Editor")]
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Authoring.Editor")]
+[assembly: InternalsVisibleTo("CloudCode.Runtime.Tests")]
+[assembly: InternalsVisibleTo("CloudCode.Editor.Tests")]
 #endif

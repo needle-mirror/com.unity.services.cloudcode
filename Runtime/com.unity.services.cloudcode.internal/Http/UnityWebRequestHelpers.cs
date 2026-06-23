@@ -27,7 +27,7 @@ namespace Unity.Services.CloudCode.Internal.Http
         public static TaskAwaiter<HttpClientResponse> GetAwaiter(this UnityWebRequestAsyncOperation asyncOp)
         {
             var tcs = new TaskCompletionSource<HttpClientResponse>();
-            
+
             asyncOp.completed += obj =>
             {
                 var result = CreateHttpClientResponse((UnityWebRequestAsyncOperation) obj);

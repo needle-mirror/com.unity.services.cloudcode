@@ -8,13 +8,12 @@ using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
-using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.UI;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using DeploymentConfigInspectorFooter = Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter.DeploymentConfigInspectorFooter;
 using Task = System.Threading.Tasks.Task;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
@@ -50,23 +49,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             uxmlAsset.CloneTree(rootElement);
 
             BindControls(rootElement);
-            SetupConfigFooter(rootElement);
+            DeploymentFooterBinder.Bind(rootElement, target, DeploymentDashboard.Module);
 
             return rootElement;
-        }
-
-        void SetupConfigFooter(VisualElement rootElement)
-        {
-            var deploymentConfigInspectorFooter = rootElement.Q<DeploymentConfigInspectorFooter>();
-            var assetPath = AssetDatabase.GetAssetPath(target);
-            var assetName = Path.GetFileNameWithoutExtension(assetPath);
-            deploymentConfigInspectorFooter.BindGUI(
-                assetPath,
-                CloudCodeAuthoringServices.Instance.GetService<ICommonAnalytics>(),
-                "cloudcode");
-            deploymentConfigInspectorFooter.DashboardLinkUrlGetter = () => CloudCodeAuthoringServices.Instance
-                .GetService<IDashboardUrlResolver>()
-                .CloudCodeModule(assetName);
         }
 
         void BindControls(VisualElement rootElement)
@@ -160,9 +145,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             if (IsPathValid(newObj.ModulePath))
             {
                 m_ChangeTracker.Apply();
-                ModuleReference.SaveChanges();
-                UpdateApplyRevertEnabled();
-                AssetDatabase.Refresh();
+                if (ModuleReference.SaveChanges())
+                {
+                    UpdateApplyRevertEnabled();
+                    AssetDatabase.Refresh();
+                }
             }
             else
             {
@@ -201,7 +188,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         void GenerateSolution()
         {
-            var task = GenerateSolutionCommand.GenerateSolution(ModuleReference);
+            var task = CloudCodeModuleReferenceGenerateSolutionCommand.GenerateSolution(ModuleReference);
             if (task.Exception != null)
             {
                 UpdateMessageBox("Solution failed to generate: " + task.Exception?.Message, true, HelpBoxMessageType.Error);
@@ -218,8 +205,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             try
             {
                 var taskResult = await CloudCodeAuthoringServices.Instance
-                    .GetService<ICloudCodeModuleBindingsGenerator>()
-                        .GenerateModuleBindings(new List<IModuleItem>() { ModuleReference }, CancellationToken.None);
+                    .GetService<ICloudCodeModuleReferenceBindingsGenerator>()
+                        .GenerateModuleBindings(new List<ISolutionModuleItem>() { ModuleReference }, CancellationToken.None);
 
                 var generationResult = taskResult.First();
                 if (generationResult.IsSuccessful)
@@ -242,7 +229,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 m_GenerateBindingsContainer.SetEnabled(true);
 
-                CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleBindingsGenerationAnalytics>()
+                CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleReferenceBindingsGenerationAnalytics>()
                     .SendCodeGenerationFromInspectorBtnEvent(ex);
             }
         }

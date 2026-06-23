@@ -43,6 +43,6 @@ namespace Unity.Services.CloudCode.Internal.Scheduler
                 IsPlaying = true;
             }
         }
-#endif   
+#endif
     }
 }

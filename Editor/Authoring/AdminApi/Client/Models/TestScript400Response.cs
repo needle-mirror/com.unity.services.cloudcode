@@ -49,7 +49,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
 
         private static Dictionary<string, Type> TypeLookup = new Dictionary<string, Type>()
         {
-            
+
         };
         private static List<Type> PossibleTypes = new List<Type>(){ typeof(CloudCodeBasicErrorResponse) , typeof(CloudCodeTestScriptErrorResponse)  };
 

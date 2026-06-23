@@ -1,3 +1,6 @@
+// Obsolete facade retained for backwards compatibility on the 2.x line. Scheduled for removal
+// in the 3.x major — delete this file when cutting 3.x. (Cannot be gated by a feature flag:
+// the flag stripper only supports singular positive conditions, not "stable-only" negation.)
 using System;
 using System.Collections.Generic;
 using System.Reflection;

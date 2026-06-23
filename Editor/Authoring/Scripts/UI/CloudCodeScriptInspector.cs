@@ -1,11 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using Unity.Services.CloudCode.Authoring.Editor.Deployment;
-using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.UI;
 using UnityEditor;
 using UnityEngine.UIElements;
-using DeploymentConfigInspectorFooter = Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter.DeploymentConfigInspectorFooter;
 using Object = UnityEngine.Object;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
@@ -24,23 +22,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
             visualTree.CloneTree(myInspector);
 
             ShowScriptBody(myInspector);
-            SetupConfigFooter(myInspector);
+            DeploymentFooterBinder.Bind(myInspector, target, DeploymentDashboard.Script);
 
             return myInspector;
-        }
-
-        void SetupConfigFooter(VisualElement rootElement)
-        {
-            var assetPath = AssetDatabase.GetAssetPath(target);
-            var assetName = Path.GetFileNameWithoutExtension(assetPath);
-            var deploymentConfigInspectorFooter = rootElement.Q<DeploymentConfigInspectorFooter>();
-            deploymentConfigInspectorFooter.BindGUI(
-                assetPath,
-                CloudCodeAuthoringServices.Instance.GetService<ICommonAnalytics>(),
-                "cloudcode");
-            deploymentConfigInspectorFooter.DashboardLinkUrlGetter = () => CloudCodeAuthoringServices.Instance
-                .GetService<IDashboardUrlResolver>()
-                .CloudCodeScript(assetName);
         }
 
         void ShowScriptBody(VisualElement myInspector)

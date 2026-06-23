@@ -48,21 +48,21 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "asPlayer", EmitDefaultValue = false)]
         public CloudCodeTestScriptRequestAsPlayer AsPlayer{ get; }
-        
+
         /// <summary>
         /// The Script parameters of the test run. Parameters are required according to the Script definition
         /// </summary>
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public IDeserializable Params{ get; }
-        
+
         /// <summary>
         /// Version identifier. By default, the working copy of the Script is executed (identified by null)
         /// </summary>
         [Preserve]
         [DataMember(Name = "version", EmitDefaultValue = false)]
         public int? Version{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeTestScriptRequest into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -99,7 +99,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var versionStringValue = Version.ToString();
                 dictionary.Add("version", versionStringValue);
             }
-            
+
             return dictionary;
         }
     }

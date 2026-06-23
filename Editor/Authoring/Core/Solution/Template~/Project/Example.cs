@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Unity.Services.CloudCode.Apis;

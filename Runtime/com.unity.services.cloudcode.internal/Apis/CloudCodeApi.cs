@@ -78,8 +78,7 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         /// </summary>
         public Configuration Configuration
         {
-            get
-            {
+            get {
                 // We return a merge between the current configuration and the
                 // global configuration to ensure we have the correct
                 // combination of headers and a base path (if it is set).

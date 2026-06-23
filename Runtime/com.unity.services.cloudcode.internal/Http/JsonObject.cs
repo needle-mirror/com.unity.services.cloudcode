@@ -56,7 +56,7 @@ namespace Unity.Services.CloudCode.Internal.Http
                 {
                     return obj.ToString();
                 }
-                
+
                 return IsolatedJsonConvert.SerializeObject(obj);
             }
             catch (System.Exception)

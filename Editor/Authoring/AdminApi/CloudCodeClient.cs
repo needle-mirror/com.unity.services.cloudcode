@@ -152,7 +152,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             string token = await m_TokenProvider.GetServicesGatewayTokenAsync();
             var headers = new AdminApiHeaders<CloudCodeClient>(token);
             client.Configuration = new Configuration(
-                null,
+                client.Configuration.BasePath,
                 null,
                 null,
                 headers.ToDictionary());

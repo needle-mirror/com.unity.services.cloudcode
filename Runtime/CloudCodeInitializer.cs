@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Services.Authentication.Internal;
@@ -11,22 +10,33 @@ using Unity.Services.Core.Internal;
 using Unity.Services.Wire.Internal;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Unity.Services.CloudCode
 {
-    class CloudCodeInitializer : IInitializablePackage
+    class CloudCodeInitializer : IInitializablePackageV2
     {
         const string k_CloudEnvironmentKey = "com.unity.services.core.cloud-environment";
         const string k_StagingEnvironment = "staging";
+        internal const ushort k_DefaultLocalCloudCodeServerPort = 5000;
+        const string k_LocalCloudCodePidPrefs = "LOCAL_CLOUD_CODE_PID";
         const int k_ConfigurationReqTimeoutSec = 30;
         const string k_PackageName = "com.unity.services.cloudcode";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Register()
+        static void InitializeOnLoad()
         {
             // Ensure Instance is reset to account for Fast Enter Play Mode
             CloudCodeService.Instance = null;
+            var initializer = new CloudCodeInitializer();
+            initializer.Register(CorePackageRegistry.Instance);
+        }
 
-            CoreRegistry.Instance.RegisterPackage(new CloudCodeInitializer())
+        public void Register(CorePackageRegistry registry)
+        {
+            registry.Register(this)
                 .DependsOn<ICloudProjectId>()
                 .DependsOn<IPlayerId>()
                 .DependsOn<IAccessToken>()
@@ -37,6 +47,18 @@ namespace Unity.Services.CloudCode
         }
 
         public Task Initialize(CoreRegistry registry)
+        {
+            CloudCodeService.Instance = InitializeService(registry);
+            return Task.CompletedTask;
+        }
+
+        public Task InitializeInstanceAsync(CoreRegistry registry)
+        {
+            _ = InitializeService(registry);
+            return Task.CompletedTask;
+        }
+
+        static ICloudCodeService InitializeService(CoreRegistry registry)
         {
             var cloudProjectId = registry.GetServiceComponent<ICloudProjectId>();
             var accessToken = registry.GetServiceComponent<IAccessToken>();
@@ -58,8 +80,7 @@ namespace Unity.Services.CloudCode
 
             var service = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken);
             registry.RegisterService<ICloudCodeService>(service);
-            CloudCodeService.Instance = service;
-            return Task.CompletedTask;
+            return service;
         }
 
         static Dictionary<string, string> GetServiceHeaders(IInstallationId installationIdProvider, IExternalUserId externalUserId)
@@ -71,7 +92,7 @@ namespace Unity.Services.CloudCode
 
             headers.Add("unity-installation-id", installationId);
 
-            if (!String.IsNullOrEmpty(analyticsUserId))
+            if (!string.IsNullOrEmpty(analyticsUserId))
             {
                 headers.Add("analytics-user-id", analyticsUserId);
             }
@@ -91,8 +112,30 @@ namespace Unity.Services.CloudCode
             }
         }
 
+        static int? GetTimeout()
+        {
+#if UNITY_EDITOR
+            var cloudCodePid = EditorPrefs.GetInt(k_LocalCloudCodePidPrefs, -1);
+            if (cloudCodePid != -1)
+            {
+                // For local Cloud Code debugging, override and ensure UnityWebRequest do not time out.
+                return 0;
+            }
+#endif
+            // Provide overrides for remote Cloud Code
+            return k_ConfigurationReqTimeoutSec;
+        }
+
         static string GetHost(IProjectConfiguration projectConfiguration)
         {
+#if UNITY_EDITOR
+            var cloudCodePid = EditorPrefs.GetInt(k_LocalCloudCodePidPrefs, -1);
+            var cloudCodePort = EditorPrefs.GetInt("CLOUD_CODE_DEBUG_PORT", k_DefaultLocalCloudCodeServerPort);
+            if (cloudCodePid != -1)
+            {
+                return "http://localhost:" + cloudCodePort;
+            }
+#endif
             var cloudEnvironment = projectConfiguration?.GetString(k_CloudEnvironmentKey);
 
             switch (cloudEnvironment)

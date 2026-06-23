@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.10.4] - 2026-06-23
+
+### Fixed
+- Added retries with a longer request timeout when checking whether a Cloud Code module exists during deployment.
+
+### Changed
+- Generating bindings will now includes enum values alongside their names.
+- Generating bindings dictionary keys now retain their original types instead of being converted to strings.
+
 ## [2.10.3] - 2026-01-05
 
 ### Fixed
@@ -25,9 +34,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bumped dependency of Core package
 
 ### Fixed
--[Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)
-  -Changed exit condition , it seems [only indefinite wait for exit will always work](https://github.com/dotnet/runtime/issues/18789)
-  - Added timeout
+- [Tentative fix to dotnet hang](https://discussions.unity.com/t/cloud-code-deployment-status-stuck-at-0/906556/29)
+- Changed exit condition , it seems [only indefinite wait for exit will always work](https://github.com/dotnet/runtime/issues/18789)
+- Added timeout
 - Tentative fix for occasional hang of dotnet when redirecting std output
 - Fixed documentation that still used `import` over `require` for bundling
 
@@ -144,13 +153,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [2.2.4] - 2023-02-07
 
 ### Fixed
-- Fixed corrupted npm libraries used for services. 
+- Fixed corrupted npm libraries used for services.
 
 ## [2.2.2] - 2022-12-07
 
 ### Fixed
 - Missing logs in some failure cases are now handled
-- Added more verbose logging for diagnostics behind a preprocessor directive 
+- Added more verbose logging for diagnostics behind a preprocessor directive
 
 ## [2.2.1] - 2022-12-07
 
@@ -171,7 +180,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Integration with the `Deployment`  package for config-as-code which allows to edit and configure
-CloudCode scripts directly from the editor
+  CloudCode scripts directly from the editor
 
 ## [2.0.1] - 2022-06-13
 

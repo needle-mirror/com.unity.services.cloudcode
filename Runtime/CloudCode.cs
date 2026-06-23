@@ -50,7 +50,6 @@ namespace Unity.Services.CloudCode
         public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args)
         {
             var result = await GetRunModuleScriptResponse(module, function, args);
-
             var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
@@ -58,14 +57,15 @@ namespace Unity.Services.CloudCode
         public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args)
         {
             var result = await GetRunModuleScriptResponse(module, function, args);
-
             return DeserializeOutput<TResult>(result);
         }
+
 
         public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks)
         {
             return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
         }
+
 
         public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks)
         {
@@ -242,5 +242,6 @@ namespace Unity.Services.CloudCode
 
             return await task;
         }
+
     }
 }

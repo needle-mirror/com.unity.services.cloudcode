@@ -46,14 +46,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public List<CloudCodeScriptParams> Params{ get; }
-        
+
         /// <summary>
         /// The new code of the Script. Required if language is provided
         /// </summary>
         [Preserve]
         [DataMember(Name = "code", EmitDefaultValue = false)]
         public string Code{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeUpdateScriptRequest into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -86,7 +86,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var codeStringValue = Code.ToString();
                 dictionary.Add("code", codeStringValue);
             }
-            
+
             return dictionary;
         }
     }

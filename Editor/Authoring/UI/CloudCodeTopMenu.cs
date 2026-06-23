@@ -25,14 +25,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.UI
                 .GetService<CloudCodeModuleReferenceCollection>().ToList();
 
             var results = await CloudCodeAuthoringServices.Instance
-                .GetService<ICloudCodeModuleBindingsGenerator>()
+                .GetService<ICloudCodeModuleReferenceBindingsGenerator>()
                     .GenerateModuleBindings(ccmrs);
 
             var failedResults = results
                 .Select(x => x.Exception)
                 .Where(x => x != null).ToList();
 
-            CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleBindingsGenerationAnalytics>()
+            CloudCodeAuthoringServices.Instance.GetService<ICloudCodeModuleReferenceBindingsGenerationAnalytics>()
                 .SendCodeGenerationFromTopMenuEvent(
                     failedResults.Any() ? new AggregateException(failedResults) : null);
         }

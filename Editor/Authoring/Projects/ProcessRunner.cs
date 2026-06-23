@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 {
@@ -13,7 +14,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             string stdIn = default,
             CancellationToken cancellationToken = default,
             TimeSpan timeout = default);
+
+        Process RunAsyncFireAndForget(ProcessStartInfo startInfo, Action<string> onStandardError = null);
         bool Start(ProcessStartInfo startInfo);
+        void Stop(int processId);
     }
 
     struct ProcessOutput
@@ -31,11 +35,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             CancellationToken cancellationToken = default,
             TimeSpan timeout = default)
         {
-            startInfo.UseShellExecute = false;
             startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            startInfo.CreateNoWindow = true;
 
             using var process = new Process();
             var exitTask = WrapProcessInTask(process, cancellationToken);
@@ -62,7 +64,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
                 await process.StandardInput.WriteAsync(stdIn);
                 process.StandardInput.Close();
             }
-
             await HandleExit(process, exitTask, timeout);
 
             return new ProcessOutput
@@ -71,6 +72,35 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
                 StdOut = stdOut.ToString(),
                 StdErr = stdErr.ToString(),
             };
+        }
+
+        public Process RunAsyncFireAndForget(ProcessStartInfo startInfo, Action<string> onStandardError = null)
+        {
+            // stdout is left inherited; stderr is only redirected when a handler is supplied, so a
+            // caller can surface early/fatal launch output during startup without keeping a pipe
+            // open for the process lifetime.
+            if (onStandardError != null)
+                startInfo.RedirectStandardError = true;
+
+            var process = new Process();
+            process.StartInfo = startInfo;
+            process.EnableRaisingEvents = true;
+
+            if (onStandardError != null)
+            {
+                process.ErrorDataReceived += (sender, args) =>
+                {
+                    if (!string.IsNullOrEmpty(args.Data))
+                        onStandardError(args.Data);
+                };
+            }
+
+            process.Start();
+
+            if (onStandardError != null)
+                process.BeginErrorReadLine();
+
+            return process;
         }
 
         static async Task HandleExit(
@@ -96,8 +126,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
         static Task WrapProcessInTask(Process process, CancellationToken cancellationToken = default)
         {
-            var t = new Task(process.WaitForExit);
-            return t;
+            return new Task(process.WaitForExit, cancellationToken);
+        }
+
+        public void Stop(int processID)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(processID);
+                if (process.HasExited)
+                    return;
+
+                process.Kill();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
         }
     }
 }

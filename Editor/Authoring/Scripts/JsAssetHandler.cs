@@ -16,7 +16,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         const string k_SolutionPath = "$(SolutionPath)";
         const string k_EditorExePath = "$(EditorExePath)";
 
-        readonly ICloudCodeProjectSettings m_ProjectSettings;
+        readonly ICloudCodePreferences m_ProjectSettings;
         readonly IProcessRunner m_ProcessRunner;
         readonly IExternalCodeEditor m_CodeEditor;
 
@@ -29,7 +29,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         };
 
         public JsAssetHandler(
-            ICloudCodeProjectSettings projectSettings,
+            ICloudCodePreferences projectSettings,
             IProcessRunner processRunner,
             IExternalCodeEditor codeEditor)
         {

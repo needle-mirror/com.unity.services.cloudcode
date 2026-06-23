@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         [DataMember(Name = "output", EmitDefaultValue = false)]
         public IDeserializable Output{ get; }
-    
+
         /// <summary>
         /// Formats a RunScriptResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>

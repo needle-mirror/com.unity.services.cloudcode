@@ -17,8 +17,8 @@ using SystemPath = System.IO.Path;
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
-     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
-    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, IModuleItem
+     Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeAsset.png")]
+    class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
         {
@@ -35,6 +35,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         float m_Progress;
         string m_Type = "C# Module";
         DeploymentStatus m_Status;
+        SerializableObservableCollection<AssetState> m_States;
 
         string m_ModuleName;
         public string ModuleName
@@ -93,7 +94,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             set { SetField(ref m_Status, value); }
         }
 
-        public ObservableCollection<AssetState> States { get; set; }
+        // TODO: record and surface the last successful deployment for ccmr (see CloudCodeModule).
+        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment { get; set; }
+
+        public ObservableCollection<AssetState> States => m_States;
 
         public string ModulePath
         {
@@ -124,7 +128,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         {
             Progress = 0;
             Status = DeploymentStatus.Empty;
-            States = new ObservableCollection<AssetState>();
+            m_States = new SerializableObservableCollection<AssetState>();
         }
 
         public string ToJson()
@@ -137,15 +141,33 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
                 k_JsonSerializerSettings);
         }
 
-        public void FromJson(string json)
+        public bool FromJson(string json)
         {
-            JsonConvert.PopulateObject(json, this, k_JsonSerializerSettings);
+            try
+            {
+                JsonConvert.PopulateObject(json, this, k_JsonSerializerSettings);
+                return true;
+            }
+            catch (JsonException e)
+            {
+                Debug.LogError($"Failed to parse Cloud Code Module Reference: {e.Message}");
+                return false;
+            }
         }
 
-        public void SaveChanges()
+        public bool SaveChanges()
         {
-            var json = ToJson();
-            File.WriteAllText(Path, json);
+            try
+            {
+                var json = ToJson();
+                File.WriteAllText(this.Path, json);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to save Cloud Code Module Reference: {e.Message}");
+                return false;
+            }
         }
 
         public void CopyTo(CloudCodeModuleReference value)
@@ -168,5 +190,37 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        #region Serialization Wrappers
+
+        // Required as ObservableCollection fails Unity serialization of its items across Domain Reloads
+        [Serializable]
+        class SerializableObservableCollection<T> : ObservableCollection<T>, ISerializationCallbackReceiver
+        {
+            [SerializeField]
+            List<T> m_PersistedList;
+
+            internal SerializableObservableCollection()
+            {
+                m_PersistedList = new List<T>();
+            }
+
+            public void OnBeforeSerialize()
+            {
+                m_PersistedList.Clear();
+                m_PersistedList.AddRange(Items);
+            }
+
+            public void OnAfterDeserialize()
+            {
+                Items.Clear();
+                foreach (var state in m_PersistedList)
+                {
+                    Items.Add(state);
+                }
+            }
+        }
+
+        #endregion
     }
 }

@@ -46,14 +46,14 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "output", EmitDefaultValue = false)]
         public IDeserializable Output{ get; }
-        
+
         /// <summary>
         /// The logs of the Script execution
         /// </summary>
         [Preserve]
         [DataMember(Name = "logs", EmitDefaultValue = false)]
         public List<string> Logs{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeTestScriptResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -86,7 +86,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var logsStringValue = Logs.ToString();
                 dictionary.Add("logs", logsStringValue);
             }
-            
+
             return dictionary;
         }
     }

@@ -90,13 +90,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
 
         static void SendDeployEvent(DeploymentParameters deploymentParameters)
         {
+#if UNITY_2023_2_OR_NEWER
+            var res = EditorAnalytics.SendAnalytic(new DeployAnalytic(deploymentParameters));
+#else
             var res = EditorAnalytics.SendEventWithLimit(k_EventNameDeploy, deploymentParameters, k_VersionDeploy);
+#endif
             LogVerbose(k_EventNameDeploy, k_VersionDeploy, res);
         }
 
         static void SendPublishEvent(PublishParameters publishParameters)
         {
+#if UNITY_2023_2_OR_NEWER
+            var res = EditorAnalytics.SendAnalytic(new PublishAnalytic(publishParameters));
+#else
             var res = EditorAnalytics.SendEventWithLimit(k_EventNamePublish, publishParameters, k_VersionPublish);
+#endif
             LogVerbose(k_EventNamePublish, k_VersionPublish, res);
         }
 
@@ -104,5 +112,49 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics.Deployment
         {
             Logger.LogVerbose($"Sent Analytics Event: {eventName}.v{version}. Result: {result}");
         }
+
+#if UNITY_2023_2_OR_NEWER
+        [AnalyticInfo(
+            eventName: k_EventNameDeploy,
+            vendorKey: AnalyticsConstants.k_VendorKey,
+            version: k_VersionDeploy)]
+        class DeployAnalytic : IAnalytic
+        {
+            readonly DeploymentParameters m_Payload;
+
+            public DeployAnalytic(DeploymentParameters payload)
+            {
+                m_Payload = payload;
+            }
+
+            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
+            {
+                error = null;
+                data = m_Payload;
+                return true;
+            }
+        }
+
+        [AnalyticInfo(
+            eventName: k_EventNamePublish,
+            vendorKey: AnalyticsConstants.k_VendorKey,
+            version: k_VersionPublish)]
+        class PublishAnalytic : IAnalytic
+        {
+            readonly PublishParameters m_Payload;
+
+            public PublishAnalytic(PublishParameters payload)
+            {
+                m_Payload = payload;
+            }
+
+            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
+            {
+                error = null;
+                data = m_Payload;
+                return true;
+            }
+        }
+#endif
     }
 }

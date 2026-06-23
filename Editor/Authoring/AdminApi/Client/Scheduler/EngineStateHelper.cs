@@ -43,6 +43,6 @@ namespace Unity.Services.CloudCode.Authoring.Client.Scheduler
                 IsPlaying = true;
             }
         }
-#endif   
+#endif
     }
 }

@@ -46,14 +46,14 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve]
         [DataMember(Name = "channel", EmitDefaultValue = false)]
         public string Channel{ get; }
-        
+
         /// <summary>
         /// The authentication token to be used when subscribing to a channel.
         /// </summary>
         [Preserve]
         [DataMember(Name = "token", EmitDefaultValue = false)]
         public string Token{ get; }
-    
+
         /// <summary>
         /// Formats a SubscriptionTokenResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -86,13 +86,13 @@ namespace Unity.Services.CloudCode.Internal.Models
                 var channelStringValue = Channel.ToString();
                 dictionary.Add("channel", channelStringValue);
             }
-            
+
             if (Token != null)
             {
                 var tokenStringValue = Token.ToString();
                 dictionary.Add("token", tokenStringValue);
             }
-            
+
             return dictionary;
         }
     }

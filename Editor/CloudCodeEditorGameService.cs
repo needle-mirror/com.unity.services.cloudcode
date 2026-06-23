@@ -1,3 +1,6 @@
+#if DEPLOYMENT_API_AVAILABLE_V1_0
+using Unity.Services.CloudCode.Editor.Shared.Clients;
+#endif
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.OrganizationHandler;
 using UnityEditor;
@@ -21,7 +24,14 @@ namespace Unity.Services.CloudCode.Settings
 
         public string GetFormattedDashboardUrl()
         {
-            return $"https://dashboard.unity3d.com/organizations/{OrganizationProvider.Organization.Key}/projects/{CloudProjectSettings.projectId}/cloud-code/about";
+#if DEPLOYMENT_API_AVAILABLE_V1_0
+            var host = CloudEnvironmentConfigProvider.IsStaging()
+                ? "https://staging.dashboard.unity3d.com"
+                : "https://dashboard.unity3d.com";
+#else
+            var host = "https://dashboard.unity3d.com";
+#endif
+            return $"{host}/organizations/{OrganizationProvider.Organization.Key}/projects/{CloudProjectSettings.projectId}/cloud-code/overview";
         }
     }
 }

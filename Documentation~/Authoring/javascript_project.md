@@ -117,7 +117,7 @@ Official website: <https://jestjs.io/>
   - Add this code snippet to your `package.json`
   - The `moduleFileExtensions` entry will make `js` and `es10` files valid for testing.
   - The `testMatch` entry will make files ending in `.test.es10` valid as test files.
-  
+
 ```json
 "jest": {
     "moduleFileExtensions": ["es10", "js"],

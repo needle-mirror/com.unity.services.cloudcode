@@ -14,10 +14,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
 {
     class CreateCloudCodeScript : BaseClass
     {
-        const string k_TemplatePath = "Authoring/Scripts/Templates/new_cloud_code_script.js.txt";
+        const string k_TemplatePath = "Authoring/Scripts/Templates~/new_cloud_code_script.js.txt";
         static readonly string k_DefaultFileName = "new_cloud_code_script";
 
-        [MenuItem("Assets/Create/Services/Cloud Code Js Script", false, 81)]
+        [MenuItem("Assets/Create/Services/Cloud Code Js Script", false, 70)]
         public static void CreateScript()
         {
             CreateScriptInternal();

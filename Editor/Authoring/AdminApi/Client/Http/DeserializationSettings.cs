@@ -11,7 +11,7 @@
 using System;
 
 namespace Unity.Services.CloudCode.Authoring.Client.Http
-{   
+{
     /// <summary>Enum for how handling missing members when deserializing.</summary>
      enum MissingMemberHandling
     {
@@ -29,5 +29,5 @@ namespace Unity.Services.CloudCode.Authoring.Client.Http
         /// <summary>MissingMemberHandling is set to Error by default.</summary>
         public MissingMemberHandling MissingMemberHandling = MissingMemberHandling.Error;
     }
-    
+
 }

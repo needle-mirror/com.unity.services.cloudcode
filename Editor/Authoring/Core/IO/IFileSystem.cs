@@ -24,6 +24,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.IO
         bool DirectoryExists(string path);
         string? GetDirectoryName(string path);
         string GetFullPath(string path);
+        string GetCurrentDirectory();
         string GetFileNameWithoutExtension(string path);
         string Combine(params string[] paths);
         string Join(string path1, string path2);

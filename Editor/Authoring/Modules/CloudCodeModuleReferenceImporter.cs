@@ -17,7 +17,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             var fileContent = File.ReadAllText(ctx.assetPath);
             var definition = ScriptableObject.CreateInstance<CloudCodeModuleReference>();
 
-            definition.FromJson(fileContent);
+            if (!definition.FromJson(fileContent))
+            {
+                ctx.LogImportError($"Failed to import Cloud Code Module Reference at '{ctx.assetPath}'.");
+                DestroyImmediate(definition);
+                return;
+            }
 
             ctx.AddObjectToAsset("MainAsset", definition);
             ctx.SetMainObject(definition);

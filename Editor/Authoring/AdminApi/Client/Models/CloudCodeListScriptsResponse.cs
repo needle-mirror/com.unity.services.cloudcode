@@ -50,28 +50,28 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "total", EmitDefaultValue = false)]
         public int Total{ get; }
-        
+
         /// <summary>
         /// Offset used by the request
         /// </summary>
         [Preserve]
         [DataMember(Name = "offset", EmitDefaultValue = false)]
         public int Offset{ get; }
-        
+
         /// <summary>
         /// Limit used by the request
         /// </summary>
         [Preserve]
         [DataMember(Name = "limit", EmitDefaultValue = false)]
         public int Limit{ get; }
-        
+
         /// <summary>
         /// List of Scripts
         /// </summary>
         [Preserve]
         [DataMember(Name = "results", EmitDefaultValue = false)]
         public List<CloudCodeListScriptsResponseResultsInner> Results{ get; }
-    
+
         /// <summary>
         /// Formats a CloudCodeListScriptsResponse into a string of key-value pairs for use as a path parameter.
         /// </summary>
@@ -100,13 +100,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
 
             var totalStringValue = Total.ToString();
             dictionary.Add("total", totalStringValue);
-            
+
             var offsetStringValue = Offset.ToString();
             dictionary.Add("offset", offsetStringValue);
-            
+
             var limitStringValue = Limit.ToString();
             dictionary.Add("limit", limitStringValue);
-            
+
             return dictionary;
         }
     }

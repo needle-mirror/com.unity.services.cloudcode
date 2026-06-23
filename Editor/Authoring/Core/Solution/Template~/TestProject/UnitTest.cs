@@ -1,4 +1,4 @@
-﻿using HelloWorld;
+using HelloWorld;
 
 namespace TestProject;
 

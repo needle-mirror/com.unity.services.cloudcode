@@ -54,7 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "name", IsRequired = true, EmitDefaultValue = true)]
         public string Name{ get; }
-        
+
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -62,7 +62,7 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "type", IsRequired = true, EmitDefaultValue = true)]
         public TypeOptions Type{ get; }
-        
+
         /// <summary>
         /// The language of the Script
         /// </summary>
@@ -70,28 +70,28 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [DataMember(Name = "language", IsRequired = true, EmitDefaultValue = true)]
         public LanguageOptions Language{ get; }
-        
+
         /// <summary>
         /// Parameter activeScript of CloudCodeGetScriptResponse
         /// </summary>
         [Preserve]
         [DataMember(Name = "activeScript", IsRequired = true, EmitDefaultValue = true)]
         public CloudCodeGetScriptResponseActiveScript ActiveScript{ get; }
-        
+
         /// <summary>
         /// A list of versions of the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "versions", IsRequired = true, EmitDefaultValue = true)]
         public List<CloudCodeGetScriptResponseVersionsInner> Versions{ get; }
-        
+
         /// <summary>
         /// The current list of parameters that are used by the Script
         /// </summary>
         [Preserve]
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public List<CloudCodeScriptParams> Params{ get; }
-    
+
         /// <summary>
         /// The type of the Script
         /// </summary>
@@ -169,13 +169,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
                 var nameStringValue = Name.ToString();
                 dictionary.Add("name", nameStringValue);
             }
-            
+
             var typeStringValue = Type.ToString();
             dictionary.Add("type", typeStringValue);
-            
+
             var languageStringValue = Language.ToString();
             dictionary.Add("language", languageStringValue);
-            
+
             return dictionary;
         }
     }

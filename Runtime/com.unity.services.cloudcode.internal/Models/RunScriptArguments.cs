@@ -39,12 +39,12 @@ namespace Unity.Services.CloudCode.Internal.Models
         }
 
         /// <summary>
-        /// Object containing key-value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition. 
+        /// Object containing key-value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition.
         /// </summary>
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]
         public IDeserializable Params{ get; }
-    
+
         /// <summary>
         /// Formats a RunScriptArguments into a string of key-value pairs for use as a path parameter.
         /// </summary>

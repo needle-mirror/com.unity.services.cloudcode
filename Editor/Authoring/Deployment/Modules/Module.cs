@@ -7,9 +7,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 {
     class Module : Script
     {
-        readonly CloudCodeModuleReference m_Parent;
+        readonly IModuleItem m_Parent;
 
-        public Module(string path, CloudCodeModuleReference parent) : base(path)
+        public Module(string path, IModuleItem parent) : base(path)
         {
             m_Parent = parent;
         }
