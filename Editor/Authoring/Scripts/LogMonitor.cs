@@ -1,3 +1,4 @@
+#if UNITY_6000_5_OR_NEWER
 
 using System;
 using System.IO;
@@ -205,3 +206,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
     }
 }
 
+#endif

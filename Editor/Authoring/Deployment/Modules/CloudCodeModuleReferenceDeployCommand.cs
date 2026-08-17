@@ -15,7 +15,9 @@ using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_3_OR_NEWER
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
+#endif
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 {
@@ -28,8 +30,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         readonly IDashboardUrlResolver m_DashboardUrlResolver;
         readonly bool m_Reconcile;
         readonly bool m_DryRun;
+#if UNITY_6000_3_OR_NEWER
         readonly CloudCodeModuleReferenceLocalDeployCommand m_CloudCodeModuleReferenceLocalDeployCommand;
+#endif
 
+#if UNITY_6000_3_OR_NEWER
         public CloudCodeModuleReferenceDeployCommand(
             IModuleBuilder moduleBuilder,
             ICloudCodeModulesClient modulesClient,
@@ -48,15 +53,36 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             m_DryRun = false;
         }
 
+#else
+        public CloudCodeModuleReferenceDeployCommand(
+            IModuleBuilder moduleBuilder,
+            ICloudCodeModulesClient modulesClient,
+            IDeploymentAnalytics analytics,
+            ILogger logger,
+            IPreDeployValidator validator,
+            IDashboardUrlResolver dashboardUrlResolver)
+        {
+            m_ModuleBuilder = moduleBuilder;
+
+            m_CloudCodeDeploymentHandler =
+                new CloudCodeDeploymentHandler(modulesClient, analytics, logger, validator);
+            m_DashboardUrlResolver = dashboardUrlResolver;
+            m_Reconcile = false;
+            m_DryRun = false;
+        }
+
+#endif
 
         public override async Task ExecuteAsync(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = new CancellationToken())
         {
+#if UNITY_6000_3_OR_NEWER
             // If the User is using a Local Cloud Code server, direct all deployments to it.
             if (m_CloudCodeModuleReferenceLocalDeployCommand.ShouldDeployToLocal())
             {
                 await m_CloudCodeModuleReferenceLocalDeployCommand.ExecuteAsync(items, cancellationToken);
                 return;
             }
+#endif
 
             // Else, deploy to Remote Cloud Code as usual.
             var cloudCodeModuleReferences = items.ToList();

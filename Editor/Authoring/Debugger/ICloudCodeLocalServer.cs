@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -28,3 +29,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         void ClearServerState();
     }
 }
+#endif

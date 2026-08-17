@@ -4,9 +4,9 @@ Local Cloud Code Debugging accelerates backend development by enabling you to in
 modules deployed directly on your local machine. This allows you to iterate rapidly on game server logic in isolation,
 bypassing the need to push to a remote environment for every change.
 
-More importantly, it unlocks diagnostic
-capabilities by allowing you to attach a debugger to the local process, granting the ability to set breakpoints, step
-through execution, and inspect memory to resolve complex server issues at runtime in play mode.
+The local server also runs as an ordinary .NET process on your machine, so you can attach your IDE's debugger to it
+using **Attach to Process** and set breakpoints in your module code. The server is started as `dotnet`, so identify it
+by the PID shown in the Cloud Code toolbar popup (see [Local server status](#executing-modules-on-the-local-server)).
 
 ## Prerequisites
 
@@ -15,9 +15,12 @@ To use Local Cloud Code Debugging, ensure that you have the following setup:
 1. A Unity Editor version of at least 6000.3 and up.
 2. Followed the setup prerequisites for [Cloud Code Modules](./cloud_code_modules.md#prerequisites)
 3. If you have existing Modules, ensure the following Nuget packages are referenced:
-   1. com.unity.services.cloudcode.apis - v0.0.26
-   2. com.unity.services.cloudcode.core - v0.0.4
-4. You have [.Net 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) installed on your machine.
+   1. com.unity.services.cloudcode.apis - v0.0.27
+   2. com.unity.services.cloudcode.core - v0.0.7
+4. You have the [ASP.NET Core Runtime 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) installed on your
+   machine. The local server needs both the `Microsoft.NETCore.App` and `Microsoft.AspNetCore.App` shared frameworks:
+   the ASP.NET Core Runtime provides both, as does the .NET SDK. The plain ".NET Runtime" download provides only the
+   former and is not enough to start the server.
 
 > [!NOTE]
 > **Note:** Local Cloud Code Debugging is only supported for Cloud Code Modules. Cloud Code Scripts are _not_ supported.
@@ -82,6 +85,9 @@ public class ModuleConfig : ICloudCodeSetup
 
         // Replace with this for version v0.0.22+
         config.AddGameApiClient();
+
+        // Optional: registers IAdminApiClient the same way, if your module uses admin APIs.
+        config.AddAdminApiClient();
     }
 }
 ```

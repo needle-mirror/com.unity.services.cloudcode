@@ -1,3 +1,4 @@
+#if UNITY_6000_5_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,13 +12,14 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
 using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
      Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
-    class CloudCodeModule : ScriptableObject, ICloudCodeModuleItem, IPath
+    class CloudCodeModule : ScriptableObject, ICloudCodeModuleItem, IPath, ITrackableItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
         {
@@ -68,6 +70,45 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             return System.IO.Path.GetFullPath(System.IO.Path.Combine("Library", "ScriptAssemblies", asmdef.name + ".dll"));
         }
 
+        /// <summary>Directory containing the cloud assembly definition. Null when the asmdef is unresolved.</summary>
+        internal string GetCloudAssemblyDirectory() => GetAssemblyDirectory(m_CloudAssemblyDefinition);
+
+        /// <summary>Directory containing the client assembly definition. Null when the asmdef is unresolved.</summary>
+        internal string GetClientAssemblyDirectory() => GetAssemblyDirectory(m_ClientAssemblyDefinition);
+
+        static string GetAssemblyDirectory(AssemblyDefinitionAsset assemblyDefinition)
+        {
+            if (assemblyDefinition == null)
+                return null;
+
+            var asmdefPath = AssetDatabase.GetAssetPath(assemblyDefinition);
+            return string.IsNullOrEmpty(asmdefPath)
+                ? null
+                : System.IO.Path.GetDirectoryName(asmdefPath)?.Replace('\\', '/');
+        }
+
+        /// <summary>
+        /// ITrackableItem: the Deployment window calls this when it (re)tracks the asset. Reconciles
+        /// status from deployed content instead of falling back to the generic file-timestamp heuristic.
+        /// </summary>
+        public void TrackOrUpdate()
+        {
+            CloudCodeModuleModifiedTracker tracker;
+            try
+            {
+                // Instance is lazily created (never null), but its service provider may not be built yet
+                // during early lifecycle (the deployment window can track items before authoring services
+                // initialize on load), and the dependency is absent when required defines are off.
+                tracker = CloudCodeAuthoringServices.Instance.GetService<CloudCodeModuleModifiedTracker>();
+            }
+            catch (Exception e) when (e is DependencyNotFoundException or NullReferenceException)
+            {
+                return;
+            }
+
+            tracker.ReconcileFireAndForget(this);
+        }
+
         #region IModuleItem
 
         float m_DeploymentProgress;
@@ -113,11 +154,39 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             set => SetField(ref m_DeploymentStatus, value);
         }
 
-        // Tracks a log history of all deployment status events
-        public List<(DateTime, DeploymentStatus)> StatusLog => m_DeploymentStatusLog;
+        /// <summary>
+        /// Tracks a log history of all deployment status events. Lazily initialized because a domain
+        /// reload restores the asset without running the constructor, leaving the backing field null.
+        /// </summary>
+        public List<(DateTime, DeploymentStatus)> StatusLog =>
+            m_DeploymentStatusLog ??= new List<(DateTime, DeploymentStatus)>();
 
-        // Tracks the current local server status, if available.
-        public ObservableCollection<AssetState> States => m_DeployedServerStatus;
+        /// <summary>Tracks the current local server status, if available. Lazily initialized for the same reason.</summary>
+        public ObservableCollection<AssetState> States =>
+            m_DeployedServerStatus ??= new SerializableObservableCollection<AssetState>();
+
+        [SerializeReference]
+        LastSuccessfulDeploymentInfo m_LastSuccessfulDeployment;
+
+        // Last successful deployment for this editor session.
+        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment
+        {
+            get => m_LastSuccessfulDeployment;
+            set => SetField(ref m_LastSuccessfulDeployment, value);
+        }
+
+        [SerializeField]
+        string m_CurrentContentHash;
+
+        /// <summary>
+        /// Hash of the module's current source as last computed by the modified tracker. Serialized so a
+        /// domain reload can restore status by comparing it to the deployed baseline without re-hashing.
+        /// </summary>
+        internal string CurrentContentHash
+        {
+            get => m_CurrentContentHash;
+            set => m_CurrentContentHash = value;
+        }
 
         private void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
@@ -143,7 +212,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 
                 // Name changes are detected on path changes.
                 // Ensure we trigger property name change updates for the Deployment window.
-                Name = name;
+                Name = System.IO.Path.GetFileName(value);
             }
         }
 
@@ -254,3 +323,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         #endregion
     }
 }
+#endif

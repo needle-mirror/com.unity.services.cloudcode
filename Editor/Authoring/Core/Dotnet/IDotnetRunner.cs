@@ -13,5 +13,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet
 
         Task<List<SemVersion>> GetAvailableCoreRuntimes(
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Versions of a single shared framework reported by <c>dotnet --list-runtimes</c>, for
+        /// example <c>Microsoft.NETCore.App</c> or <c>Microsoft.AspNetCore.App</c>.
+        /// </summary>
+        Task<List<SemVersion>> GetAvailableRuntimes(
+            string frameworkName,
+            CancellationToken ct = default);
     }
 }

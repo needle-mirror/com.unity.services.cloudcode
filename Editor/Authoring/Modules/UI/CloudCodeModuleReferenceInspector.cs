@@ -8,13 +8,12 @@ using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
-using Unity.Services.CloudCode.Editor.Shared.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.UI;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using DeploymentConfigInspectorFooter = Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter.DeploymentConfigInspectorFooter;
 using Task = System.Threading.Tasks.Task;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
@@ -50,23 +49,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             uxmlAsset.CloneTree(rootElement);
 
             BindControls(rootElement);
-            SetupConfigFooter(rootElement);
+            DeploymentFooterBinder.Bind(rootElement, target, DeploymentDashboard.Module);
 
             return rootElement;
-        }
-
-        void SetupConfigFooter(VisualElement rootElement)
-        {
-            var deploymentConfigInspectorFooter = rootElement.Q<DeploymentConfigInspectorFooter>();
-            var assetPath = AssetDatabase.GetAssetPath(target);
-            var assetName = Path.GetFileNameWithoutExtension(assetPath);
-            deploymentConfigInspectorFooter.BindGUI(
-                assetPath,
-                CloudCodeAuthoringServices.Instance.GetService<ICommonAnalytics>(),
-                "cloudcode");
-            deploymentConfigInspectorFooter.DashboardLinkUrlGetter = () => CloudCodeAuthoringServices.Instance
-                .GetService<IDashboardUrlResolver>()
-                .CloudCodeModule(assetName);
         }
 
         void BindControls(VisualElement rootElement)

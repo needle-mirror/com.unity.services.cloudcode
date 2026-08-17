@@ -1,7 +1,19 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:fba="Unity.Services.CloudCode.Editor.Shared.UI.DeploymentConfigInspectorFooter" xmlns="UnityEngine.UIElements" editor-extension-mode="True">
     <Style src="project://database/Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeModuleReferenceUi.uss?fileID=7433441132597879392&amp;guid=b3b478719566fe14d90e9fc09e58be3f&amp;type=3#CloudCodeModuleReferenceUi"/>
+    <Style src="project://database/Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeModuleUi.uss"/>
     <ui:VisualElement name="readonly-container">
         <uie:ObjectField label="Cloud Assembly Definition" name="assembly-definition" binding-path="m_CloudAssemblyDefinition" enabled="false" tooltip="The assembly definition linked to the Cloud Code Module" allow-scene-objects="false" type="UnityEditorInternal.AssemblyDefinitionAsset, UnityEditor.CoreModule"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="last-deployment" class="last-deployment">
+        <ui:Label text="Last Successful Deployment" class="last-deployment__header"/>
+        <ui:VisualElement class="last-deployment__row">
+            <ui:Label text="Target" class="last-deployment__label"/>
+            <ui:Label name="last-deploy-target" text="No status" class="last-deployment__value"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="last-deployment__row">
+            <ui:Label text="Time" class="last-deployment__label"/>
+            <ui:Label name="last-deploy-time" text="No status" class="last-deployment__value"/>
+        </ui:VisualElement>
     </ui:VisualElement>
     <fba:DeploymentConfigInspectorFooter/>
 </ui:UXML>

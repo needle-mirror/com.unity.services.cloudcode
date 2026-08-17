@@ -1,3 +1,4 @@
+#if UNITY_6000_5_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,10 +18,12 @@ using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.DeploymentApi.Editor;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
 using UnityEditor.Build;
 using UnityEngine;
 using Exception = System.Exception;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
+using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 {
@@ -35,6 +38,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
         readonly IFileSystem m_FileSystem;
         readonly IModuleZipper m_ModuleZipper;
+        readonly IModuleContentHasher m_ContentHasher;
         readonly EditorCloudCodeLocalModuleDeploymentHandler m_LocalDeploymentHandler;
         readonly CloudCodeDeploymentHandler m_RemoteDeploymentHandler;
 
@@ -47,11 +51,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             IPreDeployValidator validator,
             IFileSystem fileSystem,
             IModuleZipper moduleZipper,
-            EditorCloudCodeLocalModuleDeploymentHandler localDeploymentHandler)
+            EditorCloudCodeLocalModuleDeploymentHandler localDeploymentHandler,
+            IModuleContentHasher contentHasher)
         {
             m_DeploymentAnalytics = analytics;
             m_FileSystem = fileSystem;
             m_ModuleZipper = moduleZipper;
+            m_ContentHasher = contentHasher;
             m_LocalDeploymentHandler = localDeploymentHandler;
             m_RemoteDeploymentHandler =
                 new CloudCodeDeploymentHandler(modulesClient, analytics, logger, validator);
@@ -79,6 +85,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 await GenerateAndDeployToRemoteAsync(moduleReferences, cancellationToken);
         }
 
+        // Source of truth for a module's deployed name is the cloud assembly (asmdef) name, since that is
+        // what the generated client and manifest call. Falls back to the asset file name only when the
+        // asmdef cannot be read, preserving the previous behavior.
+        internal static string GetDeployModuleName(CloudCodeModule ccm)
+        {
+            var asmdef = ccm.CloudAssemblyDefinition != null
+                ? AsmdefJsonData.ParseAssemblyDefinitionAsset(ccm.CloudAssemblyDefinition)
+                : null;
+
+            return string.IsNullOrEmpty(asmdef?.name)
+                ? Path.GetFileNameWithoutExtension(ccm.Name)
+                : asmdef.name;
+        }
+
         static bool ShouldDeployToLocal()
         {
             var server = CloudCodeAuthoringServices.Instance.GetService<ICloudCodeLocalServer>();
@@ -104,9 +124,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 "Please ensure each CCM has its own unique assembly definition.",
                 severity: SeverityLevel.Error);
 
+            var deployedHashes = await SnapshotContentHashesAsync(validCCMs);
             var modulesToZip = GetAllAssemblyPathsForModules(validCCMs);
-            var deploymentDict = await ZipCloudCodeModule(modulesToZip, cancellationToken);
-            return await m_LocalDeploymentHandler.DeployAsync(deploymentDict, cancellationToken);
+            var deploymentDict = await ZipCloudCodeModuleAsync(modulesToZip, cancellationToken);
+            var moduleDestinationDir = await m_LocalDeploymentHandler.DeployAsync(deploymentDict, cancellationToken);
+
+            // Records the last successful deploy of the module. This reflects that the module was
+            // deployed, separate from whether the local server is currently running.
+            RecordSuccessfulDeployments(deploymentDict.Keys.ToList(), DeploymentTarget.Local, deployedHashes);
+            await ReconcileAfterDeployAsync(deploymentDict.Keys);
+
+            return moduleDestinationDir;
         }
 
         async Task GenerateAndDeployToRemoteAsync(List<CloudCodeModule> moduleReferences,
@@ -128,10 +156,77 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 "Please ensure each CCM has its own unique assembly definition.",
                 severity: SeverityLevel.Error);
 
+            var deployedHashes = await SnapshotContentHashesAsync(validCCMs);
             var modulesToZip = GetAllAssemblyPathsForModules(validCCMs);
-            var deploymentDict = await ZipCloudCodeModule(modulesToZip, cancellationToken);
+            var deploymentDict = await ZipCloudCodeModuleAsync(modulesToZip, cancellationToken);
 
-            await m_RemoteDeploymentHandler.DeployAsync(deploymentDict.Values.ToList());
+            var result = await m_RemoteDeploymentHandler.DeployAsync(deploymentDict.Values.ToList());
+
+            // Map deployed scripts back to their module items.
+            var deployedModules = deploymentDict
+                .Where(entry => result.Deployed.Contains(entry.Value))
+                .Select(entry => entry.Key)
+                .ToList();
+
+            RecordSuccessfulDeployments(deployedModules, DeploymentTarget.Remote, deployedHashes);
+            await ReconcileAfterDeployAsync(deployedModules);
+        }
+
+        /// <summary>
+        /// Fingerprints each module's source before the deploy runs, so the baseline recorded on success
+        /// reflects the content that was deployed rather than any edit made while the deploy is in flight.
+        /// </summary>
+        async Task<Dictionary<CloudCodeModule, string>> SnapshotContentHashesAsync(IEnumerable<CloudCodeModule> modules)
+        {
+            var hashes = new Dictionary<CloudCodeModule, string>();
+            foreach (var module in modules)
+                hashes[module] = await m_ContentHasher.ComputeHashAsync(module);
+            return hashes;
+        }
+
+        /// <summary>
+        /// Records each module's last successful deployment, pairing the deployment target with the source
+        /// fingerprint captured before the deploy so a deployed module always carries the hash the
+        /// modified-tracker compares against. The hash is null only when a module's source cannot be hashed.
+        /// </summary>
+        internal void RecordSuccessfulDeployments(IEnumerable<IModuleItem> deployedModules, DeploymentTarget target,
+            IReadOnlyDictionary<CloudCodeModule, string> deployedHashes)
+        {
+            foreach (var module in deployedModules)
+            {
+                string contentHash = null;
+                if (module is CloudCodeModule ccm)
+                {
+                    deployedHashes.TryGetValue(ccm, out contentHash);
+                    // Seed the modified-tracker cache: right after deploy the current source matches what
+                    // was deployed, so a reload before any edit restores up-to-date without re-hashing.
+                    ccm.CurrentContentHash = contentHash;
+                }
+
+                module.LastSuccessfulDeployment = LastSuccessfulDeploymentInfo.Create(target, contentHash);
+            }
+        }
+
+        /// <summary>
+        /// A change made while a module was mid-deploy arrives during a transient, non-reconcilable status
+        /// and is dropped by the tracker; reconcile now against the just-recorded baseline so a mid-deploy
+        /// edit surfaces as modified once the deploy settles. Awaited (rather than the fire-and-forget
+        /// <see cref="ITrackableItem.TrackOrUpdate"/>) so the reconcile stays the last writer of status.
+        /// </summary>
+        static async Task ReconcileAfterDeployAsync(IEnumerable<IModuleItem> deployedModules)
+        {
+            CloudCodeModuleModifiedTracker tracker;
+            try
+            {
+                tracker = CloudCodeAuthoringServices.Instance.GetService<CloudCodeModuleModifiedTracker>();
+            }
+            catch (Exception e) when (e is DependencyNotFoundException or NullReferenceException)
+            {
+                return;
+            }
+
+            foreach (var ccm in deployedModules.OfType<CloudCodeModule>())
+                await tracker.ReconcileAsync(ccm);
         }
 
         internal static (List<CloudCodeModule>, List<CloudCodeModule>) PartitionValidCCMs(List<CloudCodeModule> ccms)
@@ -339,7 +434,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
 #endif
 
-        async Task<Dictionary<IModuleItem, IScript>> ZipCloudCodeModule(
+        async Task<Dictionary<IModuleItem, IScript>> ZipCloudCodeModuleAsync(
             Dictionary<CloudCodeModule, List<string>> allAssemblyDependencies,
             CancellationToken cancellationToken)
         {
@@ -354,8 +449,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
                 try
                 {
+                    // Name everything after the cloud assembly (asmdef) name, not the .ccmu asset name,
+                    // so the stored zip matches what the generated client calls.
+                    var moduleName = GetDeployModuleName(ccm);
+
                     // Flush the directory to ensure we are zipping the latest files.
-                    var cloudModuleDir = Path.Combine(k_CloudCodeModulesDirectory, ccm.name);
+                    var cloudModuleDir = Path.Combine(k_CloudCodeModulesDirectory, moduleName);
                     if (m_FileSystem.DirectoryExists(cloudModuleDir))
                     {
                         await m_FileSystem.DeleteDirectory(cloudModuleDir, true);
@@ -372,9 +471,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
 
                     // Finally, zip the files and add it to the dictionary of assemblies to deploy
                     var result = await m_ModuleZipper.ZipCompilation(cloudModuleDir, k_CloudCodeModulesDirectory,
-                        Path.GetFileNameWithoutExtension(ccm.Name), cancellationToken);
+                        moduleName, cancellationToken);
 
-                    var moduleToDeploy = GenerateModule(result, ccm);
+                    var moduleToDeploy = GenerateModule(result, ccm, moduleName);
                     allAssembliesToDeploy.Add(ccm, moduleToDeploy);
 
                     m_LocalDeploymentHandler.UpdateDeployStatus(ccm, "Zipped Successfully");
@@ -388,9 +487,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             return allAssembliesToDeploy;
         }
 
-        static Module GenerateModule(string path, CloudCodeModule moduleReference)
+        static Module GenerateModule(string path, CloudCodeModule moduleReference, string moduleName)
         {
-            var name = new ScriptName(moduleReference.name);
+            var name = new ScriptName(moduleName);
             var module = new Module(path, moduleReference)
             {
                 Name = name,
@@ -403,3 +502,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         }
     }
 }
+#endif

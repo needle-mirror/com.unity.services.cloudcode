@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
 {
     abstract class LocalCloudCodeRequestBase
@@ -21,3 +22,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
         }
     }
 }
+#endif

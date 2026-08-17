@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Services.CloudCode.Models;
 using Unity.Services.CloudCode.Subscriptions;
 
 namespace Unity.Services.CloudCode
@@ -44,7 +43,7 @@ namespace Unity.Services.CloudCode
         /// <returns>String representation of the return value of the called function. Intended to enable custom serializers.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null, CloudCodeModuleScope scope = null);
+        Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null, CloudCodeScope scope = null);
 
         /// <summary>
         /// Calls a Cloud Code function.
@@ -57,7 +56,7 @@ namespace Unity.Services.CloudCode
         /// <returns>Serialized output from the called function.</returns>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         /// <exception cref="CloudCodeRateLimitedException">Thrown if the service returned rate limited error.</exception>
-        Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null, CloudCodeModuleScope scope = null);
+        Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null, CloudCodeScope scope = null);
 
         /// <summary>
         /// Subscribe to push messages from the Cloud Code service for the currently logged in player.

@@ -1,6 +1,9 @@
+#if UNITY_6000_3_OR_NEWER
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Search;
 using Directory = UnityEngine.Windows.Directory;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
@@ -9,20 +12,42 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
     {
         const string k_SettingsProviderPath = "Assets/CloudCode/CloudCodeLocalServerSettings.asset";
 
+        // Re-exposed here because the port constant lives in the runtime assembly, which the
+        // authoring test assembly cannot see. Tests that restore defaults should use this rather
+        // than repeating the number.
+        internal const ushort k_DefaultPort = CloudCodeInitializer.k_DefaultLocalCloudCodeServerPort;
+
         [SerializeField]
         [Range(ushort.MinValue, ushort.MaxValue)]
         [Tooltip("The local port on your machine on which the local Cloud Code server will listen for calls.")]
         private ushort m_Port = CloudCodeInitializer.k_DefaultLocalCloudCodeServerPort;
 
         [SerializeField]
+        [SearchContext("p: ext:json", "asset")]
         [Tooltip("A JSON asset containing key-value secret pairs to be used by your Cloud Code functions when running on the local server.")]
         private TextAsset m_SecretsFile;
 
         private TextAsset m_PreviousSecretsFile;
 
-        static readonly string k_InvalidSecretsFileErrorTitle = L10n.Tr("Invalid secrets file");
-        static readonly string k_InvalidSecretsFileErrorDescription = L10n.Tr("Invalid secrets file. Please select a valid JSON file.");
-        static readonly string k_Ok = L10n.Tr("OK");
+        private ISecretsFileDialogs m_Dialogs;
+
+        internal ISecretsFileDialogs Dialogs
+        {
+            get => m_Dialogs ??= TryResolveDialogs();
+            set => m_Dialogs = value;
+        }
+
+        static ISecretsFileDialogs TryResolveDialogs()
+        {
+            try
+            {
+                return CloudCodeAuthoringServices.Instance.GetService<ISecretsFileDialogs>();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
 
         public ushort Port
         {
@@ -58,20 +83,51 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 return;
             }
 
-            var path = AssetDatabase.GetAssetPath(m_SecretsFile);
-            if (!string.IsNullOrEmpty(path) && path.EndsWith(".json"))
+            var assetPath = AssetDatabase.GetAssetPath(m_SecretsFile);
+            var result = SecretsFileValidator.Validate(assetPath, ReadSecretsFile());
+            if (result == SecretsFileValidator.Result.Valid)
             {
                 m_PreviousSecretsFile = m_SecretsFile;
-                return; // everything checks out
+                return;
             }
 
-            // Else invalid path
-            // Display dialog
+            var rejected = m_SecretsFile;
+            m_SecretsFile = m_PreviousSecretsFile;
+
+            var dialogs = Dialogs;
+            if (dialogs == null)
+            {
+                return;
+            }
+
             EditorApplication.delayCall += () =>
             {
-                EditorUtility.DisplayDialog(k_InvalidSecretsFileErrorTitle, k_InvalidSecretsFileErrorDescription, k_Ok);
+                if (result == SecretsFileValidator.Result.NotJsonExtension)
+                {
+                    dialogs.ShowInvalidFileType();
+                }
+                else if (dialogs.ShowInvalidJson())
+                {
+                    dialogs.OpenInIde(rejected);
+                }
             };
-            m_SecretsFile = m_PreviousSecretsFile;
+        }
+
+        private string ReadSecretsFile()
+        {
+            try
+            {
+                var physicalPath = SecretsFilePaths.GetPhysicalPath(m_SecretsFile);
+                return string.IsNullOrEmpty(physicalPath) ? null : File.ReadAllText(physicalPath);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
         }
 
         public static CloudCodeLocalServerSettings GetOrCreate()
@@ -98,3 +154,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         }
     }
 }
+#endif

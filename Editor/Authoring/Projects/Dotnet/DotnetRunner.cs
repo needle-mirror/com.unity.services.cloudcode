@@ -93,12 +93,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
             }
         }
 
-        public async Task<List<SemVersion>> GetAvailableCoreRuntimes(CancellationToken ct = default)
+        public Task<List<SemVersion>> GetAvailableCoreRuntimes(CancellationToken ct = default)
+        {
+            return GetAvailableRuntimes("Microsoft.NETCore.App", ct);
+        }
+
+        public async Task<List<SemVersion>> GetAvailableRuntimes(string frameworkName, CancellationToken ct = default)
         {
             var executionResult = await ExecuteDotnetAsync(new[] {"--list-runtimes"}, ct);
             var versions = executionResult
                 .Split("\n", StringSplitOptions.RemoveEmptyEntries)
-                .Where(s => s.StartsWith("Microsoft.NETCore.App"))
+                .Where(s => s.StartsWith(frameworkName))
                 .Select(s =>
                 {
                     s = s.Trim();

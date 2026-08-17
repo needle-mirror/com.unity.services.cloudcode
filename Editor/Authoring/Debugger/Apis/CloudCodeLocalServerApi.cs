@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System;
 using System.Net;
 using System.Net.Http;
@@ -126,3 +127,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
         }
     }
 }
+#endif

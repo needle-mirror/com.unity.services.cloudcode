@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System;
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
@@ -30,7 +31,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_FoldoutText = L10n.Tr("Local Debugging");
         static readonly string k_FoldoutTooltip = L10n.Tr("A local server with debug capabilities to allow for stepping through debugging of your code modules.");
         static readonly string k_HelpBoxText = L10n.Tr("To use the local Cloud Code server, open the More (\u22ee) menu in the top toolbar and enable Cloud Code from the Service submenu.");
-        static readonly string k_HelpBoxServerRunningText = L10n.Tr("Port and Secrets File cannot be modified while the local Cloud Code server is running. Stop the server to edit these settings.");
+        static readonly string k_HelpBoxServerRunningText = L10n.Tr("These settings cannot be modified while the local Cloud Code server is running. Stop the server to edit them.");
 
         HelpBox DebuggerStartHelpBox { get; }
         Foldout Foldout { get; }
@@ -103,3 +104,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         }
     }
 }
+#endif

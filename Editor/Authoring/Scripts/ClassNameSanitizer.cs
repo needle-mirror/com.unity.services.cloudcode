@@ -9,7 +9,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
     /// Converts arbitrary text into a valid C# identifier suitable for use as a class name.
     /// Used by the Cloud Code module creation flow to derive class names from user-supplied input.
     /// </summary>
-    public static class ClassNameSanitizer
+    static class ClassNameSanitizer
     {
         /// <summary>
         /// Sanitizes <paramref name="input"/> into a valid C# identifier.

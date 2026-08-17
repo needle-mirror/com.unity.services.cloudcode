@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "3.0.0-exp.8",
+  "version": "3.0.0-exp.9",
   "unity": "6000.3",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
   "dependencies": {
@@ -28,7 +28,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Added\n- Author Cloud Code Modules natively in the Unity Editor, with your cloud source code compiled automatically and fully\n  debuggable right where you work. There's no longer any need to regenerate bindings or maintain a separate solution\n  outside your Unity workspace - everything lives in one place. Writing, compiling, debugging, and deploying now happen\n  in a single workflow, enabling rapid iteration and faster deployment. Highlights include:\n  - Create new Cloud Code Modules quickly with a guided creation flow.\n  - Iterate rapidly and catch issues early with modules that compile in-editor as part of your project.\n  - Skip manual bindings regeneration - strongly-typed client bindings are generated and kept in sync automatically.\n  - Scoped Cloud Code is supported alongside standard modules.\n\n### Fixed\n- Added retries with a longer request timeout when checking whether a Cloud Code module exists during deployment.\n- Fixed Cloud Code Module deployment resolving required precompiled assemblies using Editor-loaded assembly paths on Unity 6000.5 or newer.\n\n### Changed\n- Renamed Native Modules to Cloud Code Modules; they now use the `.ccmu` file extension instead of generic `.asset` files. Recreate any existing modules.\n- Generating bindings will now includes enum values alongside their names.\n- Generating bindings dictionary keys now retain their original types instead of being converted to strings."
+    "changelog": "### Added\n- Updated the Cloud Code Module (.ccmu) inspector with deployment actions and a last successful deployment summary.\n- Support default parameters in generated bindings for Cloud Code modules scripts.\n- The local Cloud Code server settings can now create and assign a placeholder secrets JSON file, and open the assigned file in your external editor.\n\n### Changed\n- The package now targets Unity 6000.0. The local debugger requires Unity 6000.3 or newer, and Cloud Code Module authoring requires Unity 6000.5 or newer.\n- The local Cloud Code server now defaults to port `14750` instead of `5000` by default. Configurable in the `CloudCodeLocalServerSettings` asset. Existing projects keep the port already stored in that asset.\n- The local Cloud Code server's infrastructure now defaults to non-verbose logging. This has been made configurable on the `CloudCodeLocalServerSettings` asset.\n- The local Cloud Code server's secrets file is now validated for parseable JSON object content and surfaces an error dialog when invalid.\n- The local Cloud Code server settings can now create and assign a placeholder secrets JSON file, and open the assigned file in your external editor.\n- New Cloud Code Module scripts are now created with `[StateScope(Scope.Player)]` instead of `[StateScope(Scope.MultiplayerSession)]`, and carry a comment linking to the scope documentation.\n- Cloud Code Modules now report a compile-time error when a function's return type, a parameter, or a data type field is a custom collection type (a user type implementing `IEnumerable<T>` other than `List<T>`, an array, or `Dictionary<,>`), which can't be serialized to or from JSON. Use `List<T>` or `T[]` instead.\n\n### **Breaking Changes**:\n- CloudCodeModuleScope renamed to CloudCodeScope and moved to the main Unity.Services.CloudCode namespace.\n\n### Fixed\n- Cloud Code Modules (`.ccmu`) no longer show \"Modified locally\" after routine re-imports (entering Play Mode, domain reloads, or reimporting) when their source is unchanged. A module's status is now derived from its content compared to the last deployment, and a remotely-deployed module keeps its status regardless of the local server's state.\n- Cloud Code Modules authored natively in-editor now generate enum bindings that preserve the enum's underlying type (`byte`, `short`, `long`, `ulong`, etc.) instead of always emitting `int`, which truncated or failed to compile values outside `int` range. (The separate module-reference `.ccmr` bindings generator is unchanged.)\n- The local debug server now starts on Linux with default preferences. The default .NET path pointed at the `/usr/share/dotnet` directory instead of an executable; it now resolves `dotnet` from the system PATH, with a fallback if the configured path is invalid.\n- A local Cloud Code server that dies during startup now reports why. It also checks two things up front on start:\n  - Port conflicts for any ports the local server needs.\n  - The .NET runtime the server needs.\n- Fixed a `NullReferenceException` when deploying a Cloud Code Module after a domain reload.\n\n### Dependencies\n- Cloud Code Module authoring now targets Cloud Code Core `v0.0.7` (was `v0.0.4`) and Cloud Code APIs `v0.0.27` (was `v0.0.26`). The changes to these packages are listed below.\n\n#### Cloud Code Core `v0.0.7`\n- **Breaking**: Redefined the Cloud Code `Access` enum. The values are renamed and renumbered,\n  and default is now `Access.Unspecified`. Validation will be done at load time and incompatible values will throw an exception.\n- **Breaking**: Renamed `[Service]` attribute to `[CloudCodeService]` to avoid confusion with other service attributes.\n- **Breaking**: Renamed `ITimerService.RegisterTimerAsync` and `ITimerService.GetTimerAsync`, for consistency. The previous `Register` and `Fetch` names still work but are now obsolete.\n\n#### Cloud Code APIs `v0.0.27`\n- Added `AddAdminApiClient()` extension method to register the Admin API client through dependency injection, matching `AddGameApiClient()`."
   },
   "samples": [
     {
@@ -42,16 +42,13 @@
       "path": "Samples~/CloudCodeModulesDeployment"
     }
   ],
-  "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "3.0.0-exp.8"
-  },
   "upmCi": {
-    "footprint": "b1b548dae87ea86fd7be17e2d0c3e7542829bd73"
+    "footprint": "614ec2bda19285b2461494ba7f749964404601f6"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "9b56150cf3a14ffe51dc1bf90492bda9fa88af1d"
+    "revision": "4b61ff9bac63fb54eb793d1a0ae8f78f6fc5ddd0"
   }
 }

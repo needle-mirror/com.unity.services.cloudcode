@@ -4,6 +4,45 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-exp.9] - 2026-08-17
+### Added
+- Updated the Cloud Code Module (.ccmu) inspector with deployment actions and a last successful deployment summary.
+- Support default parameters in generated bindings for Cloud Code modules scripts.
+- The local Cloud Code server settings can now create and assign a placeholder secrets JSON file, and open the assigned file in your external editor.
+
+### Changed
+- The package now targets Unity 6000.0. The local debugger requires Unity 6000.3 or newer, and Cloud Code Module authoring requires Unity 6000.5 or newer.
+- The local Cloud Code server now defaults to port `14750` instead of `5000` by default. Configurable in the `CloudCodeLocalServerSettings` asset. Existing projects keep the port already stored in that asset.
+- The local Cloud Code server's infrastructure now defaults to non-verbose logging. This has been made configurable on the `CloudCodeLocalServerSettings` asset.
+- The local Cloud Code server's secrets file is now validated for parseable JSON object content and surfaces an error dialog when invalid.
+- The local Cloud Code server settings can now create and assign a placeholder secrets JSON file, and open the assigned file in your external editor.
+- New Cloud Code Module scripts are now created with `[StateScope(Scope.Player)]` instead of `[StateScope(Scope.MultiplayerSession)]`, and carry a comment linking to the scope documentation.
+- Cloud Code Modules now report a compile-time error when a function's return type, a parameter, or a data type field is a custom collection type (a user type implementing `IEnumerable<T>` other than `List<T>`, an array, or `Dictionary<,>`), which can't be serialized to or from JSON. Use `List<T>` or `T[]` instead.
+
+### **Breaking Changes**:
+- CloudCodeModuleScope renamed to CloudCodeScope and moved to the main Unity.Services.CloudCode namespace.
+
+### Fixed
+- Cloud Code Modules (`.ccmu`) no longer show "Modified locally" after routine re-imports (entering Play Mode, domain reloads, or reimporting) when their source is unchanged. A module's status is now derived from its content compared to the last deployment, and a remotely-deployed module keeps its status regardless of the local server's state.
+- Cloud Code Modules authored natively in-editor now generate enum bindings that preserve the enum's underlying type (`byte`, `short`, `long`, `ulong`, etc.) instead of always emitting `int`, which truncated or failed to compile values outside `int` range. (The separate module-reference `.ccmr` bindings generator is unchanged.)
+- The local debug server now starts on Linux with default preferences. The default .NET path pointed at the `/usr/share/dotnet` directory instead of an executable; it now resolves `dotnet` from the system PATH, with a fallback if the configured path is invalid.
+- A local Cloud Code server that dies during startup now reports why. It also checks two things up front on start:
+  - Port conflicts for any ports the local server needs.
+  - The .NET runtime the server needs.
+- Fixed a `NullReferenceException` when deploying a Cloud Code Module after a domain reload.
+
+### Dependencies
+- Cloud Code Module authoring now targets Cloud Code Core `v0.0.7` (was `v0.0.4`) and Cloud Code APIs `v0.0.27` (was `v0.0.26`). The changes to these packages are listed below.
+
+#### Cloud Code Core `v0.0.7`
+- **Breaking**: Redefined the Cloud Code `Access` enum. The values are renamed and renumbered,
+  and default is now `Access.Unspecified`. Validation will be done at load time and incompatible values will throw an exception.
+- **Breaking**: Renamed `[Service]` attribute to `[CloudCodeService]` to avoid confusion with other service attributes.
+- **Breaking**: Renamed `ITimerService.RegisterTimerAsync` and `ITimerService.GetTimerAsync`, for consistency. The previous `Register` and `Fetch` names still work but are now obsolete.
+
+#### Cloud Code APIs `v0.0.27`
+- Added `AddAdminApiClient()` extension method to register the Admin API client through dependency injection, matching `AddGameApiClient()`.
+
 ## [3.0.0-exp.8] - 2026-06-16
 ### Added
 - Author Cloud Code Modules natively in the Unity Editor, with your cloud source code compiled automatically and fully

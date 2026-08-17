@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,3 +121,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         }
     }
 }
+#endif

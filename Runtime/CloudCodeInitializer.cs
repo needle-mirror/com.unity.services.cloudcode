@@ -20,7 +20,7 @@ namespace Unity.Services.CloudCode
     {
         const string k_CloudEnvironmentKey = "com.unity.services.core.cloud-environment";
         const string k_StagingEnvironment = "staging";
-        internal const ushort k_DefaultLocalCloudCodeServerPort = 5000;
+        internal const ushort k_DefaultLocalCloudCodeServerPort = 14750;
         const string k_LocalCloudCodePidPrefs = "LOCAL_CLOUD_CODE_PID";
         const int k_ConfigurationReqTimeoutSec = 30;
         const string k_PackageName = "com.unity.services.cloudcode";

@@ -30,3 +30,29 @@
 .group-path {
     flex-direction: row;
 }
+
+#assembly-definition .unity-base-field__label {
+    min-width: 210px;
+    width: 210px;
+    flex-shrink: 0;
+    margin-left: 0;
+}
+
+.last-deployment {
+    margin-top: 4px;
+    margin-left: 3px;
+}
+
+.last-deployment__header {
+    margin-bottom: 2px;
+}
+
+.last-deployment__row {
+    flex-direction: row;
+}
+
+.last-deployment__label {
+    width: 212px;
+    flex-shrink: 0;
+    padding-left: 15px;
+}

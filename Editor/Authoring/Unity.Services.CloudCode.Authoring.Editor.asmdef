@@ -6,9 +6,9 @@
         "Unity.Services.Core.Editor",
         "Unity.Services.Core.Internal",
         "Unity.Services.DeploymentApi",
-        "Unity.Services.CloudCode.Authoring.Editor.Core",
+        "Unity.Services.CloudCode.Authoring.Core.Editor",
         "Unity.Services.Core.Environments.Editor",
-        "Unity.Services.CloudCode.Editor.Shared",
+        "Unity.Services.CloudCode.Shared.Editor",
         "Unity.Services.CloudCode"
     ],
     "includePlatforms": [

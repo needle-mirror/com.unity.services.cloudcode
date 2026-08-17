@@ -1,6 +1,4 @@
-#if DEPLOYMENT_API_AVAILABLE_V1_0
 using Unity.Services.CloudCode.Authoring.Editor.Modules.UI;
-#endif
 using Unity.Services.Core.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -32,18 +30,16 @@ namespace Unity.Services.CloudCode.Settings
         protected override VisualElement GenerateServiceDetailUI()
         {
             var root = new VisualElement();
+            root.Add(new CloudCodeVerboseLoggingVisualElement());
 
 #if DEPLOYMENT_API_AVAILABLE_V1_0
-            if (root.childCount == 0)
-            {
-                root.Add(new CloudCodeModuleReferenceGenerateBindingsVisualElement());
-                root.Add(new CloudCodeLocalDebuggerVisualElement());
-            }
+            root.Add(new CloudCodeModuleReferenceGenerateBindingsVisualElement());
+#if UNITY_6000_3_OR_NEWER
+            root.Add(new CloudCodeLocalDebuggerVisualElement());
+#endif
+#endif
 
             return root;
-#else
-            return root;
-#endif
         }
 
         /// <summary>

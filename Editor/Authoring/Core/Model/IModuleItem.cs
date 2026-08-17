@@ -17,6 +17,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 
         // Progression as viewed in the Deployment Window.
         new float Progress { get; set; }
+
+        // The last successful deployment recorded for the current editor session.
+        LastSuccessfulDeploymentInfo LastSuccessfulDeployment { get; set; }
     }
 
     /// <summary>
@@ -63,6 +66,42 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
         {
             self.StatusLog.Clear();
             self.Status = DeploymentStatus.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Records the last successful deployment of a module for the current editor session: its target,
+    /// time, and the source fingerprint captured at deploy. A null instance means no successful deployment
+    /// has been recorded yet.
+    /// </summary>
+    [Serializable]
+    class LastSuccessfulDeploymentInfo
+    {
+        public enum DeploymentTarget
+        {
+            Local,
+            Remote
+        }
+
+        public DeploymentTarget Target;
+        public long TimeTicks;
+
+        /// <summary>
+        /// Hash of the module's source content captured for this deployment, used to tell a real local
+        /// change apart from a routine re-import. Always recorded together with the target; non-null for
+        /// any valid module and null only when the source cannot be hashed (e.g. a corrupt module missing
+        /// an assembly definition), in which case the modified-tracker leaves the module un-tracked.
+        /// </summary>
+        public string ContentHash;
+
+        public static LastSuccessfulDeploymentInfo Create(DeploymentTarget target, string contentHash)
+        {
+            return new LastSuccessfulDeploymentInfo
+            {
+                Target = target,
+                TimeTicks = DateTime.UtcNow.Ticks,
+                ContentHash = contentHash
+            };
         }
     }
 }

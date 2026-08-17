@@ -111,5 +111,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
             return found;
         }
+
+        internal bool HasNameThatMatches(AssemblyDefinitionAsset asmdefAsset)
+        {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            var parsed = ParseAssemblyDefinitionAsset(asmdefAsset);
+            return parsed != null && string.Equals(name, parsed.name, StringComparison.Ordinal);
+        }
     }
 }

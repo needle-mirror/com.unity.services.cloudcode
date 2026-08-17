@@ -7,7 +7,6 @@ using Unity.Services.CloudCode.Internal.Apis.CloudCode;
 using Unity.Services.CloudCode.Internal.CloudCode;
 using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.CloudCode.Internal.Models;
-using Unity.Services.CloudCode.Models;
 using Unity.Services.CloudCode.Subscriptions;
 using Unity.Services.Core;
 using Unity.Services.Core.Configuration.Internal;
@@ -22,7 +21,8 @@ namespace Unity.Services.CloudCode
         private readonly ICloudProjectId m_CloudProjectId;
         private readonly IPlayerId m_PlayerId;
         private readonly IAccessToken m_AccessToken;
-        private readonly IWire m_Wire;
+        readonly IWire m_Wire;
+        readonly SubscriptionProvider m_SubscriptionProvider;
 
         internal CloudCodeInternal(IWire wire, ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
         {
@@ -31,6 +31,7 @@ namespace Unity.Services.CloudCode
             m_PlayerId = playerId;
             m_AccessToken = accessToken;
             m_Wire = wire;
+            m_SubscriptionProvider = new SubscriptionProvider(wire, cloudCodeApiClient, cloudProjectId, playerId);
         }
 
         public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args)
@@ -48,18 +49,16 @@ namespace Unity.Services.CloudCode
             return DeserializeOutput<TResult>(result);
         }
 
-        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope = null)
+        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args, CloudCodeScope scope = null)
         {
             var result = await GetRunModuleScriptResponse(module, function, args, scope);
-
             var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
 
-        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope = null)
+        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args, CloudCodeScope scope = null)
         {
             var result = await GetRunModuleScriptResponse(module, function, args, scope);
-
             return DeserializeOutput<TResult>(result);
         }
 
@@ -70,7 +69,9 @@ namespace Unity.Services.CloudCode
 
         public async Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync(SubscriptionEventCallbacks callbacks)
         {
-            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
+            ValidateWireDependency();
+            ValidateRequiredDependencies();
+            return await m_SubscriptionProvider.SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Player);
         }
 
         public Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync()
@@ -80,23 +81,9 @@ namespace Unity.Services.CloudCode
 
         public async Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks)
         {
-            return await SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
-        }
-
-        async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, TokenProvider.TokenProviderMode mode)
-        {
-            if (m_Wire == null)
-            {
-                throw new InvalidOperationException(
-                    "Cannot subscribe to Cloud Code messages without the wire SDK dependency.");
-            }
-
+            ValidateWireDependency();
             ValidateRequiredDependencies();
-
-            var channel = m_Wire.CreateChannel(new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
-            var subscriptionsChannel = new SubscriptionChannel(channel, callbacks);
-            await subscriptionsChannel.SubscribeAsync();
-            return subscriptionsChannel;
+            return await m_SubscriptionProvider.SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
         }
 
         static TResult DeserializeOutput<TResult>(Response<RunScriptResponse> result)
@@ -139,7 +126,7 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope)
+        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args, CloudCodeScope scope)
         {
             ValidateRequiredDependencies();
 
@@ -191,6 +178,15 @@ namespace Unity.Services.CloudCode
             }
             Debug.LogError(cloudCodeException.Message);
             return cloudCodeException;
+        }
+
+        void ValidateWireDependency()
+        {
+            if (m_Wire == null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot subscribe to Cloud Code messages without the wire SDK dependency.");
+            }
         }
 
         void ValidateRequiredDependencies()
@@ -245,7 +241,7 @@ namespace Unity.Services.CloudCode
             return await task;
         }
 
-        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args, CloudCodeModuleScope scope)
+        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args, CloudCodeScope scope)
         {
             var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>(), scope == null ? null : new RunModuleArgumentsScope(scope.ToInternalType(), scope.Id));
             var runScript = new RunModuleRequest(m_CloudProjectId.GetCloudProjectId(), module, function, runArgs);
@@ -253,5 +249,6 @@ namespace Unity.Services.CloudCode
 
             return await task;
         }
+
     }
 }

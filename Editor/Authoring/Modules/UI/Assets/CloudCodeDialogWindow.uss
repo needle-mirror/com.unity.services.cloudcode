@@ -1,0 +1,19 @@
+/* Appearance for CloudCodeDialogWindow. */
+.cc-dialog {
+    background-color: var(--unity-colors-window-background);
+}
+
+/* Flatten the documentation Button so it reads as an inline link. */
+.cc-dialog__link {
+    align-self: flex-start;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--unity-colors-link-text, rgb(77, 133, 230));
+}
+
+.cc-dialog__ok-button {
+    min-width: 80px;
+}

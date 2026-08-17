@@ -21,9 +21,30 @@
     flex-grow: 1;
 }
 
+.debugger-secrets-file-row {
+    flex-direction: row;
+}
+
+.debugger-secrets-file-field {
+    flex-grow: 1;
+}
+
+.debugger-secrets-file-btn {
+    flex-grow: 0;
+    flex-shrink: 1;
+    margin-left: 4px;
+    margin-right: 0;
+    min-width: 75px;
+}
+
 .unity-base-field__label {
     width: 50%;
 }
 .unity-base-field__input {
     flex-grow: 1;
+}
+
+/* Aligns every row's right edge. */
+.unity-base-field {
+    margin-right: 0;
 }

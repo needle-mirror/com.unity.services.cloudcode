@@ -28,6 +28,23 @@ namespace Unity.Services.CloudCode.Subscriptions
         public SubscriptionEventCallbacks Callbacks { get; }
 
         /// <summary>
+        /// The most recent connection state translated from the wire channel, or null if none yet.
+        /// </summary>
+        public EventConnectionState? LastKnownState { get; private set; }
+
+        /// <summary>
+        /// Whether this channel has been retired (torn down or evicted). Once retired, the provider
+        /// stops routing its late/dying events so they are not delivered to a newer subscriber.
+        /// </summary>
+        public bool IsRetired { get; set; }
+
+        /// <summary>
+        /// The signed-in player this channel was created for. Used to detect a channel belonging to a
+        /// previous player (e.g. after a re-login) so it is never reused.
+        /// </summary>
+        public string PlayerId { get; set; }
+
+        /// <summary>
         /// Initialize the subscription channel with event callbacks.
         /// </summary>
         /// <param name="channel">This object allows the subscription to a channel.</param>
@@ -119,15 +136,22 @@ namespace Unity.Services.CloudCode.Subscriptions
         /// <param name="callbacks">The callbacks you want to be called from the Cloud Code event subscription.</param>
         void OnSubscriptionNewState(SubscriptionState state, SubscriptionEventCallbacks callbacks)
         {
+            var connectionState = ToConnectionState(state);
+            LastKnownState = connectionState;
+            callbacks.InvokeEventConnectionStateChanged(connectionState);
+        }
+
+        static EventConnectionState ToConnectionState(SubscriptionState state)
+        {
             switch (state)
             {
-                case SubscriptionState.Unsubscribed: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Unsubscribed); break;
-                case SubscriptionState.Subscribing: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Subscribing); break;
-                case SubscriptionState.Synced: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Subscribed); break;
-                case SubscriptionState.Unsynced: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Unsynced); break;
-                case SubscriptionState.Error: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Error); break;
+                case SubscriptionState.Unsubscribed: return EventConnectionState.Unsubscribed;
+                case SubscriptionState.Subscribing: return EventConnectionState.Subscribing;
+                case SubscriptionState.Synced: return EventConnectionState.Subscribed;
+                case SubscriptionState.Unsynced: return EventConnectionState.Unsynced;
+                case SubscriptionState.Error: return EventConnectionState.Error;
                 // Currently, it's impossible to reach the default case.
-                default: callbacks.InvokeEventConnectionStateChanged(EventConnectionState.Unknown); break;
+                default: return EventConnectionState.Unknown;
             }
         }
 

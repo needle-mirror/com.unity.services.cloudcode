@@ -1,3 +1,4 @@
+#if UNITY_6000_5_OR_NEWER
 using System;
 using System.IO;
 using System.Linq;
@@ -34,6 +35,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         TextElement m_ClientAssemblyNameInputField;
         TextElement m_DirCloudInputField;
         TextElement m_DirClientInputField;
+        string m_AssetName;
+        string m_AssetPath;
 
         // Const for all string localizations
         static readonly string k_WindowHeader = L10n.Tr("Assets to Create");
@@ -90,17 +93,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             minSize = k_WindowSize;
             maxSize = k_WindowSize;
             m_OnSubmitForm = onSubmit;
+            m_AssetName = assetName;
+            m_AssetPath = assetPath;
             m_CloudModuleNameInputField.value = moduleName;
-            m_CloudAssemblyNameInputField.text =  $"{moduleName}.asmdef";;
-            m_ClientAssemblyNameInputField.text = $"{moduleName}Client.asmdef";;
+            m_CloudAssemblyNameInputField.text =  $"{moduleName}.asmdef";
+            m_ClientAssemblyNameInputField.text = $"{moduleName}Client.asmdef";
             m_CloudScriptNameInputField.value = assetName;
             m_ClientSideBindings.text = $"{assetName}Client.cs";
             m_CloudScriptNameInputField.tooltip = k_InvalidCharToolTip;
             m_CloudModuleNameInputField.tooltip = k_InvalidCharToolTip;
-            m_DirCloudInputField.text = GetModulePath(assetName, assetPath, true, true);
-            m_DirCloudInputField.tooltip = GetModulePath(assetName, assetPath, true, false);
-            m_DirClientInputField.text = GetModulePath(assetName, assetPath, false, true);
-            m_DirClientInputField.tooltip = GetModulePath(assetName, assetPath, false, false);
+            RefreshDirectoryPreview(moduleName);
+            UpdateConfirmButtonState();
+        }
+
+        void UpdateConfirmButtonState()
+        {
+            var isNameEmpty = m_CloudScriptNameInputField.text.Trim().Length == 0;
+            var isModuleEmpty = m_CloudModuleNameInputField.text.Trim().Length == 0;
+            m_ConfirmActionButton.enabledSelf = !isNameEmpty && !isModuleEmpty;
+        }
+
+        void RefreshDirectoryPreview(string moduleName)
+        {
+            m_DirCloudInputField.text = GetModulePath(m_AssetName, m_AssetPath, moduleName, true, true);
+            m_DirCloudInputField.tooltip = GetModulePath(m_AssetName, m_AssetPath, moduleName, true, false);
+            m_DirClientInputField.text = GetModulePath(m_AssetName, m_AssetPath, moduleName, false, true);
+            m_DirClientInputField.tooltip = GetModulePath(m_AssetName, m_AssetPath, moduleName, false, false);
         }
 
         public void CreateGUI()
@@ -173,6 +191,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 var sanitzedModuleName = m_CloudModuleNameInputField.text;
                 m_CloudAssemblyNameInputField.text = $"{sanitzedModuleName}.asmdef";
                 m_ClientAssemblyNameInputField.text = $"{sanitzedModuleName}Client.asmdef";
+                RefreshDirectoryPreview(sanitzedModuleName);
             });
         }
 
@@ -189,26 +208,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ClientAssemblyNameInputField = m_Root.Q<TextElement>(k_ClientAssemblyInputFieldName);
         }
 
-        string GetModulePath(string assetName, string assetPath, bool isCloud, bool shouldTruncate)
+        string GetModulePath(string assetName, string assetPath, string moduleName, bool isCloud, bool shouldTruncate)
         {
             int lastDirIndex = assetPath.LastIndexOf(assetName, StringComparison.Ordinal);
-            string scriptPath = assetPath.Substring(0, lastDirIndex);
+            string basePath = assetPath.Substring(0, lastDirIndex);
 
             var postFixDir = isCloud ? "Cloud" : "Client";
-            scriptPath = $"{scriptPath}{postFixDir}";
+            var moduleSegment = string.IsNullOrEmpty(moduleName) ? string.Empty : $"{moduleName}/";
+            var scriptPath = $"{basePath}{moduleSegment}{postFixDir}";
 
             if (!shouldTruncate)
                 return scriptPath;
 
             const int visibleCharacters = 16;
-            string basePath = PathUtils.Join("Assets", "....");
-            int maxVisibleStringLength = basePath.Length + visibleCharacters;
+            string ellipsisPrefix = PathUtils.Join("Assets", "....");
+            int maxVisibleStringLength = ellipsisPrefix.Length + visibleCharacters;
             int pathLen = scriptPath.Length;
 
             if (pathLen > maxVisibleStringLength)
             {
                 var truncatedPath = scriptPath.Substring(pathLen - visibleCharacters, visibleCharacters);
-                scriptPath = $"{basePath}{truncatedPath}";
+                scriptPath = $"{ellipsisPrefix}{truncatedPath}";
             }
 
             return scriptPath;
@@ -223,10 +243,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
             field.value = sanitizedAssetName;
 
-            // Disable the confirm button if fields are empty.
-            var isNameEmpty = m_CloudScriptNameInputField.text.Trim().Length == 0;
-            var isModuleEmpty = m_CloudModuleNameInputField.text.Trim().Length == 0;
-            m_ConfirmActionButton.enabledSelf = !isNameEmpty && !isModuleEmpty;
+            UpdateConfirmButtonState();
         }
 
         void OnCreateAssetClicked()
@@ -249,3 +266,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         }
     }
 }
+#endif

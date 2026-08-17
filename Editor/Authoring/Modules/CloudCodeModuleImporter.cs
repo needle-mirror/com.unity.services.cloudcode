@@ -1,3 +1,4 @@
+#if UNITY_6000_5_OR_NEWER
 using System.IO;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -30,3 +31,4 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         }
     }
 }
+#endif

@@ -12,11 +12,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Settings
 
         public string ExternalEditorPath { get; set; }
         public string ExternalEditorArgsFormat { get; set; }
+        // Linux install locations vary by distro and install method (/usr/share/dotnet,
+        // /usr/lib/dotnet, ~/.dotnet), but all of them put "dotnet" on PATH.
         public string DotnetPath { get; set; } =
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_LINUX
             "dotnet";
-#elif UNITY_EDITOR_LINUX
-            "/usr/share/dotnet";
 #else
             "/usr/local/share/dotnet/dotnet";
 #endif

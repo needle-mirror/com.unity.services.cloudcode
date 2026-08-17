@@ -94,6 +94,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             set { SetField(ref m_Status, value); }
         }
 
+        // TODO: record and surface the last successful deployment for ccmr (see CloudCodeModule).
+        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment { get; set; }
+
         public ObservableCollection<AssetState> States => m_States;
 
         public string ModulePath
