@@ -38,6 +38,11 @@
             "name": "com.unity.multiplayer.playmode",
             "expression": "2.0.0",
             "define": "MPPM_API_AVAILABLE_V2_0_OR_NEWER"
+        },
+        {
+            "name": "com.unity.services.multiplayer",
+            "expression": "",
+            "define": "MULTIPLAYER_AVAILABLE"
         }
     ],
     "noEngineReferences": false

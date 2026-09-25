@@ -9,7 +9,7 @@ namespace Unity.Services.CloudCode.Apis
     /// <summary>
     /// Client for managing secrets in the Cloud Code service.
     /// </summary>
-    public class SecretClient : ISecretClient
+    internal class SecretClient : ISecretClient
     {
         private static ISecretManagerApi s_client { get; set; }
 

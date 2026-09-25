@@ -1,0 +1,25 @@
+{
+    "name": "BehaviourModuleCloudTemplate",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Services.CloudCode.Core",
+        "Unity.Services.CloudCode.Apis",
+        "Unity.Services.CloudBehaviours.Editor",
+        "Unity.Services.CloudCode.SourceGenerator"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_6000_5_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

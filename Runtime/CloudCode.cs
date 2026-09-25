@@ -156,7 +156,14 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        private CloudCodeException BuildException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
+        CloudCodeException BuildException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
+        {
+            var cloudCodeException = CreateException(isNetworkError, statusCode, errorCode, message, innerException);
+            Debug.LogError(cloudCodeException.Message);
+            return cloudCodeException;
+        }
+
+        internal static CloudCodeException CreateException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
         {
             var code = isNetworkError ? CommonErrorCodes.TransportError : errorCode;
             var reason = isNetworkError ? CloudCodeExceptionReason.NoInternetConnection : GetErrorReason(statusCode);
@@ -176,7 +183,6 @@ namespace Unity.Services.CloudCode
             {
                 cloudCodeException = new CloudCodeException(reason, code, message, innerException);
             }
-            Debug.LogError(cloudCodeException.Message);
             return cloudCodeException;
         }
 
@@ -210,7 +216,7 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        CloudCodeExceptionReason GetErrorReason(long statusCode)
+        static CloudCodeExceptionReason GetErrorReason(long statusCode)
         {
             switch (statusCode)
             {
@@ -249,6 +255,5 @@ namespace Unity.Services.CloudCode
 
             return await task;
         }
-
     }
 }

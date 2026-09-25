@@ -14,8 +14,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
     class ManifestWindow : EditorWindow
     {
         const long k_RefreshIntervalMs = 2000;
-        static string ManifestFolderPath =>
-            Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "CloudModules", "ModuleManifests"));
+
+        static string ManifestRootPath =>
+            Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "CloudModules"));
+
+        // Native and Cloud Behaviour manifests are keyed by module name but written to separate
+        // directories, so a module holding both kinds has the same file name in each. Both are listed,
+        // and entries are labelled with their directory to tell those two apart.
+        static readonly string[] k_ManifestFolderNames = { "ModuleManifests", "BehaviourModuleManifests" };
+
+        static IEnumerable<string> ManifestFolderPaths =>
+            k_ManifestFolderNames.Select(name => Path.Combine(ManifestRootPath, name));
 
         readonly List<string> m_Files = new List<string>();
         string m_SelectedPath;
@@ -37,7 +46,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
             // ── Toolbar ──────────────────────────────────────────────────────────
             var toolbar = new Toolbar();
 
-            m_FilePathLabel = new Label(ManifestFolderPath);
+            m_FilePathLabel = new Label(ManifestRootPath);
             m_FilePathLabel.style.flexShrink = 1;
             m_FilePathLabel.style.overflow = Overflow.Hidden;
             m_FilePathLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
@@ -74,8 +83,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
                 bindItem = (element, index) =>
                 {
                     var label = (Label)element;
-                    label.text = Path.GetFileNameWithoutExtension(m_Files[index]);
-                    label.tooltip = m_Files[index];
+                    var path = m_Files[index];
+                    var folder = Path.GetFileName(Path.GetDirectoryName(path));
+                    label.text = $"{folder}/{Path.GetFileNameWithoutExtension(path)}";
+                    label.tooltip = path;
                 }
             };
             m_FileList.style.flexGrow = 1;
@@ -128,10 +139,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
             if (m_FileList == null)
                 return;
 
-            var folder = ManifestFolderPath;
-            var newFiles = Directory.Exists(folder)
-                ? Directory.GetFiles(folder, "*.json").OrderBy(Path.GetFileName).ToList()
-                : new List<string>();
+            var newFiles = ManifestFolderPaths
+                .Where(Directory.Exists)
+                .SelectMany(folder => Directory.GetFiles(folder, "*.json"))
+                .OrderBy(path => Path.GetFileName(path))
+                .ThenBy(path => path)
+                .ToList();
 
             // Skip rebuild if the list hasn't changed
             if (newFiles.Count == m_Files.Count && !newFiles.Where((f, i) => f != m_Files[i]).Any())

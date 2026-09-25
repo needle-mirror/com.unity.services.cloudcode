@@ -53,11 +53,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             if (string.IsNullOrEmpty(cloudDirectory) || string.IsNullOrEmpty(clientDirectory))
                 return Task.FromResult<string>(null);
 
-            var directories = new[] { cloudDirectory, clientDirectory };
+            // The whole assembly closure, because the deploy uploads all of it: editing a shared assembly
+            // changes the module just as much as editing the module's own source does.
+            var directories = new HashSet<string>(StringComparer.Ordinal) { cloudDirectory, clientDirectory };
+            if (module.CloudAssemblyDefinition != null)
+            {
+                directories.UnionWith(ModuleAssemblyClosure.ProjectSourceDirectories(module.CloudAssemblyDefinition));
+            }
 
             // File enumeration and reads are pure file-system work; run them off the main thread so a large
             // module does not stall the Editor while hashing.
-            return Task.Run(() => ComputeHashAsync(directories));
+            var ordered = directories.OrderBy(directory => directory, StringComparer.Ordinal).ToList();
+            return Task.Run(() => ComputeHashAsync(ordered));
         }
 
         /// <summary>

@@ -62,6 +62,15 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
         /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
         Task<Response<Models.SubscriptionTokenResponse>> SubscriptionTokenProjectAsync(Unity.Services.CloudCode.Internal.CloudCode.SubscriptionTokenProjectRequest request, Configuration operationConfiguration = null);
 
+        /// <summary>
+        /// Async Operation.
+        /// Ready invokers.
+        /// </summary>
+        /// <param name="request">Request object for WarmInvoker.</param>
+        /// <param name="operationConfiguration">Configuration for WarmInvoker.</param>
+        /// <returns>Task for a Response object containing status code and headers.</returns>
+        Task<Response> WarmInvokerAsync(Unity.Services.CloudCode.Internal.CloudCode.WarmInvokerRequest request, Configuration operationConfiguration = null);
+
     }
 
     ///<inheritdoc cref="ICloudCodeApiClient"/>
@@ -221,5 +230,33 @@ namespace Unity.Services.CloudCode.Internal.Apis.CloudCode
             return new Response<Models.SubscriptionTokenResponse>(response, handledResponse);
         }
 
+
+        /// <summary>
+        /// Async Operation.
+        /// Ready invokers.
+        /// </summary>
+        /// <param name="request">Request object for WarmInvoker.</param>
+        /// <param name="operationConfiguration">Configuration for WarmInvoker.</param>
+        /// <returns>Task for a Response object containing status code and headers.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Internal.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response> WarmInvokerAsync(Unity.Services.CloudCode.Internal.CloudCode.WarmInvokerRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"200", null   },{"401", typeof(Models.BasicErrorResponse)   },{"404", typeof(Models.BasicErrorResponse)   },{"422", typeof(Models.BasicErrorResponse)   },{"429", typeof(Models.BasicErrorResponse)   },{"500", typeof(Models.BasicErrorResponse)   },{"503", typeof(Models.BasicErrorResponse)   },{"504", typeof(Models.BasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("POST",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(_accessToken, finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            ResponseHandler.HandleAsyncResponse(response, statusCodeToTypeMap);
+            return new Response(response);
+        }
     }
 }

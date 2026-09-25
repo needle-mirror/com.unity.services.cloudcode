@@ -20,5 +20,16 @@
             <ui:Button name="GenerateModuleBindings" text="Generate Bindings" class="generate-button" />
         </ui:VisualElement>
     </ui:VisualElement>
+    <ui:VisualElement name="last-deployment" class="last-deployment">
+        <ui:Label text="Last Successful Deployment" class="last-deployment__header" />
+        <ui:VisualElement class="last-deployment__row">
+            <ui:Label text="Target" class="last-deployment__label" />
+            <ui:Label name="last-deploy-target" text="No status" class="last-deployment__value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="last-deployment__row">
+            <ui:Label text="Time" class="last-deployment__label" />
+            <ui:Label name="last-deploy-time" text="No status" class="last-deployment__value" />
+        </ui:VisualElement>
+    </ui:VisualElement>
     <fba:DeploymentConfigInspectorFooter />
 </ui:UXML>

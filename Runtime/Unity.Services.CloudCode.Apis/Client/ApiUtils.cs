@@ -13,7 +13,7 @@ namespace Unity.Services.CloudCode.Shared
     /// <summary>
     /// Utility functions providing some benefit to API client consumers.
     /// </summary>
-    public class ApiUtils
+    internal class ApiUtils
     {
         /// <summary>
         /// Convert params to key/value pairs.

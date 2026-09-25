@@ -165,16 +165,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         public ObservableCollection<AssetState> States =>
             m_DeployedServerStatus ??= new SerializableObservableCollection<AssetState>();
 
-        [SerializeReference]
-        LastSuccessfulDeploymentInfo m_LastSuccessfulDeployment;
-
-        // Last successful deployment for this editor session.
-        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment
-        {
-            get => m_LastSuccessfulDeployment;
-            set => SetField(ref m_LastSuccessfulDeployment, value);
-        }
-
         [SerializeField]
         string m_CurrentContentHash;
 

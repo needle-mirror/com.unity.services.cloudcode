@@ -1,0 +1,28 @@
+{
+    "name": "Unity.Services.CloudBehaviours.Multiplayer.Runtime",
+    "rootNamespace": "Unity.Services.CloudBehaviours",
+    "references": [
+        "GUID:bf3177453f3a41ad90c62e88fb9bb63f",
+        "GUID:fe25561d224ed4743af4c60938a59d0b",
+        "GUID:f220a277eefae4d3aa9e31c2b43bb307",
+        "GUID:37e17ffe38d86ae48bc3207e83ffef88"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_6000_5_OR_NEWER",
+        "MULTIPLAYER_SERVICES_INSTALLED"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.multiplayer",
+            "expression": "",
+            "define": "MULTIPLAYER_SERVICES_INSTALLED"
+        }
+    ],
+    "noEngineReferences": false
+}

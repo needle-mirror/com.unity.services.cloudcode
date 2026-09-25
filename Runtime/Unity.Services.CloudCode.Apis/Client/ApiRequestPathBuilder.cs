@@ -6,7 +6,7 @@ namespace Unity.Services.CloudCode.Shared
     /// <summary>
     /// A URI builder for constructing request paths with parameters.
     /// </summary>
-    public class ApiRequestPathBuilder
+    internal class ApiRequestPathBuilder
     {
         private string _baseUrl;
         private string _path;

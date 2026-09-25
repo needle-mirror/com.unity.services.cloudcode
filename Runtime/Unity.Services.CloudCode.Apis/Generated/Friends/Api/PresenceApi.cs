@@ -54,7 +54,7 @@ namespace Unity.Services.Friends.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class FriendsPresenceApi : IFriendsPresenceApi
+    internal class FriendsPresenceApi : IFriendsPresenceApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

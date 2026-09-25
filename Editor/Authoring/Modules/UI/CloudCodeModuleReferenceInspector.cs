@@ -9,6 +9,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Bindings;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.UI;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -36,6 +37,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         Button m_ButtonBrowse;
         Button m_SolutionHandlerButton; // Can either generate or open the solution
         HelpBox m_MessageBox;
+        VisualElement m_LastDeploymentRoot;
 
         bool m_SolutionExists;
 
@@ -51,8 +53,68 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             BindControls(rootElement);
             DeploymentFooterBinder.Bind(rootElement, target, DeploymentDashboard.Module);
 
+            SetupLastDeployment(rootElement);
+
             return rootElement;
         }
+
+        void SetupLastDeployment(VisualElement root)
+        {
+            m_LastDeploymentRoot = root;
+
+            RefreshLastDeployment(root);
+
+            // Re-attach after docking must re-subscribe, or the section goes permanently stale.
+            root.RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+#if UNITY_6000_3_OR_NEWER
+                var store = TryGetDeploymentStore();
+                if (store != null)
+                {
+                    store.Changed -= OnDeploymentStoreChanged;
+                    store.Changed += OnDeploymentStoreChanged;
+                }
+#endif
+                RefreshLastDeployment(root);
+            });
+            root.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+#if UNITY_6000_3_OR_NEWER
+                var store = TryGetDeploymentStore();
+                if (store != null)
+                    store.Changed -= OnDeploymentStoreChanged;
+#endif
+            });
+        }
+
+        void RefreshLastDeployment(VisualElement root)
+        {
+            LastSuccessfulDeploymentInfo record = null;
+#if UNITY_6000_3_OR_NEWER
+            record = TryGetDeploymentStore()?.FreshestRecord(ModuleReference);
+#endif
+            LastDeploymentSection.Refresh(root, record);
+        }
+
+#if UNITY_6000_3_OR_NEWER
+        void OnDeploymentStoreChanged()
+        {
+            RefreshLastDeployment(m_LastDeploymentRoot);
+        }
+
+        static ILastSuccessfulDeploymentStore TryGetDeploymentStore()
+        {
+            try
+            {
+                return CloudCodeAuthoringServices.Instance.GetService<ILastSuccessfulDeploymentStore>();
+            }
+            catch (Exception e) when (e is DependencyNotFoundException or NullReferenceException)
+            {
+                return null;
+            }
+        }
+
+#endif
 
         void BindControls(VisualElement rootElement)
         {
@@ -188,14 +250,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         void GenerateSolution()
         {
-            var task = CloudCodeModuleReferenceGenerateSolutionCommand.GenerateSolution(ModuleReference);
-            if (task.Exception != null)
+            _ = GenerateSolutionAsync();
+        }
+
+        async Task GenerateSolutionAsync()
+        {
+            Exception ex = null;
+            try
             {
-                UpdateMessageBox("Solution failed to generate: " + task.Exception?.Message, true, HelpBoxMessageType.Error);
-            }
-            else
-            {
+                await CloudCodeModuleReferenceGenerateSolutionCommand.GenerateSolution(ModuleReference);
                 UpdateMessageBox("Solution generated successfully.", true, HelpBoxMessageType.Info);
+            }
+            catch (Exception e)
+            {
+                ex = e;
+                UpdateMessageBox("Solution failed to generate: " + e.Message, true, HelpBoxMessageType.Error);
+            }
+            finally
+            {
+                CloudCodeAuthoringServices.Instance.GetService<ISolutionGenerationAnalytics>()
+                    .SendSolutionGeneratedEvent(AnalyticsSource.Inspector, ex);
             }
         }
 

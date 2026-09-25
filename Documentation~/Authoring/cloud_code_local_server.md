@@ -46,10 +46,28 @@ is shown both within the popup window and toolbar icon.
 
 ![img.png](images/cloud-code-toolbar-started.png)
 
-Alternatively, any subsequent code changes to your modules can be 'hot reloaded' onto the started server by simply
-restarting the server, or redeploying the desired module through the deployment window:
+While the server is running, a module whose source has changed is recompiled and 'hot reloaded' onto it for you -
+the server picks up the new module on the next call, so there is no need to stop and start it, or to redeploy from
+the deployment window. Each reload names the modules it carried in the Console, so you can see the change land
+without calling the module to find out:
+
+* **Cloud Code Module References** are redeployed when the Editor regains focus, which includes editing their
+  solution in an external IDE. This also works while you stay in play mode.
+* **Cloud Code Modules** are redeployed once the Editor has recompiled them, since what they deploy is the
+  assembly Unity compiles from their source. This happens outside play mode only.
+
+You can still redeploy a module by hand from the deployment window at any time:
 
 ![img.png](images/cloud-code-deployment-window.png)
+
+> [!NOTE]
+> **Note:** A Cloud Code Module is not redeployed while you are in play mode. Its deployed form is the
+> assembly Unity compiles for it, and Unity cannot rebuild that reliably during play. If you change one
+> while playing, the Console tells you which modules changed - exit play mode and enter it again to run the
+> new code.
+>
+> Cloud Code Module References are unaffected and keep redeploying in play mode: their solution is built
+> outside Unity, so nothing has to recompile.
 
 With your deployed C# modules on the local server, server calls made from your game in play mode are now redirected to
 the local server. It is important to note: The determination of "local vs remote" server call switch is made right
@@ -91,3 +109,29 @@ public class ModuleConfig : ICloudCodeSetup
     }
 }
 ```
+
+## What the local server reproduces, and what it does not
+
+The local server is a faithful rehearsal for most of a Module's behaviour, but not for all of it.
+Use this table to tell whether a design can be iterated on locally before you deploy it.
+
+| Behaviour | Locally | Notes |
+| --- | --- | --- |
+| Module endpoint calls | Local | Play mode routes to `http://localhost:<port>`. |
+| Module state, scoped state and timers | Local | Persisted on disk next to your modules, not in the deployed state store. |
+| Push messages and subscriptions | Local | The server hosts its own push endpoint, so messages never leave your machine. Requires `com.unity.services.wire` 1.6.0 or newer; an older version sends subscriptions to the cloud, which rejects the local server's channel tokens. |
+| `Access.Service`, `Access.SessionMember`, `Access.SessionHost` | Enforced | The same access checks the deployed service runs. |
+| Multiplayer session membership | Enforced, against the live Lobby service | A session id with no lobby behind it fails locally the same way it fails deployed. Your machine needs network access and the project needs an active environment. |
+| `ICall.ForScope` cross-scope calls | Local | The server points the Module's own Cloud Code client at itself, so a cross-scope call stays on the local server instead of reaching the deployed module. |
+| Player identity | **Not validated** | There is no local Player Auth backend, so the caller's player id is trusted as sent. A deployed Module rejects a token it cannot verify; the local server does not. |
+| Secret Manager, Cloud Save, Economy and other service calls | Live | Server-side calls go to the real services for your active environment, using a real service token. They are not sandboxed. |
+| Scope-addressed push channels | Not available | A Module publishing to a scope channel rather than to individual players has no local equivalent yet. |
+
+Two consequences worth planning around:
+
+* **Local or remote is decided when you enter play mode**, from whether the server is running. The
+  server is stopped when you quit the Editor, so the first play session after reopening a project
+  is remote - and remote invocations are billed. The Cloud Code toolbar shows which one you are in.
+* **Other services are not sandboxed.** Local debugging isolates your Module's own state and push
+  traffic. Everything the Module then calls - Cloud Save, Economy, Secret Manager, Lobby - is the
+  real service for your active environment, and writes it makes are real writes.

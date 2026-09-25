@@ -81,7 +81,7 @@ namespace Unity.Services.Matchmaker.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class MatchmakerBackfillApi : IMatchmakerBackfillApi
+    internal class MatchmakerBackfillApi : IMatchmakerBackfillApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

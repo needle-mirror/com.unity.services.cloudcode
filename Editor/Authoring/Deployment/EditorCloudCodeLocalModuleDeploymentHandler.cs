@@ -12,6 +12,8 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.DeploymentApi.Editor;
 
+using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
+
 namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
 {
     class EditorCloudCodeLocalModuleDeploymentHandler
@@ -42,6 +44,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         }
 
         internal async Task<string> DeployAsync(Dictionary<IModuleItem, IScript> deploymentItems,
+            DeploymentAssetKind assetKind,
+            DeploymentOrigin origin,
             CancellationToken cancellationToken)
         {
             try
@@ -60,7 +64,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
                     var scripts = deploymentItem.Value;
                     UpdateDeployStatus(module, "Deploying...", severity: SeverityLevel.Info);
 
+                    var sendTimer = origin == DeploymentOrigin.Manual
+                        ? m_DeploymentAnalytics.BeginDeploySend(
+                        GetFileSize(scripts.Path),
+                        assetKind,
+                        DeploymentTarget.Local,
+                        scripts.Name.ToString())
+                        : null;
+
                     await CopyToTempFolder(scripts.Path, Path.Combine(moduleDestinationDir, envId.ToString()), cancellationToken);
+
+                    // Only dispose the timer if the copy succeeded.
+                    sendTimer?.Dispose();
 
                     UpdateDeployStatus(module, "Deployed Successfully", severity: SeverityLevel.Info);
                     UpdateDeployStatus(module, "Up to date", severity: SeverityLevel.Success);
@@ -74,9 +89,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             }
             catch (Exception e)
             {
-                m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
+                if (origin == DeploymentOrigin.Manual)
+                {
+                    m_DeploymentAnalytics.SendFailureDeploymentEvent(
+                        e.GetType().ToString(),
+                        AnalyticsErrorCode.FromException(e),
+                        AnalyticsErrorData.FromException(e),
+                        assetKind,
+                        DeploymentTarget.Local,
+                        deploymentItems.Values.Select(script => script.Name.ToString()).ToList());
+                }
+
                 throw;
             }
+        }
+
+        static int GetFileSize(string filePath)
+        {
+            var fileInfo = new FileInfo(filePath);
+            return fileInfo.Exists ? (int)fileInfo.Length : -1;
         }
 
         async Task CopyToTempFolder(string sourceFilePath, string destinationPath, CancellationToken cancellationToken)
@@ -95,12 +126,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             }
             catch (Exception e)
             {
-                throw new Exception($"Failed to generate modules: {e.Message}");
+                // Keep the inner exception: the analytics error code is mapped from it.
+                throw new Exception($"Failed to generate modules: {e.Message}", e);
             }
         }
 
         internal void UpdateDeployStatus(IModuleItem deploymentItem, string message,
-            string detail = null, SeverityLevel severity = SeverityLevel.Info, bool shouldLog = true)
+            string detail = null, SeverityLevel severity = SeverityLevel.Info, bool shouldLog = true,
+            bool logToConsole = true)
         {
             var deployStatus = new DeploymentStatus(message, detail, severity);
             if (shouldLog)
@@ -108,8 +141,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             else
                 deploymentItem.Status = deployStatus;
 
-            // For deployment errors, ensure they also show up in the console.
-            if (severity == SeverityLevel.Error)
+            // For deployment errors, ensure they also show up in the console - unless the caller has
+            // already reported the underlying diagnostics there itself.
+            if (severity == SeverityLevel.Error && logToConsole)
                 m_logger.LogError($"{message} - {detail}");
         }
 

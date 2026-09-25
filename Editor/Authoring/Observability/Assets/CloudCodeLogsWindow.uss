@@ -1,0 +1,118 @@
+
+.logs-hidden {
+    display: none;
+}
+
+.logs-toolbar {
+    overflow: hidden;
+}
+
+.logs-toolbar__button {
+    flex-shrink: 0;
+}
+
+.logs-toolbar__time-range {
+    width: 120px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.logs-toolbar__severity {
+    width: 90px;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.logs-toolbar__query {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.logs-body {
+    flex-grow: 1;
+}
+
+.logs-list {
+    flex-grow: 1;
+}
+
+.logs-detail-scroll {
+    flex-grow: 1;
+}
+
+.logs-detail {
+    padding-left: 6px;
+    padding-top: 4px;
+}
+
+.log-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding-left: 4px;
+}
+
+.log-row__severity {
+    width: 60px;
+    flex-shrink: 0;
+    -unity-text-align: middle-left;
+    color: rgb(179, 179, 179);
+}
+
+.log-row__severity--warn {
+    color: rgb(230, 191, 89);
+}
+
+.log-row__severity--error {
+    color: rgb(230, 102, 102);
+}
+
+.log-row__timestamp {
+    width: 200px;
+    flex-shrink: 0;
+    -unity-text-align: middle-left;
+}
+
+.log-row__body {
+    flex-shrink: 0;
+    min-width: 1200px;
+    padding-right: 8px;
+    -unity-text-align: middle-left;
+}
+
+.logs-detail__section-header {
+    -unity-font-style: bold;
+    margin-top: 6px;
+}
+
+.logs-detail__row {
+    flex-direction: row;
+    margin-bottom: 2px;
+}
+
+.logs-detail__key {
+    width: 180px;
+    flex-shrink: 0;
+    color: rgb(166, 166, 166);
+}
+
+.logs-detail__value {
+    flex-grow: 1;
+    white-space: normal;
+}
+
+.logs-status {
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: rgb(179, 179, 179);
+}
+
+.logs-status--error {
+    color: rgb(230, 102, 102);
+}

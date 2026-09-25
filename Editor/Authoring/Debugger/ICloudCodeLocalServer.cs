@@ -16,6 +16,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             Stopping
         }
 
+        enum ClearStateResult
+        {
+            Cleared,
+            NothingToClear,
+            Failed
+        }
+
         event EventHandler<LocalCloudCodeServerStatus> OnServerStatusChanged;
         LocalCloudCodeServerStatus GetCurrentServerStatus();
         string GetLastServerFailure();
@@ -26,7 +33,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         TextAsset GetSecretsFile();
         void SetSecretsFile(TextAsset path);
         int GetServerPid();
-        void ClearServerState();
+        ClearStateResult ClearServerState();
     }
 }
 #endif

@@ -748,7 +748,7 @@ namespace Unity.Services.CloudSave.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class CloudSaveDataApi : ICloudSaveDataApi
+    internal class CloudSaveDataApi : ICloudSaveDataApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

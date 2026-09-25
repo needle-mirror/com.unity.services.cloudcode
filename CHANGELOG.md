@@ -4,6 +4,70 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.1.0-exp.1] - 2026-09-25
+### Added
+- Cloud Behaviour data types now capture public properties with a public getter and setter, in addition to fields. Readable but unassignable properties report CCSG131; unreadable ones (write-only, or a non-public getter) are excluded silently.
+- Add creation flow for Cloud Behaviour Scripts through the Unity Editor
+- Cloud Behaviours supports `[CloudCodeSerializeProperty]` and `[CloudCodeIgnoreProperty]` on fields to control state persistence.
+- Cloud Behaviours supports the `[CloudCodeAccess(Access)]` attribute to restrict who can access which endpoints, as in Stateful Cloud Code.
+- Cloud Behaviours supports `struct` data types for endpoint parameters and returns, synchronized fields, and event payloads.
+- Cloud Behaviours: new `[SyncView("wireName")]` attribute for per-viewer synchronized projections — a `TWire Method(string playerId)` whose value is computed per recipient, so each player receives their own view of the shared state.
+- Cloud Behaviours supports timers and cross-scope requests via the generated `I{Behaviour}` interface. Once injected, in the calling function, it can be used with `ScheduleAsync()` to schedule a deferred execution of that function, or `ForScope()` to invoke a function in a different scope than the current one.
+- Added `ModuleHostWarmup`, which warms the project's module host at sign-in so the first module call is not delayed by provisioning. Generated Cloud Behaviour clients arm it at load and await it before hydrating; a failed warm-up raises `Fatal` with the new `InvokerUnavailable` reason.
+- Added `CloudBehaviourErrorReason.MessageError`: a generated client raises `Error` with it when a synchronization or push-event message cannot be read or applied. The message is dropped and `MessageReceived` is not raised for it.
+
+- Add a Cloud Code observability logs window (`Services > CloudCode > Observability Logs`) to query the logs your scripts and modules emit
+- Cloud Code data types authored natively in-editor now capture public properties with a public getter and setter, in addition to fields. Readable but unassignable properties report CCSG216; unreadable ones (write-only, or a non-public getter) are excluded silently.
+- A module whose source changed is now redeployed onto the running local Cloud Code server automatically, instead of having to be redeployed by hand, so picking up a code change no longer requires stopping and starting the server. Each redeploy names the modules the server reloaded in the Console. Module references are redeployed when the Editor regains focus, including while in play mode. Cloud Code Modules are redeployed after Unity recompiles them, outside play mode only; changing one while playing logs which modules need play mode to be re-entered.
+- Cloud Code push-message subscriptions now support multiple subscribers on the same channel, each with its own callbacks and an independent unsubscribe.
+- Entering Play mode without the local Cloud Code server running now logs a warning when the remote environment is stale relative to local module source.
+- The Cloud Code Module Reference (.ccmr) inspector now shows a last successful deployment summary, matching the Cloud Code Module (.ccmu) inspector. The summary reads the editor session's per-user deployment record, so it survives domain reloads and follows the active project and environment.
+- Module References (.ccmr) now show "Modified locally, deploy to update" in the Deployment window when their external solution changed since the last recorded deploy, instead of a status derived from the .ccmr asset file's own timestamp.
+- Editor analytics now cover the Cloud Code authoring flows: creating, deploying and publishing JS scripts; creating and deploying module references (`.ccmr`) and modules (`.ccmu`); generating solutions and bindings; and the local server lifecycle. Automatic local redeploys are not reported. Collection follows the Editor's own analytics setting, and no script or module source is sent.
+
+### Changed
+- New Cloud Behaviour scripts are now created with `[StateScope(Scope.Player)]` instead of `[StateScope(Scope.MultiplayerSession)]`, and carry a comment linking to the scope documentation.
+- Generated Cloud Behaviour data types are emitted into their own namespace, with nested types kept inside their containing type instead of flattened into the client's namespace. Data types that share a simple name across different namespaces are now generated separately rather than one overwriting the other.
+- Player scoped Cloud Behaviours now send events.
+- Cloud Behaviours now support sharing code via a third asmdef.
+
+- Cloud Code Modules now support sharing code via a third asmdef.
+- A running Cloud Code local debug session no longer redirects every other Wire consumer to the debugger. Cloud Code now opens its own connection to the debug server through `IWireFactory`, so Multiplayer, Friends and the editor status service stay connected to their environment while debugging.
+- Local Cloud Code debugging can now be enabled in a development player build by launching it with `--cloud-code-local-debugger[=<port>]`. The argument is ignored in release builds.
+
+### **Breaking Changes**:
+- Generated Cloud Behaviour clients no longer mark synchronized members with `[field: SerializeField]`. Unity's serializer cannot represent most backend-legal types, so per-member serialization silently persisted only a subset of the synchronized state. The custom Inspector is unaffected (it reads live members directly).
+- `readonly` fields on Cloud Behaviour data types are no longer captured and now report CCSG131.
+- `HydrationFailedOnConnect` moved from `Error` to `Fatal` as a `CloudBehaviourExceptionReason`: a hydrate that fails when the scope resolves disables the client and raises no `ScopeChanged`. Call `EnableClient()` from outside the handler to try again.
+- Cloud Behaviours: removed the `[VisibilityFilter]` attribute. Per-viewer synchronization is now expressed with `[SyncView]` projection methods (see Added); migrate a filtered field to a projection that returns the value each viewer should see.
+
+- `readonly` fields on Cloud Code data types authored natively in-editor are no longer captured and now report CCSG216.
+
+### Fixed
+- Cloud Behaviours now report error CCSG156 when saved state has two members with the same name, such as a field hidden with `new` in a data type. The server can't save that state, so every call to the behaviour failed.
+- Cloud Behaviours now report error CCSG157 when a behaviour implements `IStateSerializer`, which Cloud Behaviours don't support yet. Its `OnSerialize` and `OnDeserialize` were never called, and state was saved with the default serializer.
+- Cloud Behaviour data types now warn (CCSG212 / CCSG105) when a derived declaration hides an inherited public member out of the generated client type.
+- Cloud Behaviour script creation now surfaces clear error dialogs, matching the Cloud Code Module creation flow.
+- Generated Cloud Behaviour client bindings now compile when the cloud class name matches the module name; the client's `[CloudBehaviour(typeof(...))]` is globally qualified so the module namespace can't shadow the class.
+- Cloud Behaviours now resolve client-to-cloud bindings in player builds from a generated binding manifest instead of scanning module manifests by simple type name. This fixes binding failures when two modules declare behaviours with the same simple type name; each client now resolves to the correct behaviour by full type identity.
+- A Cloud Behaviour exposing an enum backed by `ulong` with a value above `long.MaxValue` no longer silently fails to generate a module manifest.
+- Cloud Behaviour events declared with `Action<T>` now deliver their payload type to the generated client; previously only `EventHandler<T>` payloads were emitted, so an `Action<T>` payload had no client-side type.
+- Cloud Behaviours now generate enum bindings that preserve the enum's underlying type, matching the fix already made for Cloud Code Modules authored natively in-editor.
+- A Cloud Behaviour event push that fails to send is now caught and logged server-side instead of being silently swallowed as an unobserved task exception. Synchronizing before any endpoint has run (e.g. manually during hydration) no longer risks a `NullReferenceException` and is skipped instead.
+- `CloudBehaviour.SynchronizeAsync()` now throws an `InvalidOperationException` explaining that no synchronizer is attached, instead of returning a null `Task` that failed the caller's `await` with an opaque `NullReferenceException`.
+- A local Cloud Code server stop that fails now records the failure, as a start already did, so it is visible rather than only logged, and the failure shown always belongs to the last start or stop. The log line for a failed stop no longer claims the start failed.
+- In a project using Multiplayer Play Mode, a local Cloud Code server start or stop issued just after a domain reload is no longer repeated by the deferred restore of the previous session. The restore runs a moment after the reload there, and it read the new operation's state as an interrupted one to resume, running a second start or stop alongside it.
+- The local Cloud Code server now logs a warning when a running local session is not restored after a domain reload or an Editor restart, naming the reason and stating that play mode has returned to the deployed service. Previously the only trace was a process id of -1 in the local server status. A start that never launched is not warned about, since its recorded failure outlives the reload and would otherwise be reported again on every later one; it stays readable in the local server status.
+- Cloud Code now logs an error when local debugging is active but no `IWireFactory` is registered, instead of silently subscribing push messages against the cloud, which rejects the local server's channel tokens.
+- Clearing the local Cloud Code server's state now deletes the state the server actually writes. It targeted `Orleans/GrainState/v1`, a path the server stopped using, so the Cloud Code toolbar's clear-state action left every scope's persisted state in place.
+
+- Cloud Code data types now warn (CCSG212 / CCSG105) when a derived declaration hides an inherited public member out of the generated client type.
+- Fixed bug ensuring that the local debugger only starts when valid Unity Services environemnts are set.
+- Each compiler diagnostic from a module that fails to build is now its own Console entry, at its own severity, instead of one entry holding the whole `dotnet publish` transcript. The full output is still available with Cloud Code verbose logging enabled.
+- Building a Cloud Code Module no longer emits the .NET SDK warning about a solution-level output path (NETSDK1194). The published output is unchanged.
+- Opening a Cloud Code script no longer logs `JsAssetHandler:OpenAsset (int,int) does not match any of [OnOpenAssetAttribute] expected signatures` on Unity 6000.4 and newer. The asset-open handler now takes an `EntityId` and resolves the asset from it, so Cloud Code scripts open in the configured external editor again.
+- Cloud Code requests made against a local debug server no longer time out after 30 seconds. The timeout override existed but was never applied.
+
 ## [3.0.0-exp.9] - 2026-08-17
 ### Added
 - Updated the Cloud Code Module (.ccmu) inspector with deployment actions and a last successful deployment summary.

@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Analytics;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration.Exceptions;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Solution;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
@@ -20,35 +23,41 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         static ILogger m_Logger;
         static Regex m_ValidNameRegex = new Regex("^[a-zA-Z][a-zA-Z_0-9]*$", RegexOptions.Compiled);
 
-        public CloudCodeModuleReferenceGenerateSolutionCommand(CloudCodeModuleSolutionGenerator generator, ILogger logger)
+        readonly ISolutionGenerationAnalytics m_Analytics;
+
+        public CloudCodeModuleReferenceGenerateSolutionCommand(
+            CloudCodeModuleSolutionGenerator generator,
+            ILogger logger,
+            ISolutionGenerationAnalytics analytics)
         {
             m_SolutionGenerator = generator;
             m_Logger = logger;
+            m_Analytics = analytics;
         }
 
-        public override Task ExecuteAsync(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = default)
+        public override async Task ExecuteAsync(IEnumerable<CloudCodeModuleReference> items, CancellationToken cancellationToken = default)
         {
-            List<Task> generationTasks = new List<Task>();
-            foreach (var ccmr in items)
+            var generation = Task.WhenAll(items.Select(ccmr => GenerateSolution(ccmr, cancellationToken)));
+            try
             {
-                var name = Path.GetFileNameWithoutExtension(ccmr.ModulePath);
-                var task = GenerateSolution(ccmr, cancellationToken);
-                generationTasks.Add(task);
+                await generation;
+            }
+            catch (Exception)
+            {
+                // Awaiting rethrows only the first fault; the task itself carries them all.
             }
 
-            List<Exception> exceptions = new List<Exception>();
-            foreach (var task in generationTasks)
+            // A cancelled task carries no exception, so it would otherwise report a success. Only set
+            // when nothing faulted, so a mixed batch still reports its fault below.
+            if (generation.IsCanceled)
+                throw new TaskCanceledException(generation);
+
+            m_Analytics.SendSolutionGeneratedEvent(AnalyticsSource.DeploymentWindow, generation.Exception);
+
+            if (generation.Exception != null)
             {
-                if (task.IsFaulted)
-                {
-                    exceptions.Add(task.Exception);
-                }
+                throw generation.Exception;
             }
-            if (exceptions.Count > 0)
-            {
-                throw new AggregateException(exceptions);
-            }
-            return Task.CompletedTask;
         }
 
         public static async Task GenerateSolution(CloudCodeModuleReference ccmr, CancellationToken cancellationToken = default)
@@ -64,7 +73,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                     "Cloud Code Module will not be generated, selected 'Path' contains invalid characters. The solution name should only contain alphanumerical characters and underscores.";
 
                 m_Logger.LogError(msg);
-                throw new Exception(msg);
+                throw new InvalidSolutionNameException(msg);
             }
             var solutionPath = Path.Combine(
                 Path.GetDirectoryName(targetPath),
@@ -72,7 +81,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
             if (File.Exists(solutionPath))
             {
-                throw new Exception($"File {solutionPath} already exists. You cannot override an existing solution.");
+                throw new SolutionAlreadyExistsException(
+                    $"File {solutionPath} already exists. You cannot override an existing solution.");
             }
 
             try

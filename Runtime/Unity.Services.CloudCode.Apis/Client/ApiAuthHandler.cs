@@ -18,7 +18,7 @@ namespace Unity.Services.CloudCode.Shared
     /// <summary>
     /// Bearer token authentication implementation.
     /// </summary>
-    public class BearerAuth : IAuthType
+    internal class BearerAuth : IAuthType
     {
         private readonly string accessToken;
 
@@ -44,7 +44,7 @@ namespace Unity.Services.CloudCode.Shared
     /// <summary>
     /// HTTP Basic authentication implementation.
     /// </summary>
-    public class BasicAuth : IAuthType
+    internal class BasicAuth : IAuthType
     {
         private readonly string key;
         private readonly string secret;

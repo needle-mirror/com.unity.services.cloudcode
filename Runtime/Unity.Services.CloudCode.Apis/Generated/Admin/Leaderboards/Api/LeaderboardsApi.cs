@@ -477,7 +477,7 @@ namespace Unity.Services.Leaderboards.Admin.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class LeaderboardsApi : ILeaderboardsApi
+    internal class LeaderboardsApi : ILeaderboardsApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

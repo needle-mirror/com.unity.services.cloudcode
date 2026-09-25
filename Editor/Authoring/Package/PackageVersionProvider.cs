@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Package
@@ -9,12 +8,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Package
         public async Task<string> GetPackageVersionAsync(string packageName)
         {
             var listRequest = UnityEditor.PackageManager.Client.List();
-            await Task.Yield();
-
-            var spinWait = new SpinWait();
             while (!listRequest.IsCompleted)
             {
-                spinWait.SpinOnce();
+                await Task.Yield();
             }
 
             if (listRequest.Error != null)

@@ -314,7 +314,7 @@ namespace Unity.Services.Lobby.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class LobbyApi : ILobbyApi
+    internal class LobbyApi : ILobbyApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

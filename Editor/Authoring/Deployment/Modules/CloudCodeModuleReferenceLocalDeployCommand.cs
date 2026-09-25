@@ -6,12 +6,17 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
+
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
+using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
 {
@@ -20,13 +25,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         public override string Name => L10n.Tr("Deploy Local");
         readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
         readonly IModuleBuilder m_ModuleBuilder;
+        readonly IDeploymentAnalytics m_Analytics;
+        readonly ILastSuccessfulDeploymentStore m_DeploymentStore;
 
         internal CloudCodeModuleReferenceLocalDeployCommand(
             IModuleBuilder moduleBuilder,
-            EditorCloudCodeLocalModuleDeploymentHandler deployHandler)
+            EditorCloudCodeLocalModuleDeploymentHandler deployHandler,
+            IDeploymentAnalytics analytics,
+            ILastSuccessfulDeploymentStore deploymentStore)
         {
             m_ModuleBuilder = moduleBuilder;
             m_DeployHandler = deployHandler;
+            m_Analytics = analytics;
+            m_DeploymentStore = deploymentStore;
         }
 
         internal bool ShouldDeployToLocal()
@@ -51,18 +62,71 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             }
 
             // Else continue deployment
-            await CompileAndDeployAsync(ccmrs, cancellationToken);
+            await CompileAndDeployAsync(ccmrs, DeploymentOrigin.Manual, cancellationToken);
         }
 
         internal async Task<string> CompileAndDeployAsync(List<CloudCodeModuleReference> ccmrs,
+            DeploymentOrigin origin,
             CancellationToken cancellationToken = new CancellationToken())
         {
+            // A module's status is the highest severity in its log, and CompileForDebug skips a module in
+            // Error, so a failure left from an earlier attempt would keep a fixed module from deploying.
+            m_DeployHandler.ClearDeploymentStatuses(ccmrs);
+
+            var deployStartedAtUtc = DateTime.UtcNow;
+            var sourceLastWriteUtcAtDeployStart = ccmrs.ToDictionary(ccmr => ccmr, LocalAutoDeployer.SourceLastWriteUtcFor);
+
             // First compile and zip the Modules in preparation for deploy
             var runtimeIdentifier = GetRuntimeIdentifier(ccmrs);
             var compiled = await CompileForDebug(ccmrs, runtimeIdentifier, cancellationToken);
 
+            if (origin == DeploymentOrigin.Manual)
+            {
+                CloudCodeModuleReferenceDeployCommand.ReportCompileFailures(
+                    m_Analytics, ccmrs, DeploymentTarget.Local);
+            }
+
             // Deploy to the local server's path referencing all modules
-            return await m_DeployHandler.DeployAsync(compiled, cancellationToken);
+            var moduleDestinationDir = await m_DeployHandler.DeployAsync(
+                compiled, DeploymentAssetKind.ModuleReference, origin, cancellationToken);
+
+            RecordSuccessfulDeployments(compiled.Keys, deployStartedAtUtc, sourceLastWriteUtcAtDeployStart);
+            await ReconcileAfterDeployAsync(compiled.Keys.OfType<CloudCodeModuleReference>());
+            return moduleDestinationDir;
+        }
+
+        static async Task ReconcileAfterDeployAsync(IEnumerable<CloudCodeModuleReference> ccmrs)
+        {
+            ModuleReferenceModifiedTracker tracker;
+            try
+            {
+                tracker = CloudCodeAuthoringServices.Instance.GetService<ModuleReferenceModifiedTracker>();
+            }
+            catch (Exception e) when (e is DependencyNotFoundException or NullReferenceException)
+            {
+                return;
+            }
+
+            foreach (var ccmr in ccmrs)
+                await tracker.ReconcileAsync(ccmr);
+        }
+
+        // Success is membership in the compiled set that was handed to the deploy, never inferred from status severity.
+        void RecordSuccessfulDeployments(
+            IEnumerable<IModuleItem> deployedItems, DateTime deployStartedAtUtc,
+            IReadOnlyDictionary<CloudCodeModuleReference, DateTime> sourceLastWriteUtcAtDeployStart)
+        {
+            foreach (var ccmr in deployedItems.OfType<CloudCodeModuleReference>())
+            {
+                var deploymentInfo = new LastSuccessfulDeploymentInfo
+                {
+                    Target = LastSuccessfulDeploymentInfo.DeploymentTarget.Local,
+                    DeployedAtUtc = deployStartedAtUtc,
+                    LastDeployedContentHash = null
+                };
+                m_DeploymentStore.Record(ccmr, deploymentInfo,
+                    sourceLastWriteUtcAtDeployStart.TryGetValue(ccmr, out var sourceLastWriteUtc) ? sourceLastWriteUtc : default);
+            }
         }
 
         string GetRuntimeIdentifier(List<CloudCodeModuleReference> ccmrs)
@@ -113,7 +177,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
                 }
                 catch (Exception e)
                 {
-                    m_DeployHandler.UpdateDeployStatus(ccmr, "Failed to compile", e.Message, severity: SeverityLevel.Error);
+                    var reportedByDotnet = e is DotnetCommandFailedException dotnetFailure
+                        && dotnetFailure.DiagnosticsReported;
+
+                    m_DeployHandler.UpdateDeployStatus(
+                        ccmr, ModuleBuilderStatuses.FailedToCompile, e.Message,
+                        severity: SeverityLevel.Error, logToConsole: !reportedByDotnet);
                 }
             }
 

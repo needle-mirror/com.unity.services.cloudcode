@@ -95,7 +95,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 k_TitleMisconfigured,
                 L10n.Tr(
                     "This Cloud Code module's server Assembly Definition (.asmdef) is missing or misconfigured. " +
-                    "It must be Editor-only, have no engine references, and " +
+                    "It must be Editor-only, have no engine references, not be auto-referenced, and " +
                     "reference the Cloud Code Core and APIs assemblies.\n\n" +
                     "Correct the server Assembly Definition, or recreate the module."),
                 k_ModulesDocumentationUrl),

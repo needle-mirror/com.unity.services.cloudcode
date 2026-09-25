@@ -29,7 +29,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Add schedule to project environment
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="scheduleConfigBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -45,7 +45,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Deletes the configuration for a specific schedule
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="configId">ID of the scheduler config. List the scheduler configurations to retrieve IDs.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -61,7 +61,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Deletes multiple schedule configurations
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="requestBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -77,7 +77,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Retrieves the configuration for a specific schedule
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="configId">ID of the scheduler config. List the scheduler configurations to retrieve IDs.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -93,7 +93,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Get list of schedules for the given project and environment
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="limit">The number of schedules to display per page (optional, default to 1000)</param>
         /// <param name="after">A token to get the next page (optional)</param>
@@ -109,7 +109,7 @@ namespace Unity.Services.Scheduler.Admin.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class SchedulerApi : ISchedulerApi
+    internal class SchedulerApi : ISchedulerApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.
@@ -161,7 +161,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Create Schedule Config Add schedule to project environment
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="scheduleConfigBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -206,7 +206,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Delete Schedule Config Deletes the configuration for a specific schedule
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="configId">ID of the scheduler config. List the scheduler configurations to retrieve IDs.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -251,7 +251,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Delete Schedule Configs Deletes multiple schedule configurations
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="requestBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -296,7 +296,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// Get Schedule Config Retrieves the configuration for a specific schedule
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="configId">ID of the scheduler config. List the scheduler configurations to retrieve IDs.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -341,7 +341,7 @@ namespace Unity.Services.Scheduler.Admin.Api
         /// List Scheduler Configs Get list of schedules for the given project and environment
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="limit">The number of schedules to display per page (optional, default to 1000)</param>
         /// <param name="after">A token to get the next page (optional)</param>

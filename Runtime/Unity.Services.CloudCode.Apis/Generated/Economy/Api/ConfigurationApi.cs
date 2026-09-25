@@ -45,7 +45,7 @@ namespace Unity.Services.Economy.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class EconomyConfigurationApi : IEconomyConfigurationApi
+    internal class EconomyConfigurationApi : IEconomyConfigurationApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

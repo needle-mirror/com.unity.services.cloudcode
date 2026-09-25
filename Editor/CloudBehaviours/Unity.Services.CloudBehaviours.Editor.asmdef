@@ -1,0 +1,23 @@
+{
+    "name": "Unity.Services.CloudBehaviours.Editor",
+    "rootNamespace": "Unity.Services.CloudBehaviours",
+    "references": [
+        "GUID:7284d1e8423490b46bbb7a1cc15a31c4",
+        "GUID:3203a5bd0983b634e962989e5e53678e"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_6000_5_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

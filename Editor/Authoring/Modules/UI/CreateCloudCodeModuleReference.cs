@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
@@ -11,6 +12,8 @@ using ActionIdentifier = UnityEngine.EntityId;
 using BaseClass = UnityEditor.ProjectWindowCallback.EndNameEditAction;
 using ActionIdentifier = System.Int32;
 #endif
+
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
@@ -39,13 +42,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         public override void Action(ActionIdentifier instanceId, string pathName, string resourceFile)
         {
-            var reference = CreateInstance<CloudCodeModuleReference>();
-            reference.Name =  Path.GetFileName(pathName);
-            reference.ModulePath =
-                Path.Combine(
-                    PathUtils.GetRelativePath(pathName, Application.dataPath),
-                    Path.GetFileNameWithoutExtension(reference.Name));
-            File.WriteAllText(pathName, reference.ToJson());
+            try
+            {
+                var reference = CreateInstance<CloudCodeModuleReference>();
+                reference.Name =  Path.GetFileName(pathName);
+                reference.ModulePath =
+                    Path.Combine(
+                        PathUtils.GetRelativePath(pathName, Application.dataPath),
+                        Path.GetFileNameWithoutExtension(reference.Name));
+                File.WriteAllText(pathName, reference.ToJson());
+            }
+            catch (Exception e)
+            {
+                CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>()
+                    .SendReferenceCreatedEvent(
+                        AnalyticsErrorCode.FromException(e), AnalyticsErrorData.FromException(e));
+                throw;
+            }
 
             CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendReferenceCreatedEvent();
 

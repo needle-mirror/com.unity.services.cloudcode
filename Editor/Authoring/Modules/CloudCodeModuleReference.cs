@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
+using Unity.Services.CloudCode.Editor.Shared.DependencyInversion;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
      Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeAsset.png")]
     class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
+        , ITrackableItem
     {
         static readonly JsonSerializerSettings k_JsonSerializerSettings = new JsonSerializerSettings
         {
@@ -94,10 +96,28 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             set { SetField(ref m_Status, value); }
         }
 
-        // TODO: record and surface the last successful deployment for ccmr (see CloudCodeModule).
-        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment { get; set; }
-
         public ObservableCollection<AssetState> States => m_States;
+
+        /// <summary>
+        /// Reconciles status from the recorded deploy baseline instead of the
+        /// generic file-timestamp heuristic, which watched the .ccmr asset file
+        /// itself - a file that editing the external solution never touches.
+        /// </summary>
+        public void TrackOrUpdate()
+        {
+            ModuleReferenceModifiedTracker tracker;
+            try
+            {
+                // Instance is lazily created (never null), but its service provider may not be built yet during early lifecycle.
+                tracker = CloudCodeAuthoringServices.Instance.GetService<ModuleReferenceModifiedTracker>();
+            }
+            catch (Exception e) when (e is DependencyNotFoundException or NullReferenceException)
+            {
+                return;
+            }
+
+            tracker.ReconcileFireAndForget(this);
+        }
 
         public string ModulePath
         {

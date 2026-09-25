@@ -1,0 +1,21 @@
+{
+    "name": "BehaviourModuleClientTemplate",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Services.CloudBehaviours.Runtime",
+        "Unity.Services.Core",
+        "Unity.Services.CloudCode",
+        "Unity.Services.CloudCode.SourceGenerator"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_6000_5_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

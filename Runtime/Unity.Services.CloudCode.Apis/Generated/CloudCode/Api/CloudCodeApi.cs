@@ -85,7 +85,7 @@ namespace Unity.Services.CloudCode.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class CloudCodeApi : ICloudCodeApi
+    internal class CloudCodeApi : ICloudCodeApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

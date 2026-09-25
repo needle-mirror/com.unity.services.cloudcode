@@ -57,7 +57,7 @@ namespace Unity.Services.PlayerNames.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class PlayerNamesApi : IPlayerNamesApi
+    internal class PlayerNamesApi : IPlayerNamesApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

@@ -17,6 +17,10 @@ using BaseClass = UnityEditor.ProjectWindowCallback.EndNameEditAction;
 using ActionIdentifier = System.Int32;
 #endif
 
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
+
+using Unity.Services.CloudCode.Authoring.Editor.Core.Modules.Exceptions;
+
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 {
     class CreateCloudCodeModule : BaseClass
@@ -27,6 +31,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         internal const string k_CloudCodeCloudTemplateName = "CloudCodeModuleCloudTemplate";
         internal const string k_CloudCodeAssemblyTemplateName = "CloudCodeModuleAssemblyTemplate";
 
+        const string k_AssetsRoot = "Assets";
         const string k_ClientDirName = "Client";
         const string k_CloudDirName = "Cloud";
 
@@ -88,16 +93,78 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 return;
             }
 
-            // Else check for situation where the User be attempting to Add a new Cloud Code Script.
+            TryAddScriptToExistingModule(directoryPath, editActionScriptName, out _);
+        }
+
+        /// <summary>
+        /// Adds a cloud/client script pair to the Cloud Code module that owns <paramref name="directoryPath"/>,
+        /// which must be the folder holding the module's server Assembly Definition. Creates no assembly
+        /// definition and does not touch the module asset. Returns false when an improper-setup condition was
+        /// reported through <see cref="ShowErrorDialog"/>, and throws when writing the scripts fails.
+        /// </summary>
+        internal bool TryAddScriptToExistingModule(
+            string directoryPath, string scriptName, out CreatedModuleScripts scripts)
+        {
+            scripts = default;
+
             // Module Scripts can ONLY be at the same directory level as the Server Asmdef.
             if (!IsValidCloudCodeServerDirectory(directoryPath, out var associatedModule))
-                return;
+                return false;
 
-            // From the found Cloud Code Module, verify the Client + Server Asmdef configurations.
-            if (!ModuleHasValidAsmdefFiles(associatedModule))
-                return;
+            return TryAddScriptToModule(associatedModule, scriptName, out scripts);
+        }
 
-            CreateClientAndServerScriptsOnly(associatedModule, editActionScriptName);
+        /// <summary>
+        /// Adds a cloud/client script pair to <paramref name="module"/>. Takes the module rather than a folder
+        /// so a caller already holding one does not go back through <see cref="IsValidCloudCodeServerDirectory"/>,
+        /// which resolves a folder to the first module whose cloud assembly name matches. Returns false when an
+        /// improper-setup condition was reported through <see cref="ShowErrorDialog"/>, and throws when writing
+        /// the scripts fails.
+        /// </summary>
+        internal bool TryAddScriptToModule(
+            CloudCodeModule module, string scriptName, out CreatedModuleScripts scripts)
+        {
+            scripts = default;
+
+            if (module == null)
+                throw new ArgumentNullException(nameof(module));
+
+            // Verify the Client + Server Asmdef configurations.
+            if (!ModuleHasValidAsmdefFiles(module))
+                return false;
+
+            scripts = CreateClientAndServerScriptsOnly(module, scriptName);
+            return true;
+        }
+
+        /// <summary>
+        /// Loads the Cloud Code module a <c>.ccmu</c> asset path names. The module asset is the only accepted
+        /// spelling because it is what names the cloud and client assembly definitions; a folder can hold more
+        /// than one module, and a module folder's name is not tied to the module. The <c>Assets/</c> prefix is
+        /// matched case-insensitively and filled in when absent, matching the other CLI path arguments.
+        /// </summary>
+        internal static CloudCodeModule ResolveModule(string modulePath)
+        {
+            if (string.IsNullOrWhiteSpace(modulePath))
+                throw new ArgumentException("A module path is required.");
+
+            var path = modulePath.Replace('\\', '/').Trim().Trim('/');
+
+            if (!path.EndsWith(CloudCodeModuleResources.FileExtension, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException(
+                    $"'{path}' is not a Cloud Code module asset. Give the path to the module's " +
+                    $"{CloudCodeModuleResources.FileExtension} file, not its folder.");
+
+            // AssetDatabase lookups are case-sensitive, so the prefix is rewritten rather than just accepted.
+            path = path.StartsWith(k_AssetsRoot + "/", StringComparison.OrdinalIgnoreCase)
+                ? k_AssetsRoot + path.Substring(k_AssetsRoot.Length)
+                : k_AssetsRoot + "/" + path;
+
+            var module = AssetDatabase.LoadAssetAtPath<CloudCodeModule>(path);
+            if (module == null)
+                throw new ArgumentException($"No Cloud Code module could be loaded from '{path}'.");
+
+            return module;
         }
 
         bool ShouldCreateNewCloudCodeModule(string directoryPath)
@@ -176,8 +243,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             return Path.GetFileNameWithoutExtension(uniquePath);
         }
 
+        /// <summary>
+        /// Creates the module asset and its Cloud + Client assembly definitions. With
+        /// <paramref name="createScripts"/> false the module is left empty, for callers that add the
+        /// first script separately; note Unity emits no assembly for an asmdef holding no scripts, so
+        /// such a module has nothing to deploy until one is added.
+        /// </summary>
         internal bool CreateNewCloudCodeModule(string moduleDirPath, string moduleName, string scriptNameCloud,
-            string scriptNameClient, string assemblyNameCloud, string assemblyNameClient)
+            string scriptNameClient, string assemblyNameCloud, string assemblyNameClient, bool createScripts = true)
         {
             string modulePath = null;
             string moduleClientPath = null;
@@ -193,18 +266,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 // First check for duplicate Module Names
                 if (AssemblyNameConflicts(assemblyNameCloud, out string foundCloudPath))
-                    throw new Exception(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameCloud, foundCloudPath));
+                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameCloud, foundCloudPath));
 
                 if (AssemblyNameConflicts(assemblyNameClient, out string foundClientPath))
-                    throw new Exception(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameClient, foundClientPath));
+                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameClient, foundClientPath));
 
                 // Parent all module files under a folder named after the module. Reuse the folder if it
                 // already exists; a folder that already contains a module is a conflict.
                 var moduleDir = PathUtils.Join(moduleDirPath, moduleName);
                 if (Directory.Exists(moduleDir))
                 {
+                    // Only reachable once the module has lost its asmdefs: an intact one trips
+                    // the assembly name check above first.
                     if (DirectoryHasModule(moduleDir))
-                        throw new Exception(CloudCodeSetupMessages.ModuleAlreadyExists(moduleName, moduleDir));
+                        throw new ModuleAlreadyExistsException(CloudCodeSetupMessages.ModuleAlreadyExists(moduleName, moduleDir));
                 }
                 else
                 {
@@ -241,26 +316,31 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
                 // Sanity check if in case the template is broken
                 AsmdefJsonData jsonAsmdef = AsmdefJsonData.ParseAssemblyDefinitionAsset(asmdefReferenceCloud);
+                // Validates the asmdef this flow just wrote from the template, so only a broken
+                // package install reaches here.
                 if (jsonAsmdef == null || jsonAsmdef.references == null || !AsmdefHasRequiredCoreApiRef(jsonAsmdef))
-                    throw new Exception(CloudCodeSetupMessages.AssemblyMissingReferences);
+                    throw new AssemblyMissingReferencesException(CloudCodeSetupMessages.AssemblyMissingReferences);
 
                 // Create the Cloud Code module. As it is a custom asset (CloudCodeModuleImporter
                 // ScriptedImporter), the JSON is written to disk and the asset is built by the importer.
                 File.WriteAllText(modulePath, CloudCodeModule.ToJson(asmdefReferenceCloud, asmdefReferenceClient));
 
-                // Create the Scripts
-                var fullAssetPathCloud = PathUtils.Join(moduleCloudPath, $"{scriptNameCloud}.cs");
-                var sanitizedNameCloud = GetUniqueSanitizedName(fullAssetPathCloud, ".cs");
+                if (createScripts)
+                {
+                    // Create the Scripts
+                    var fullAssetPathCloud = PathUtils.Join(moduleCloudPath, $"{scriptNameCloud}.cs");
+                    var sanitizedNameCloud = GetUniqueSanitizedName(fullAssetPathCloud, ".cs");
 
-                var fullAssetPathClient = PathUtils.Join(moduleClientPath, $"{scriptNameClient}.cs");
-                var sanitizedNameClient = GetUniqueSanitizedName(fullAssetPathClient, ".cs");
+                    var fullAssetPathClient = PathUtils.Join(moduleClientPath, $"{scriptNameClient}.cs");
+                    var sanitizedNameClient = GetUniqueSanitizedName(fullAssetPathClient, ".cs");
 
-                var sanitizedNamespace = NamespaceSanitizer.Sanitize(asmdefCloud.name);
+                    var sanitizedNamespace = NamespaceSanitizer.Sanitize(asmdefCloud.name);
 
-                createdScriptPathCloud = CreateCloudCodeScript(moduleCloudPath, false, k_CloudCodeClientTemplateName,
-                    k_CloudCodeCloudTemplateName, sanitizedNameClient, sanitizedNameCloud, sanitizedNamespace);
-                CreateCloudCodeScript(moduleClientPath, true, k_CloudCodeClientTemplateName,
-                    k_CloudCodeCloudTemplateName, sanitizedNameClient, sanitizedNameCloud, sanitizedNamespace);
+                    createdScriptPathCloud = CreateCloudCodeScript(moduleCloudPath, false, k_CloudCodeClientTemplateName,
+                        k_CloudCodeCloudTemplateName, sanitizedNameClient, sanitizedNameCloud, sanitizedNamespace);
+                    CreateCloudCodeScript(moduleClientPath, true, k_CloudCodeClientTemplateName,
+                        k_CloudCodeCloudTemplateName, sanitizedNameClient, sanitizedNameCloud, sanitizedNamespace);
+                }
             }
             catch (Exception e)
             {
@@ -284,6 +364,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
                 Debug.LogError($"Error when creating a new Cloud Code module: {e.Message}");
                 ShowErrorDialog(CloudCodeSetupMessages.CreationFailure(e.Message));
+                CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>()
+                    .SendCloudCodeModuleCreatedEvent(
+                        ModuleType.CloudCodeModule,
+                        AnalyticsErrorCode.FromException(e),
+                        AnalyticsErrorData.FromException(e));
                 return false;
             }
             finally
@@ -292,7 +377,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 AssetDatabase.Refresh();
             }
 
-            CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendCloudCodeModuleCreatedEvent();
+            CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendCloudCodeModuleCreatedEvent(ModuleType.CloudCodeModule);
 
             CloudCodeCreatedAssetFramer.FrameAfterReload(createdScriptPathCloud);
 
@@ -455,7 +540,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             return true;
         }
 
-        void CreateClientAndServerScriptsOnly(CloudCodeModule foundModule, string editActionScriptName)
+        CreatedModuleScripts CreateClientAndServerScriptsOnly(
+            CloudCodeModule foundModule, string editActionScriptName)
         {
             // Else, a valid Asmdef and module file exist, create a script at the Server Assembly.
             var serverAsmdefPath = AssetDatabase.GetAssetPath(foundModule.CloudAssemblyDefinition);
@@ -471,7 +557,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 var fullAssetPathCloud = PathUtils.Join(serverDirectory, $"{editActionScriptName}.cs");
                 var sanitizedNameCloud = GetUniqueSanitizedName(fullAssetPathCloud, ".cs");
 
-                var fullAssetPathClient = PathUtils.Join(clientDirectory, $"{editActionScriptName}Client.cs");
+                var fullAssetPathClient = PathUtils.Join(clientDirectory, $"{sanitizedNameCloud}Client.cs");
                 var sanitizedNameClient = GetUniqueSanitizedName(fullAssetPathClient, ".cs");
 
                 AsmdefJsonData cloudJsonAsmdef =
@@ -496,6 +582,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 if (createdClientPath != null && File.Exists(createdClientPath))
                     File.Delete(createdClientPath);
 
+                CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>()
+                    .SendCloudCodeScriptAddedEvent(
+                        ModuleType.CloudCodeModule,
+                        AnalyticsErrorCode.FromException(e),
+                        AnalyticsErrorData.FromException(e));
                 throw;
             }
             finally
@@ -504,7 +595,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 AssetDatabase.Refresh();
             }
 
-            CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendCloudCodeScriptAddedEvent();
+            CloudCodeAuthoringServices.Instance.GetService<CloudModuleCreationAnalytics>().SendCloudCodeScriptAddedEvent(ModuleType.CloudCodeModule);
+
+            return new CreatedModuleScripts(createdServerPath, createdClientPath);
         }
 
         bool AsmdefHasRequiredCoreApiRef(AsmdefJsonData jsonAsmdef)
@@ -548,6 +641,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             }
 
             return false;
+        }
+    }
+
+    /// <summary>The cloud and client script paths a module authoring flow wrote.</summary>
+    internal record CreatedModuleScripts
+    {
+        // Get-only rather than positional/init: this assembly has no IsExternalInit shim, so an init
+        // accessor does not compile against the Editor's netstandard profile.
+        public string CloudScript { get; }
+        public string ClientScript { get; }
+
+        public CreatedModuleScripts(string cloudScript, string clientScript)
+        {
+            CloudScript = cloudScript;
+            ClientScript = clientScript;
         }
     }
 }

@@ -9,6 +9,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Deployment.ModuleGeneration
 using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
+using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
 {
@@ -76,7 +77,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
                 var output = await m_ProcessRunner.RunAsync(startInfo, null, cancellationToken);
                 if (output.ExitCode != 0)
                 {
-                    throw new Exception($"DotNet failed with Error Code {output.ExitCode}. Details: {output.StdOut}. StdErr: {output.StdErr}");
+                    var(summary, reported) = ReportDiagnostics(DescribeCommand(arguments), output);
+                    throw new DotnetCommandFailedException(summary, reported);
                 }
 
                 return output.StdOut;
@@ -91,6 +93,39 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
                 m_Logger.LogVerbose($"Error {e}");
                 throw;
             }
+        }
+
+        // One Console entry per diagnostic, so the Console can filter and count them. The raw output
+        // stays at Verbose; the returned summary becomes the item's deploy status.
+        (string Summary, bool Reported) ReportDiagnostics(string command, ProcessOutput output)
+        {
+            m_Logger.LogVerbose(
+                $"{command} exited with {output.ExitCode}.\nstdout:\n{output.StdOut}\nstderr:\n{output.StdErr}");
+
+            var combined = string.Join("\n", new[] { output.StdOut, output.StdErr });
+            var diagnostics = MsBuildDiagnostics.Parse(combined);
+
+            foreach (var diagnostic in diagnostics)
+            {
+                if (diagnostic.Severity == SeverityLevel.Error)
+                    m_Logger.LogError(diagnostic.Text);
+                else
+                    m_Logger.LogWarning(diagnostic.Text);
+            }
+
+            return (MsBuildDiagnostics.Summarize(command, output.ExitCode, diagnostics), diagnostics.Count > 0);
+        }
+
+        // Arguments arrive as one string per call, so the verb is its first token:
+        // "publish \"/some/path.sln\" -c ..." -> "dotnet publish".
+        static string DescribeCommand(IEnumerable<string> arguments)
+        {
+            var first = arguments?.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(first))
+                return "dotnet";
+
+            var verb = first.Trim().Split(' ')[0];
+            return string.IsNullOrEmpty(verb) ? "dotnet" : $"dotnet {verb}";
         }
 
         public Task<List<SemVersion>> GetAvailableCoreRuntimes(CancellationToken ct = default)

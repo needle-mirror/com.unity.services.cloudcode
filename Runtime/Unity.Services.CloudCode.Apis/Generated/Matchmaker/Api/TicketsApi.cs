@@ -70,7 +70,7 @@ namespace Unity.Services.Matchmaker.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class MatchmakerTicketsApi : IMatchmakerTicketsApi
+    internal class MatchmakerTicketsApi : IMatchmakerTicketsApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

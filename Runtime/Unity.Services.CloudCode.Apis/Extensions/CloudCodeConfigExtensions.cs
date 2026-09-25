@@ -235,7 +235,14 @@ namespace Unity.Services.CloudCode.Apis.Extensions
             return config;
         }
 
-        private static string? GetCloudCodeApiBasePath(ICloudCodeConfig config)
+        /// <summary>
+        /// Resolves the base path override from <c>CloudCode:Api:BasePath</c> or
+        /// <c>CLOUD_CODE_API_BASE_PATH</c>, or null when neither is set. Public so generated Cloud
+        /// Behaviour clients resolve it the same way.
+        /// </summary>
+        /// <param name="config">The Cloud Code configuration.</param>
+        /// <returns>The base path override, or <c>null</c> when neither source is set.</returns>
+        public static string? GetCloudCodeApiBasePath(this ICloudCodeConfig config)
         {
             var fromConfig = config.GetString(CloudCodeApiBasePathKey);
             if (!string.IsNullOrWhiteSpace(fromConfig))
