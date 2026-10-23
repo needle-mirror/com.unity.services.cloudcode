@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="True">
+    <ui:VisualElement class="log-row">
+        <ui:Label name="severity" class="log-row__severity" />
+        <ui:Label name="timestamp" class="log-row__timestamp" />
+        <ui:Label name="body" class="log-row__body" />
+    </ui:VisualElement>
+</ui:UXML>

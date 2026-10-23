@@ -270,6 +270,254 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
     }
 
     /// <summary>
+    /// AssignModuleReleaseRequest
+    /// Assign Module Version To Release
+    /// </summary>
+    [Preserve]
+    internal class AssignModuleReleaseRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for moduleName </summary>
+        [Preserve]
+        public string ModuleName { get; }
+        /// <summary>Accessor for version </summary>
+        [Preserve]
+        public long Version { get; }
+        /// <summary>Accessor for unityLiveReleaseName </summary>
+        [Preserve]
+        public string UnityLiveReleaseName { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// AssignModuleRelease Request Object.
+        /// Assign Module Version To Release
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="moduleName">moduleName param</param>
+        /// <param name="version">version param</param>
+        /// <param name="unityLiveReleaseName">Name of the Live Release to assign. The gateway resolves it to the release ID.</param>
+        [Preserve]
+        public AssignModuleReleaseRequest(string projectId, string environmentId, string moduleName, long version, string unityLiveReleaseName)
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            ModuleName = moduleName;
+
+            Version = version;
+
+            UnityLiveReleaseName = unityLiveReleaseName;
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}/versions/{version}/release";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+            };
+
+            string[] accepts = {
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "PUT";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+            if(!string.IsNullOrEmpty(UnityLiveReleaseName))
+            {
+                headers.Add("Unity-live-release-name", UnityLiveReleaseName);
+            }
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
+    /// AssignScriptReleaseRequest
+    /// Assign Script Version To Release
+    /// </summary>
+    [Preserve]
+    internal class AssignScriptReleaseRequest : DefaultApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        /// <summary>Accessor for environmentId </summary>
+        [Preserve]
+        public string EnvironmentId { get; }
+        /// <summary>Accessor for scriptName </summary>
+        [Preserve]
+        public string ScriptName { get; }
+        /// <summary>Accessor for version </summary>
+        [Preserve]
+        public int Version { get; }
+        /// <summary>Accessor for unityLiveReleaseName </summary>
+        [Preserve]
+        public string UnityLiveReleaseName { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// AssignScriptRelease Request Object.
+        /// Assign Script Version To Release
+        /// </summary>
+        /// <param name="projectId">projectId param</param>
+        /// <param name="environmentId">environmentId param</param>
+        /// <param name="scriptName">scriptName param</param>
+        /// <param name="version">version param</param>
+        /// <param name="unityLiveReleaseName">Name of the Live Release to assign. The gateway resolves it to the release ID.</param>
+        [Preserve]
+        public AssignScriptReleaseRequest(string projectId, string environmentId, string scriptName, int version, string unityLiveReleaseName)
+        {
+            ProjectId = projectId;
+
+            EnvironmentId = environmentId;
+
+            ScriptName = scriptName;
+
+            Version = version;
+
+            UnityLiveReleaseName = unityLiveReleaseName;
+            PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/scripts/{scriptName}/versions/{version}/release";
+
+
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>A list of IMultipartFormSection representing the request body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] contentTypes = {
+            };
+
+            string[] accepts = {
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            var httpMethod = "PUT";
+            var contentTypeHeader = GenerateContentTypeHeader(contentTypes);
+            if (!string.IsNullOrEmpty(contentTypeHeader))
+            {
+                headers.Add("Content-Type", contentTypeHeader);
+            }
+            else if (httpMethod == "POST" || httpMethod == "PATCH")
+            {
+                headers.Add("Content-Type", "application/json");
+            }
+
+            if(!string.IsNullOrEmpty(UnityLiveReleaseName))
+            {
+                headers.Add("Unity-live-release-name", UnityLiveReleaseName);
+            }
+
+            // We also check if there are headers that are defined as part of
+            // the request configuration.
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
     /// CreateAnonymousPlayerRequest
     /// Create an anonymous player
     /// </summary>
@@ -1558,6 +1806,9 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <summary>Accessor for moduleName </summary>
         [Preserve]
         public string ModuleName { get; }
+        /// <summary>Accessor for allowDataLoss </summary>
+        [Preserve]
+        public bool? AllowDataLoss { get; }
         /// <summary>Accessor for tags </summary>
         [Preserve]
         public Dictionary<string, string> Tags { get; }
@@ -1573,10 +1824,11 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
         /// <param name="projectId">projectId param</param>
         /// <param name="environmentId">environmentId param</param>
         /// <param name="moduleName">moduleName param</param>
+        /// <param name="allowDataLoss">Accept losing persisted scoped state. Without it, an upload that would stop persisting a member of a state-scoped class is refused with code 9056. Only consulted for a project with module versions enabled.</param>
         /// <param name="tags">A set of user-defined tags in the form of string key-value pairs.</param>
         /// <param name="file">Archive file containing the module assemblies.</param>
         [Preserve]
-        public UpdateModuleRequest(string projectId, string environmentId, string moduleName, Dictionary<string, string> tags = default(Dictionary<string, string>), System.IO.Stream file = default(System.IO.Stream))
+        public UpdateModuleRequest(string projectId, string environmentId, string moduleName, bool? allowDataLoss = default(bool?), Dictionary<string, string> tags = default(Dictionary<string, string>), System.IO.Stream file = default(System.IO.Stream))
         {
             ProjectId = projectId;
 
@@ -1584,11 +1836,19 @@ namespace Unity.Services.CloudCode.Authoring.Client.Default
 
             ModuleName = moduleName;
 
+            AllowDataLoss = allowDataLoss;
             Tags = tags;
             File = file;
             PathAndQueryParams = $"/api/cloud-code/v1/projects/{projectId}/environments/{environmentId}/modules/{moduleName}";
 
+            List<string> queryParams = new List<string>();
 
+            var allowDataLossStringValue = AllowDataLoss.ToString();
+            queryParams = AddParamsToQueryParams(queryParams, "allowDataLoss", allowDataLossStringValue);
+            if (queryParams.Count > 0)
+            {
+                PathAndQueryParams = $"{PathAndQueryParams}?{string.Join("&", queryParams)}";
+            }
         }
 
         /// <summary>

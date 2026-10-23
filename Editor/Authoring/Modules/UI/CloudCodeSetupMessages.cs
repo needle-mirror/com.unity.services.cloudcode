@@ -54,7 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         // Starting-point copy for design to refine. Per-condition anchors can be added later.
         const string k_ModulesDocumentationUrl =
-            "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html";
+            "https://docs.unity.com/en-us/cloud-code/3.0.0/modules/how-to-guides/write-modules/unity-editor";
 
         static readonly Dictionary<CloudCodeSetupError, CloudCodeSetupMessage> k_Messages =
             new Dictionary<CloudCodeSetupError, CloudCodeSetupMessage>
@@ -95,7 +95,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 k_TitleMisconfigured,
                 L10n.Tr(
                     "This Cloud Code module's server Assembly Definition (.asmdef) is missing or misconfigured. " +
-                    "It must be Editor-only, have no engine references, and " +
+                    "It must be Editor-only, have no engine references, not be auto-referenced, and " +
                     "reference the Cloud Code Core and APIs assemblies.\n\n" +
                     "Correct the server Assembly Definition, or recreate the module."),
                 k_ModulesDocumentationUrl),

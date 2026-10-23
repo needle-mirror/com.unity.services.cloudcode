@@ -396,6 +396,92 @@ namespace Unity.Services.CloudCode.Internal.CloudCode
         }
     }
     /// <summary>
+    /// WarmInvokerRequest
+    /// Ready invokers
+    /// </summary>
+    [Preserve]
+    internal class WarmInvokerRequest : CloudCodeApiBaseRequest
+    {
+        /// <summary>Accessor for projectId </summary>
+        [Preserve]
+        public string ProjectId { get; }
+        string PathAndQueryParams;
+
+        /// <summary>
+        /// WarmInvoker Request Object.
+        /// Run a warm-up operation to ready the invokers for the project.
+        /// </summary>
+        /// <param name="projectId">ID of the project.</param>
+        [Preserve]
+        public WarmInvokerRequest(string projectId)
+        {
+            ProjectId = projectId;
+            PathAndQueryParams = $"/v1/projects/{projectId}/warm";
+        }
+
+        /// <summary>
+        /// Helper function for constructing URL from request base path and
+        /// query params.
+        /// </summary>
+        /// <param name="requestBasePath"></param>
+        /// <returns></returns>
+        public string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + PathAndQueryParams;
+        }
+
+        /// <summary>
+        /// Helper for constructing the request body.
+        /// </summary>
+        /// <returns>Always null; the operation takes no body.</returns>
+        public byte[] ConstructBody()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Helper function for constructing the headers.
+        /// </summary>
+        /// <param name="accessToken">The auth access token to use.</param>
+        /// <param name="operationConfiguration">The operation configuration to use.</param>
+        /// <returns>A dictionary representing the request headers.</returns>
+        public Dictionary<string, string> ConstructHeaders(IAccessToken accessToken,
+            Configuration operationConfiguration = null)
+        {
+            var headers = new Dictionary<string, string>();
+            if(!string.IsNullOrEmpty(accessToken.AccessToken))
+            {
+                headers.Add("authorization", "Bearer " + accessToken.AccessToken);
+            }
+
+            // Analytics headers
+            headers.Add("Unity-Client-Version", Application.unityVersion);
+            headers.Add("Unity-Client-Mode", Scheduler.EngineStateHelper.IsPlaying ? "play" : "edit");
+
+            string[] accepts = {
+                "application/json",
+                "application/problem+json"
+            };
+
+            var acceptHeader = GenerateAcceptHeader(accepts);
+            if (!string.IsNullOrEmpty(acceptHeader))
+            {
+                headers.Add("Accept", acceptHeader);
+            }
+            headers.Add("Content-Type", "application/json");
+
+            if (operationConfiguration != null && operationConfiguration.Headers != null)
+            {
+                foreach (var pair in operationConfiguration.Headers)
+                {
+                    headers[pair.Key] = pair.Value;
+                }
+            }
+
+            return headers;
+        }
+    }
+    /// <summary>
     /// RunScriptRequest
     /// Run script
     /// </summary>

@@ -53,7 +53,7 @@ namespace Unity.Services.RemoteConfig.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class RemoteConfigSettingsApi : IRemoteConfigSettingsApi
+    internal class RemoteConfigSettingsApi : IRemoteConfigSettingsApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

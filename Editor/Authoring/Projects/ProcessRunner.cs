@@ -37,6 +37,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
 
     class ProcessRunner : IProcessRunner
     {
+        static readonly TimeSpan k_ExitAfterKillTimeout = TimeSpan.FromSeconds(5);
+
         public async Task<ProcessOutput> RunAsync(
             ProcessStartInfo startInfo,
             string stdIn = default,
@@ -132,7 +134,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects
             if (completed != timeoutTask)
                 return;
 
-            process.Kill();
+            try
+            {
+                process.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+            }
+
+            // Kill only signals the process, and ExitCode throws until it has actually exited.
+            if (await Task.WhenAny(exitTask, Task.Delay(k_ExitAfterKillTimeout)) != exitTask)
+                throw new TimeoutException($"'{process.StartInfo.FileName}' did not exit after it was killed.");
+
             cancellationToken.ThrowIfCancellationRequested();
         }
 

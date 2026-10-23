@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Unity.Services.CloudCode.Authoring.Client;
 using Unity.Services.CloudCode.Authoring.Client.Apis.Default;
@@ -33,9 +34,6 @@ using Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
-#if UNITY_SERVICES_CLOUDCODE_INTERNAL
-using Unity.Services.CloudCode.Authoring.Editor.SourceGenerator;
-#endif
 using Unity.Services.CloudCode.Authoring.Editor.UI;
 using Unity.Services.CloudCode.Editor.Shared.Analytics;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
@@ -78,6 +76,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             Deployments.Instance.DeploymentProviders.Add(deploymentItemProvider);
         }
 
+
         protected override void Register(ServiceCollection collection)
         {
             collection.RegisterSingleton(Default<ICloudCodePreferences, CloudCodePreferences>);
@@ -103,6 +102,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(Default<INotifications, Notifications>);
 
+            collection.Register(Default<IModuleMetadataProvider, ModuleMetadataProvider>);
+            collection.RegisterSingleton(Default<IAnalyticsSender, EditorAnalyticsSender>);
             collection.RegisterSingleton(Default<IDeploymentAnalytics, DeploymentAnalytics>);
 #if UNITY_2023_2_OR_NEWER
             collection.Register(Default<ICommonAnalyticProvider, CommonAnalyticProvider>);
@@ -111,6 +112,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<CloudScriptCreationAnalytics>);
             collection.Register(Default<CloudModuleCreationAnalytics>);
             collection.Register(Default<ICloudCodeModuleReferenceBindingsGenerationAnalytics, CloudCodeModuleReferenceBindingsGenerationAnalytics>);
+            collection.Register(Default<ISolutionGenerationAnalytics, SolutionGenerationAnalytics>);
 
             collection.Register(Default<IDotnetRunner, DotnetRunner>);
             collection.Register(Default<IFileStream, CloudCodeFileStream>);
@@ -125,7 +127,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor
 
             collection.Register(sp =>
                 (ICloudCodeClient)sp.GetService(typeof(ICloudCodeScriptsClient)));
-            collection.Register(Default<CloudCodeDeploymentHandler>);
+            // Factories.Default resolves every constructor parameter from the container, so the
+            // asset kind has to be supplied here. This registration is the .js deployment path.
+            collection.Register(sp => new CloudCodeDeploymentHandler(
+                (ICloudCodeClient)sp.GetService(typeof(ICloudCodeClient)),
+                (IDeploymentAnalytics)sp.GetService(typeof(IDeploymentAnalytics)),
+                (ICoreLogger)sp.GetService(typeof(ICoreLogger)),
+                (IPreDeployValidator)sp.GetService(typeof(IPreDeployValidator)),
+                DeploymentAssetKind.Script));
 
             collection.Register(Default<DeployCommand>);
             collection.Register(Default<OpenCommand>);
@@ -141,8 +150,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<OpenScriptDashboardCommand>);
             collection.Register(Default<OpenModuleDashboardCommand>);
 #if UNITY_6000_3_OR_NEWER
+            collection.RegisterSingleton(Default<ILocalServerAnalytics, LocalServerAnalytics>);
             collection.RegisterStartupSingleton(Default<ICloudCodeLocalServer, CloudCodeLocalServer>);
             collection.Register(Default<ISecretsFileDialogs, SecretsFileDialogs>);
+            collection.RegisterStartupSingleton(Default<LocalAutoDeployer>);
+            collection.RegisterSingleton(Default<ILastSuccessfulDeploymentStore, LastSuccessfulDeploymentStore>);
+            collection.Register(Default<RemoteModuleStaleness>);
+            collection.RegisterStartupSingleton(Default<PlayModeStaleDeploymentWarner>);
+            collection.RegisterStartupSingleton(Default<ModuleReferenceModifiedTracker>);
 #endif
 
             collection.Register(Default<JsAssetHandler>);
@@ -185,9 +200,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IDashboardUrlResolver, DashboardUrlResolver>);
             collection.Register(_ => EnvironmentsApi.Instance);
             collection.Register(Default<IProjectID, ProjectIdentifierProvider>);
-#if UNITY_SERVICES_CLOUDCODE_INTERNAL
-            collection.Register(Default<ISourceGeneratorBuilder, SourceGeneratorBuilder>);
-#endif
         }
 
         string ServiceHost()

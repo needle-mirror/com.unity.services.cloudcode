@@ -1,8 +1,6 @@
-using UnityEditor;
-#if UNITY_2023_2_OR_NEWER
-using System;
+using Unity.Services.CloudCode.Authoring.Editor.Analytics.Payloads;
+using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using UnityEngine.Analytics;
-#endif
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Analytics
 {
@@ -11,86 +9,68 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Analytics
         const string k_EventNameReferenceCreate = "cloudcode_ccmrCreated";
         const string k_EventNameCloudCodeModuleCreate = "cloudcode_ccmuModuleCreated";
         const string k_EventNameCloudCodeScriptAdded = "cloudcode_ccmuModuleScriptAdded";
-        const int k_VersionCreate = 1;
+        const int k_VersionReferenceCreate = 1;
+        const int k_VersionCloudCodeModuleCreate = 1;
+        const int k_VersionCloudCodeScriptAdded = 1;
 
-        public CloudModuleCreationAnalytics()
+        readonly IAnalyticsSender m_Sender;
+
+        public CloudModuleCreationAnalytics(IAnalyticsSender sender)
         {
-#if !UNITY_2023_2_OR_NEWER
-            EditorAnalytics.RegisterEventWithLimit(k_EventNameReferenceCreate, AnalyticsConstants.k_MaxEventPerHour, AnalyticsConstants.k_MaxItems, AnalyticsConstants.k_VendorKey, k_VersionCreate);
-            EditorAnalytics.RegisterEventWithLimit(k_EventNameCloudCodeModuleCreate, AnalyticsConstants.k_MaxEventPerHour, AnalyticsConstants.k_MaxItems, AnalyticsConstants.k_VendorKey, k_VersionCreate);
-            EditorAnalytics.RegisterEventWithLimit(k_EventNameCloudCodeScriptAdded, AnalyticsConstants.k_MaxEventPerHour, AnalyticsConstants.k_MaxItems, AnalyticsConstants.k_VendorKey, k_VersionCreate);
-#endif
+            m_Sender = sender;
         }
 
-        public void SendReferenceCreatedEvent()
+        public void SendReferenceCreatedEvent(string error = null, string errorData = null)
         {
-#if UNITY_2023_2_OR_NEWER
-            EditorAnalytics.SendAnalytic(new ReferenceCreatedAnalytic());
-#else
-            EditorAnalytics.SendEventWithLimit(k_EventNameReferenceCreate, null, k_VersionCreate);
-#endif
+            m_Sender.Send(new ReferenceCreatedAnalytic(ErrorPayloads.For(error, errorData)));
         }
 
-        public void SendCloudCodeModuleCreatedEvent()
+        public void SendCloudCodeModuleCreatedEvent(ModuleType moduleType, string error = null, string errorData = null)
         {
-#if UNITY_2023_2_OR_NEWER
-            EditorAnalytics.SendAnalytic(new CloudCodeModuleCreatedAnalytic());
-#else
-            EditorAnalytics.SendEventWithLimit(k_EventNameCloudCodeModuleCreate, null, k_VersionCreate);
-#endif
+            m_Sender.Send(new CloudCodeModuleCreatedAnalytic(CreationPayload(moduleType, error, errorData)));
         }
 
-        public void SendCloudCodeScriptAddedEvent()
+        public void SendCloudCodeScriptAddedEvent(ModuleType moduleType, string error = null, string errorData = null)
         {
-#if UNITY_2023_2_OR_NEWER
-            EditorAnalytics.SendAnalytic(new CloudCodeScriptAddedAnalytic());
-#else
-            EditorAnalytics.SendEventWithLimit(k_EventNameCloudCodeScriptAdded, null, k_VersionCreate);
-#endif
+            m_Sender.Send(new CloudCodeScriptAddedAnalytic(CreationPayload(moduleType, error, errorData)));
         }
 
-#if UNITY_2023_2_OR_NEWER
+        // Success builds the base type, so the error key is absent rather than empty.
+        internal static ModuleCreationPayload CreationPayload(ModuleType moduleType, string error, string errorData = null)
+        {
+            var payload = error == null
+                ? new ModuleCreationPayload()
+                : new ModuleCreationErrorPayload { error = error, error_data = errorData };
+
+            payload.module_type = moduleType.ToAnalyticsValue();
+            return payload;
+        }
+
         [AnalyticInfo(
             eventName: k_EventNameReferenceCreate,
             vendorKey: AnalyticsConstants.k_VendorKey,
-            version: k_VersionCreate)]
-        class ReferenceCreatedAnalytic : IAnalytic
+            version: k_VersionReferenceCreate)]
+        class ReferenceCreatedAnalytic : CloudCodeAnalyticEvent<EmptyPayload>
         {
-            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
-            {
-                error = null;
-                data = null;
-                return true;
-            }
+            public ReferenceCreatedAnalytic(EmptyPayload payload) : base(payload) {}
         }
 
         [AnalyticInfo(
             eventName: k_EventNameCloudCodeModuleCreate,
             vendorKey: AnalyticsConstants.k_VendorKey,
-            version: k_VersionCreate)]
-        class CloudCodeModuleCreatedAnalytic : IAnalytic
+            version: k_VersionCloudCodeModuleCreate)]
+        class CloudCodeModuleCreatedAnalytic : CloudCodeAnalyticEvent<ModuleCreationPayload>
         {
-            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
-            {
-                error = null;
-                data = null;
-                return true;
-            }
+            public CloudCodeModuleCreatedAnalytic(ModuleCreationPayload payload) : base(payload) {}
         }
 
         [AnalyticInfo(
             eventName: k_EventNameCloudCodeScriptAdded,
             vendorKey: AnalyticsConstants.k_VendorKey,
-            version: k_VersionCreate)]
-        class CloudCodeScriptAddedAnalytic : IAnalytic
+            version: k_VersionCloudCodeScriptAdded)]
+        class CloudCodeScriptAddedAnalytic : CloudCodeAnalyticEvent<ModuleCreationPayload>
         {
-            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
-            {
-                error = null;
-                data = null;
-                return true;
-            }
+            public CloudCodeScriptAddedAnalytic(ModuleCreationPayload payload) : base(payload) {}
         }
-#endif
     }
 }

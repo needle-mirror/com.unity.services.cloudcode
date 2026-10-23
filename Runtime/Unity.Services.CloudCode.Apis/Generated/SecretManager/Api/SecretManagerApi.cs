@@ -29,7 +29,7 @@ namespace Unity.Services.SecretManager.Api
         /// View environment secret
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="secretKey">Key used for secret lookups</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -43,7 +43,7 @@ namespace Unity.Services.SecretManager.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class SecretManagerApi : ISecretManagerApi
+    internal class SecretManagerApi : ISecretManagerApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.
@@ -95,7 +95,7 @@ namespace Unity.Services.SecretManager.Api
         /// Get Environment Secret View environment secret
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="secretKey">Key used for secret lookups</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>

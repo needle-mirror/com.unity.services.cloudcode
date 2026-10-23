@@ -58,5 +58,46 @@ namespace Unity.Services.CloudCode.Core
         /// <param name="playerId">Optional target playerId, if missing or different from the playerId in the execution context.</param>
         /// <returns>A task eventually representing the response data for unsubscribing a player.</returns>
         Task<ForceUnsubscribeReply> ForceUnsubscribeFromProjectMessagesAsync(IExecutionContext executionContext, string playerId = null);
+
+        /// <summary>
+        /// Generate a token for a player that is used by the client to subscribe to push messages for the scope of the
+        /// current invocation.
+        /// </summary>
+        /// <remarks>
+        /// The target scope is taken from the execution context and is deliberately not a parameter: the invoker
+        /// authorizes scope membership before the module runs, so a module can only ever address the scope it was
+        /// invoked in. Calling this from a non-scoped function returns an error in the reply.
+        /// </remarks>
+        /// <param name="executionContext">The Cloud Code execution context.</param>
+        /// <param name="playerId">Optional target playerId, if missing or different from the playerId in the execution context.</param>
+        /// <returns>A task eventually representing the response data for generating a token.</returns>
+        Task<GenerateTokenReply> GenerateScopeTokenAsync(IExecutionContext executionContext, string playerId = null);
+
+        /// <summary>
+        /// Send a message to every player subscribed to the scope of the current invocation, with a single publish
+        /// rather than one per player.
+        /// </summary>
+        /// <remarks>
+        /// The target scope is taken from the execution context. Calling this from a non-scoped function returns an
+        /// error in the reply.
+        /// </remarks>
+        /// <param name="executionContext">The Cloud Code execution context.</param>
+        /// <param name="message">The message to be sent. Maximum size: 10 kilobytes</param>
+        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 characters</param>
+        /// <returns>A task eventually representing the response data for sending a message.</returns>
+        Task<SendMessageReply> SendScopeMessageAsync(IExecutionContext executionContext, string message, string messageType = null);
+
+        /// <summary>
+        /// Force a client to unsubscribe from push notifications for the scope of the current invocation. Call this
+        /// when a player leaves the scope: an already-issued token stays valid until it expires.
+        /// </summary>
+        /// <remarks>
+        /// The target scope is taken from the execution context. Calling this from a non-scoped function returns an
+        /// error in the reply.
+        /// </remarks>
+        /// <param name="executionContext">The Cloud Code execution context.</param>
+        /// <param name="playerId">Optional target playerId, if missing or different from the playerId in the execution context.</param>
+        /// <returns>A task eventually representing the response data for unsubscribing a player.</returns>
+        Task<ForceUnsubscribeReply> ForceUnsubscribeFromScopeMessagesAsync(IExecutionContext executionContext, string playerId = null);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Unity.Services.Authentication.Internal;
 using Unity.Services.CloudCode.Internal;
@@ -23,9 +24,11 @@ namespace Unity.Services.CloudCode
         private readonly IAccessToken m_AccessToken;
         readonly IWire m_Wire;
         readonly SubscriptionProvider m_SubscriptionProvider;
+        readonly bool m_TargetsLocalServer;
 
-        internal CloudCodeInternal(IWire wire, ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken)
+        internal CloudCodeInternal(IWire wire, ICloudProjectId cloudProjectId, ICloudCodeApiClient cloudCodeApiClient, IPlayerId playerId, IAccessToken accessToken, bool targetsLocalServer = false)
         {
+            m_TargetsLocalServer = targetsLocalServer;
             m_CloudProjectId = cloudProjectId;
             m_ApiClient = cloudCodeApiClient;
             m_PlayerId = playerId;
@@ -34,33 +37,32 @@ namespace Unity.Services.CloudCode
             m_SubscriptionProvider = new SubscriptionProvider(wire, cloudCodeApiClient, cloudProjectId, playerId);
         }
 
-        public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args)
+        public async Task<string> CallEndpointAsync(string function, Dictionary<string, object> args = null)
         {
-            var result = await GetRunScriptResponse(function, args);
-
+            var result = await GetRunScriptResponse(function, args, null);
             var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
 
-        public async Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args)
+        public async Task<TResult> CallEndpointAsync<TResult>(string function, Dictionary<string, object> args = null)
         {
-            var result = await GetRunScriptResponse(function, args);
-
+            var result = await GetRunScriptResponse(function, args, null);
             return DeserializeOutput<TResult>(result);
         }
 
-        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args, CloudCodeScope scope = null)
+        public async Task<string> CallModuleEndpointAsync(string module, string function, Dictionary<string, object> args = null, CloudCodeScope scope = null)
         {
-            var result = await GetRunModuleScriptResponse(module, function, args, scope);
+            var result = await GetRunModuleScriptResponse(module, function, args, scope, null);
             var output = result?.Result?.Output.GetAs<object>();
             return output?.ToString();
         }
 
-        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args, CloudCodeScope scope = null)
+        public async Task<TResult> CallModuleEndpointAsync<TResult>(string module, string function, Dictionary<string, object> args = null, CloudCodeScope scope = null)
         {
-            var result = await GetRunModuleScriptResponse(module, function, args, scope);
+            var result = await GetRunModuleScriptResponse(module, function, args, scope, null);
             return DeserializeOutput<TResult>(result);
         }
+
 
         public Task<ISubscriptionEvents> SubscribeToPlayerMessagesAsync()
         {
@@ -86,39 +88,85 @@ namespace Unity.Services.CloudCode
             return await m_SubscriptionProvider.SubscribeAsync(callbacks, TokenProvider.TokenProviderMode.Project);
         }
 
+        static readonly DeserializationSettings k_OutputSettings = new DeserializationSettings
+        {
+            MissingMemberHandling = MissingMemberHandling.Ignore
+        };
+
         static TResult DeserializeOutput<TResult>(Response<RunScriptResponse> result)
         {
-            return result.Result.Output.GetAs<TResult>();
+            return DeserializeOutput<TResult>(result.Result?.Output);
         }
 
         static TResult DeserializeOutput<TResult>(Response<RunModuleResponse> result)
         {
-            return result.Result.Output.GetAs<TResult>();
+            return DeserializeOutput<TResult>(result.Result?.Output);
         }
 
-        async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, Dictionary<string, object> args)
+        static TResult DeserializeOutput<TResult>(IDeserializable output)
         {
-            ValidateRequiredDependencies();
+            // A function returning null still has an output; only an empty or "null" body has none.
+            if (output == null)
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.DeserializationFailed, CommonErrorCodes.Unknown,
+                    $"The Cloud Code response had no result to deserialize into {typeof(TResult).Name}.", null);
+            }
 
             try
             {
-                return await GetResponseAsync(function, args);
+                return output.GetAs<TResult>(k_OutputSettings);
+            }
+            catch (DeserializationException e)
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.DeserializationFailed, CommonErrorCodes.Unknown,
+                    $"The Cloud Code result could not be deserialized into {typeof(TResult).Name}: {e.Message}", e);
+            }
+        }
+
+        async Task<Response<RunScriptResponse>> GetRunScriptResponse(string function, Dictionary<string, object> args, string version)
+        {
+            ValidateRequiredDependencies();
+            return await SendAsync(() => GetResponseAsync(function, args, version));
+        }
+
+        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args, CloudCodeScope scope, string version)
+        {
+            ValidateRequiredDependencies();
+            return await SendAsync(() => GetModuleResponseAsync(module, function, args, scope, version), module);
+        }
+
+        async Task<T> SendAsync<T>(Func<Task<T>> request, string module = null)
+        {
+            try
+            {
+                return await request();
             }
             catch (HttpException<BasicErrorResponse> e)
             {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+                throw BuildException(e, e.ActualError?.Code, module);
             }
             catch (HttpException<ValidationErrorResponse> e)
             {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+                throw BuildException(e, e.ActualError?.Code, module);
             }
             catch (HttpException<InvocationErrorResponse> e)
             {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
+                throw BuildException(e, e.ActualError?.Code, module);
             }
-            catch (HttpException e)
+            catch (HttpException e) when (e.Response != null)
             {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, (int)e.Response.StatusCode, e.Message, e);
+                // A status the client has no model for (e.g. 403) arrives untyped, with its body unread.
+                var fallback = ToBasicHttpException(e.Response);
+                throw BuildException(fallback, fallback.ActualError?.Code, module);
+            }
+            catch (ResponseDeserializationException e) when (e.response != null && (e.response.IsHttpError || e.response.IsNetworkError))
+            {
+                var fallback = ToBasicHttpException(e.response);
+                throw BuildException(fallback, fallback.ActualError?.Code, module);
+            }
+            catch (ResponseDeserializationException e)
+            {
+                throw new CloudCodeException(CloudCodeExceptionReason.DeserializationFailed, CommonErrorCodes.Unknown, e.Message, e);
             }
             catch (Exception e)
             {
@@ -126,40 +174,64 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        async Task<Response<RunModuleResponse>> GetRunModuleScriptResponse(string module, string function, Dictionary<string, object> args, CloudCodeScope scope)
+        CloudCodeException BuildException(HttpException e, int? bodyErrorCode, string module)
         {
-            ValidateRequiredDependencies();
-
-            try
+            var cloudCodeException = CreateException(e.Response.IsNetworkError, e.Response.StatusCode,
+                ErrorCodeOf(e.Response, bodyErrorCode), e.Message, e);
+            Debug.LogError(cloudCodeException.Message);
+#if UNITY_EDITOR
+            if (module != null
+                && m_TargetsLocalServer
+                && cloudCodeException.Reason == CloudCodeExceptionReason.NotFound)
             {
-                return await GetModuleResponseAsync(module, function, args, scope);
+                Debug.LogWarning(
+                    $"The local Cloud Code server may be running an older build of module '{module}'. Changes " +
+                    "made in play mode are not deployed to it: exit play mode, wait for \"Local Cloud Code server " +
+                    "reloaded\" in the Console, then enter play mode again.");
             }
-            catch (HttpException<BasicErrorResponse> e)
-            {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
-            }
-            catch (HttpException<ValidationErrorResponse> e)
-            {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
-            }
-            catch (HttpException<InvocationErrorResponse> e)
-            {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, e.ActualError.Code, e.Message, e);
-            }
-            catch (HttpException e)
-            {
-                throw BuildException(e.Response.IsNetworkError, e.Response.StatusCode, (int)e.Response.StatusCode, e.Message, e);
-            }
-            catch (Exception e)
-            {
-                throw new CloudCodeException(CloudCodeExceptionReason.Unknown, CommonErrorCodes.Unknown, e.Message, e);
-            }
+#endif
+            return cloudCodeException;
         }
 
-        private CloudCodeException BuildException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
+        // Sent with a 422, so it must be checked before the status maps to ScriptError.
+        const int ScopeStateIncompatibleErrorCode = 9052;
+
+
+        /// <summary>
+        /// The body's error code, or the HTTP status when there is no body or it carries no code.
+        /// </summary>
+        internal static int ErrorCodeOf(HttpClientResponse response, int? bodyErrorCode)
+        {
+            return bodyErrorCode.GetValueOrDefault() != 0 ? bodyErrorCode.Value : (int)response.StatusCode;
+        }
+
+        /// <summary>
+        /// Rebuilds an error response the client could not parse (an unknown problem type, a non-JSON body) as a
+        /// basic error, keeping whatever basic fields the body does carry.
+        /// </summary>
+        internal static HttpException<BasicErrorResponse> ToBasicHttpException(HttpClientResponse response)
+        {
+            BasicErrorResponse body = null;
+            try
+            {
+                if (response.Data != null && response.Data.Length > 0)
+                {
+                    body = (BasicErrorResponse)IsolatedJsonConvert.DeserializeObject(
+                        Encoding.UTF8.GetString(response.Data), typeof(BasicErrorResponse));
+                }
+            }
+            catch (Exception)
+            {
+                // Not JSON at all: the status code is all there is to go on.
+            }
+
+            return new HttpException<BasicErrorResponse>(response, body);
+        }
+
+        internal static CloudCodeException CreateException(bool isNetworkError, long statusCode, int errorCode, string message, HttpException innerException)
         {
             var code = isNetworkError ? CommonErrorCodes.TransportError : errorCode;
-            var reason = isNetworkError ? CloudCodeExceptionReason.NoInternetConnection : GetErrorReason(statusCode);
+            var reason = isNetworkError ? CloudCodeExceptionReason.NoInternetConnection : GetErrorReason(statusCode, errorCode);
 
             CloudCodeException cloudCodeException;
             if (statusCode == 429)
@@ -176,7 +248,6 @@ namespace Unity.Services.CloudCode
             {
                 cloudCodeException = new CloudCodeException(reason, code, message, innerException);
             }
-            Debug.LogError(cloudCodeException.Message);
             return cloudCodeException;
         }
 
@@ -210,14 +281,22 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        CloudCodeExceptionReason GetErrorReason(long statusCode)
+        static CloudCodeExceptionReason GetErrorReason(long statusCode, int errorCode)
         {
+            if (errorCode == ScopeStateIncompatibleErrorCode)
+            {
+                return CloudCodeExceptionReason.ScopeStateIncompatible;
+            }
+
+
             switch (statusCode)
             {
                 case 400:
                     return CloudCodeExceptionReason.InvalidArgument;
                 case 401:
                     return CloudCodeExceptionReason.Unauthorized;
+                case 403:
+                    return CloudCodeExceptionReason.Forbidden;
                 case 404:
                     return CloudCodeExceptionReason.NotFound;
                 case 422:
@@ -225,30 +304,36 @@ namespace Unity.Services.CloudCode
                 case 429:
                     return CloudCodeExceptionReason.TooManyRequests;
                 case 500:
+                case 502:
                 case 503:
+                case 504:
                     return CloudCodeExceptionReason.ServiceUnavailable;
                 default:
                     return CloudCodeExceptionReason.Unknown;
             }
         }
 
-        async Task<Response<RunScriptResponse>> GetResponseAsync(string function, Dictionary<string, object> args)
+        async Task<Response<RunScriptResponse>> GetResponseAsync(string function, Dictionary<string, object> args, string version)
         {
-            var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>());
+            var runArgs = new RunScriptArguments(args ?? new Dictionary<string, object>(), NullIfBlank(version));
             var runScript = new RunScriptRequest(m_CloudProjectId.GetCloudProjectId(), function, runArgs);
             var task = m_ApiClient.RunScriptAsync(runScript);
 
             return await task;
         }
 
-        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args, CloudCodeScope scope)
+        async Task<Response<RunModuleResponse>> GetModuleResponseAsync(string module, string function, Dictionary<string, object> args, CloudCodeScope scope, string version)
         {
-            var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>(), scope == null ? null : new RunModuleArgumentsScope(scope.ToInternalType(), scope.Id));
+            var runArgs = new RunModuleArguments(args ?? new Dictionary<string, object>(), scope == null ? null : new RunModuleArgumentsScope(scope.ToInternalType(), scope.Id), NullIfBlank(version));
             var runScript = new RunModuleRequest(m_CloudProjectId.GetCloudProjectId(), module, function, runArgs);
             var task = m_ApiClient.RunModuleAsync(runScript);
 
             return await task;
         }
 
+        static string NullIfBlank(string value)
+        {
+            return String.IsNullOrWhiteSpace(value) ? null : value;
+        }
     }
 }

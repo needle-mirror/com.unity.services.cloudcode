@@ -34,6 +34,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
         static string SanitizeSegment(string segment)
         {
+            // '@' is the verbatim prefix, so @foo and foo name the same identifier; keywords get it back below.
+            if (segment.StartsWith("@", StringComparison.Ordinal))
+            {
+                segment = segment.Substring(1);
+            }
+
             // Firstly, Normalize to Unicode Normalization Form C
             segment = segment.Normalize(NormalizationForm.FormC);
 

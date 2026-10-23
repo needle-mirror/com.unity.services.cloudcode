@@ -21,5 +21,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
             return requestBasePath + "/v1/lifecycle/shutdown";
         }
     }
+
+    class CloudCodeLocalAdminTokenRequest : LocalCloudCodeRequestBase
+    {
+        public string token;
+
+        public CloudCodeLocalAdminTokenRequest(string token)
+        {
+            this.token = token;
+        }
+
+        public override string ConstructUrl(string requestBasePath)
+        {
+            return requestBasePath + "/v1/admin/token";
+        }
+    }
 }
 #endif

@@ -45,8 +45,8 @@ namespace Unity.Services.CloudCode.Core
     ///  }
     /// </c>
     /// </example>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class StateScopeAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class StateScopeAttribute : Attribute
     {
         /// <summary>
         ///     The level of scope to apply to this class.

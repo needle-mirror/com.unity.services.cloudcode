@@ -247,8 +247,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
 
             var versionSelect = await GetVersionString(cancellationToken);
 
-            await m_DotnetRunner.ExecuteDotnetAsync(
-                new[] {$"{versionSelect}", $"\"{GetGeneratorPath()}\"", $"\"{moduleDllPath}\"", $"\"{bindingsOutputFolderPath}\""},
+            await m_DotnetRunner.ExecuteDotnetAsync(GetGeneratorArguments(versionSelect, moduleDllPath, bindingsOutputFolderPath),
                 cancellationToken);
         }
 
@@ -278,6 +277,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.Bindings
             #else
             return string.Empty;
             #endif
+        }
+
+        internal static string[] GetGeneratorArguments(string versionSelect, string moduleDllPath, string bindingsOutputFolderPath)
+        {
+            var arguments = new List<string>
+            {
+                versionSelect, $"\"{GetGeneratorPath()}\"", $"\"{moduleDllPath}\"", $"\"{bindingsOutputFolderPath}\"",
+            };
+            return arguments.ToArray();
         }
 
         internal static string GetGeneratorPath()

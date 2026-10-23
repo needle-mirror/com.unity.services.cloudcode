@@ -1,3 +1,4 @@
+
 #nullable enable
 namespace Unity.Services.CloudCode.Core
 {
@@ -78,5 +79,6 @@ namespace Unity.Services.CloudCode.Core
         ///     Null when the execution is not session-scoped.
         /// </summary>
         ISession? Session { get; }
+
     }
 }

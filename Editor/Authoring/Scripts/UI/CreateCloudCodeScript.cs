@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEditor;
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
@@ -9,6 +10,8 @@ using ActionIdentifier = UnityEngine.EntityId;
 using BaseClass = UnityEditor.ProjectWindowCallback.EndNameEditAction;
 using ActionIdentifier = System.Int32;
 #endif
+
+using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
 {
@@ -44,9 +47,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts.UI
 
         public override void Action(ActionIdentifier instanceId, string pathName, string resourceFile)
         {
-            var templatePath = Path.Combine(CloudCodePackage.EditorPath, k_TemplatePath);
-            File.WriteAllText(pathName, File.ReadAllText(templatePath));
-            AssetDatabase.Refresh();
+            string error = null;
+            string errorData = null;
+            try
+            {
+                var templatePath = Path.Combine(CloudCodePackage.EditorPath, k_TemplatePath);
+                File.WriteAllText(pathName, File.ReadAllText(templatePath));
+                AssetDatabase.Refresh();
+            }
+            catch (Exception e)
+            {
+                error = AnalyticsErrorCode.FromException(e);
+                errorData = AnalyticsErrorData.FromException(e);
+                throw;
+            }
+            finally
+            {
+                CloudCodeAuthoringServices.Instance
+                    .GetService<CloudScriptCreationAnalytics>()
+                    .SendJsScriptCreatedEvent(error, errorData);
+            }
         }
     }
 }

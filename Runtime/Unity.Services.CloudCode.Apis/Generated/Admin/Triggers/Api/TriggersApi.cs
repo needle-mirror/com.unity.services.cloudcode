@@ -29,7 +29,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Add Trigger to the project&#39;s environment
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerConfigBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -45,7 +45,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Delete the project&#39;s environment&#39;s Trigger
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerId">ID of the trigger config. IDs can be retrieved by listing the triggers configurations.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -61,7 +61,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Get the project&#39;s environment&#39;s Trigger
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerId">ID of the trigger config. IDs can be retrieved by listing the triggers configurations.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -77,7 +77,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// List project&#39;s environment existing Triggers
         /// </remarks>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="limit">The number of triggers to display per page (optional, default to 100)</param>
         /// <param name="after">A token to get the next page (optional)</param>
@@ -93,7 +93,7 @@ namespace Unity.Services.Triggers.Admin.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class TriggersApi : ITriggersApi
+    internal class TriggersApi : ITriggersApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.
@@ -145,7 +145,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Create Trigger Config Add Trigger to the project&#39;s environment
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerConfigBody">parameter value (optional)</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -190,7 +190,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Delete Trigger Config Delete the project&#39;s environment&#39;s Trigger
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerId">ID of the trigger config. IDs can be retrieved by listing the triggers configurations.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -235,7 +235,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// Get Trigger Config Get the project&#39;s environment&#39;s Trigger
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="triggerId">ID of the trigger config. IDs can be retrieved by listing the triggers configurations.</param>
         /// <param name="executionContext">The ExecutionContext to populate the API request options with.</param>
@@ -280,7 +280,7 @@ namespace Unity.Services.Triggers.Admin.Api
         /// List existing Triggers Config List project&#39;s environment existing Triggers
         /// </summary>
         /// <exception cref="ApiException">Thrown when fails to make API call</exception>
-        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/ugs-overview/manual/managing-unity-projects)</param>
+        /// <param name="projectId">The project&#39;s [Project ID](https://docs.unity.com/en-us/cloud/projects/create-project)</param>
         /// <param name="environmentId">The Environment ID of a project</param>
         /// <param name="limit">The number of triggers to display per page (optional, default to 100)</param>
         /// <param name="after">A token to get the next page (optional)</param>

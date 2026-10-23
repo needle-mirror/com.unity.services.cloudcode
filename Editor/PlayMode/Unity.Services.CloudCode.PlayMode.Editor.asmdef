@@ -1,0 +1,26 @@
+{
+    "name": "Unity.Services.CloudCode.PlayMode.Editor",
+    "rootNamespace": "Unity.Services.CloudCode.Editor.PlayMode",
+    "references": [
+        "Unity.Services.CloudCode",
+        "Unity.Services.CloudCode.Authoring.Editor",
+        "Unity.Services.CloudCode.Authoring.Core.Editor",
+        "Unity.Services.CloudCode.Shared.Editor",
+        "Unity.Services.DeploymentApi",
+        "Unity.Services.Core.Environments.Editor",
+        "Unity.Services.Core.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_6000_7_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

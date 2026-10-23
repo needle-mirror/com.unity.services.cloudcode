@@ -1,3 +1,5 @@
+#if UNITY_6000_5_OR_NEWER
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,15 +31,22 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
     [InitializeOnLoad]
     static class StaleManifestCleaner
     {
-        const string ManifestExtension = ".g.json";
+        internal const string ManifestExtension = ".g.json";
 
         static readonly string s_Root =
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "CloudModules"));
 
+        internal static readonly string ModuleManifestDirectory = Path.Combine(s_Root, "ModuleManifests");
+        internal static readonly string BehaviourModuleManifestDirectory = Path.Combine(s_Root, "BehaviourModuleManifests");
+        internal static readonly string BindingManifestDirectory = Path.Combine(s_Root, "BindingManifests");
+        internal static readonly string BehaviourBindingManifestDirectory = Path.Combine(s_Root, "BehaviourBindingManifests");
+
         static readonly string[] s_ManifestDirectories =
         {
-            Path.Combine(s_Root, "ModuleManifests"),
-            Path.Combine(s_Root, "BindingManifests")
+            ModuleManifestDirectory,
+            BehaviourModuleManifestDirectory,
+            BindingManifestDirectory,
+            BehaviourBindingManifestDirectory
         };
 
         /// <summary>The real on-disk manifest directories the cleaner operates on. Exposed for tests.</summary>
@@ -107,3 +116,5 @@ namespace Unity.Services.CloudCode.Authoring.Editor.SourceGenerator
         public void OnPreprocessBuild(BuildReport report) => StaleManifestCleaner.RemoveOrphans();
     }
 }
+
+#endif

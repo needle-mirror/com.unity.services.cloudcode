@@ -15,6 +15,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
     class ProblemJsonError
     {
         public string Field { get; set; }
+        public string Key { get; set; }
         public IList<string> Messages { get; set; }
     }
 }

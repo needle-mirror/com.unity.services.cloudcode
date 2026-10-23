@@ -12,15 +12,17 @@ using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
     /// <summary>
-    /// Produces a content fingerprint for a Cloud Code Module from its source files, so a module's
-    /// current state can be compared against the state captured at its last successful deployment.
+    /// Produces a content fingerprint for a Cloud Code Module from its source files and the packaged DLLs
+    /// no source covers, so a module's current state can be compared against the state captured at its
+    /// last successful deployment.
     /// </summary>
     interface IModuleContentHasher
     {
         /// <summary>
         /// Returns a stable hash of the module's tracked source files across its cloud and client
-        /// assembly directories, or null if those directories cannot be resolved or the files cannot
-        /// be read.
+        /// assembly directories, the compiler settings of its project assemblies, and the contents of its
+        /// precompiled and package dependency DLLs, or null if those directories cannot be resolved or the
+        /// files cannot be read.
         /// </summary>
         Task<string> ComputeHashAsync(CloudCodeModule module);
     }
@@ -34,6 +36,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         const char k_Separator = '\0';
 
         readonly IFileSystem m_FileSystem;
+
+        internal Func<string, string> DependencyDigest = FileDigest;
 
         public ModuleContentHasher(IFileSystem fileSystem)
         {
@@ -53,20 +57,54 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             if (string.IsNullOrEmpty(cloudDirectory) || string.IsNullOrEmpty(clientDirectory))
                 return Task.FromResult<string>(null);
 
-            var directories = new[] { cloudDirectory, clientDirectory };
+            // The whole assembly closure, because the deploy uploads all of it: editing a shared assembly
+            // changes the module just as much as editing the module's own source does.
+            var directories = new HashSet<string>(StringComparer.Ordinal) { cloudDirectory, clientDirectory };
+            var dependencies = new List<string>();
+            string compilationSettings = null;
+            if (module.CloudAssemblyDefinition != null)
+            {
+                try
+                {
+                    var closureDirectories = ModuleAssemblyClosure.ProjectSourceDirectories(module.CloudAssemblyDefinition);
+                    var closureDependencies = ModuleAssemblyClosure.DependencyAssemblyPaths(module.CloudAssemblyDefinition);
+                    var closureSettings = ModuleAssemblyClosure.CompilationSettings(module.CloudAssemblyDefinition);
+                    directories.UnionWith(closureDirectories);
+                    dependencies = closureDependencies;
+                    compilationSettings = closureSettings;
+                }
+                catch (Exception)
+                {
+                    // A malformed asmdef is surfaced by the deploy, not by the hash.
+                }
+            }
 
             // File enumeration and reads are pure file-system work; run them off the main thread so a large
             // module does not stall the Editor while hashing.
-            return Task.Run(() => ComputeHashAsync(directories));
+            var ordered = directories.OrderBy(directory => directory, StringComparer.Ordinal).ToList();
+            return Task.Run(() => ComputeHashAsync(ordered, dependencies, compilationSettings));
+        }
+
+        internal Task<string> ComputeHashAsync(IReadOnlyList<string> directories)
+        {
+            return ComputeHashAsync(directories, Array.Empty<string>(), null);
+        }
+
+        internal Task<string> ComputeHashAsync(IReadOnlyList<string> directories, IReadOnlyList<string> dependencyPaths)
+        {
+            return ComputeHashAsync(directories, dependencyPaths, null);
         }
 
         /// <summary>
         /// Hashes the tracked source files found under the given directories, sorted by relative path so
         /// the result is independent of file-system enumeration order.
         /// </summary>
-        internal async Task<string> ComputeHashAsync(IReadOnlyList<string> directories)
+        internal async Task<string> ComputeHashAsync(
+            IReadOnlyList<string> directories, IReadOnlyList<string> dependencyPaths, string compilationSettings)
         {
             var entries = new List<(string key, string content)>();
+            if (!string.IsNullOrEmpty(compilationSettings))
+                entries.Add(("compilation:", compilationSettings));
 
             try
             {
@@ -84,6 +122,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
                         entries.Add((PathUtils.GetRelativePath(directory, path), content));
                     }
                 }
+
+                foreach (var path in dependencyPaths)
+                    entries.Add(("dependency:" + Path.GetFileName(path), DependencyDigest(path)));
             }
             catch (Exception)
             {
@@ -105,6 +146,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         static bool IsTrackedExtension(string path)
         {
             return TrackedExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+        }
+
+        static string FileDigest(string path)
+        {
+            if (!File.Exists(path))
+                return "missing";
+
+            using var sha1 = System.Security.Cryptography.SHA1.Create();
+            using var stream = File.OpenRead(path);
+            return BitConverter.ToString(sha1.ComputeHash(stream));
         }
     }
 }

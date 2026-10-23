@@ -286,7 +286,7 @@ namespace Unity.Services.PlayerAuth.Api
     /// <summary>
     /// Represents a collection of functions to interact with the API endpoints
     /// </summary>
-    public class PlayerAuthenticationApi : IPlayerAuthenticationApi
+    internal class PlayerAuthenticationApi : IPlayerAuthenticationApi
     {
         /// <summary>
         /// The client for accessing this underlying API asynchronously.

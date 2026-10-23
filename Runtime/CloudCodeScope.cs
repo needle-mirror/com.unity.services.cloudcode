@@ -7,7 +7,7 @@ namespace Unity.Services.CloudCode
     /// <summary>
     /// A class representing the scope being used when executing a Cloud Code function.
     /// </summary>
-    public class CloudCodeScope : IEquatable<CloudCodeScope>
+    public sealed class CloudCodeScope : IEquatable<CloudCodeScope>
     {
         /// <summary>
         /// The scope type for the Cloud Code execution.

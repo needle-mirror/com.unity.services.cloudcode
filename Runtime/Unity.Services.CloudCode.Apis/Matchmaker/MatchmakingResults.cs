@@ -29,5 +29,11 @@ namespace Unity.Services.CloudCode.Apis.Matchmaker
         string PoolName,
         string QueueName,
         Dictionary<string, object> MatchProperties
-    );
+    )
+    {
+        /// <summary>
+        ///     Identifier of the match.
+        /// </summary>
+        public string? MatchId { get; init; }
+    }
 }

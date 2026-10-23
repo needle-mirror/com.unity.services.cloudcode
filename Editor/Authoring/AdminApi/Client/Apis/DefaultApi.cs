@@ -23,6 +23,26 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
     {
             /// <summary>
             /// Async Operation.
+            /// Assign Module Version To Release.
+            /// </summary>
+            /// <param name="request">Request object for AssignModuleRelease.</param>
+            /// <param name="operationConfiguration">Configuration for AssignModuleRelease.</param>
+            /// <returns>Task for a Response object containing status code, headers.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response> AssignModuleReleaseAsync(Unity.Services.CloudCode.Authoring.Client.Default.AssignModuleReleaseRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
+            /// Assign Script Version To Release.
+            /// </summary>
+            /// <param name="request">Request object for AssignScriptRelease.</param>
+            /// <param name="operationConfiguration">Configuration for AssignScriptRelease.</param>
+            /// <returns>Task for a Response object containing status code, headers.</returns>
+            /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+            Task<Response> AssignScriptReleaseAsync(Unity.Services.CloudCode.Authoring.Client.Default.AssignScriptReleaseRequest request, Configuration operationConfiguration = null);
+
+            /// <summary>
+            /// Async Operation.
             /// Create an anonymous player.
             /// </summary>
             /// <param name="request">Request object for CreateAnonymousPlayer.</param>
@@ -189,6 +209,64 @@ namespace Unity.Services.CloudCode.Authoring.Client.Apis.Default
             _configuration = configuration;
 
 
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Assign Module Version To Release.
+        /// </summary>
+        /// <param name="request">Request object for AssignModuleRelease.</param>
+        /// <param name="operationConfiguration">Configuration for AssignModuleRelease.</param>
+        /// <returns>Task for a Response object containing status code, headers.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response> AssignModuleReleaseAsync(Unity.Services.CloudCode.Authoring.Client.Default.AssignModuleReleaseRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"204",  null },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"403", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"429", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"503", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("PUT",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            ResponseHandler.HandleAsyncResponse(response, statusCodeToTypeMap);
+            return new Response(response);
+        }
+
+
+        /// <summary>
+        /// Async Operation.
+        /// Assign Script Version To Release.
+        /// </summary>
+        /// <param name="request">Request object for AssignScriptRelease.</param>
+        /// <param name="operationConfiguration">Configuration for AssignScriptRelease.</param>
+        /// <returns>Task for a Response object containing status code, headers.</returns>
+        /// <exception cref="Unity.Services.CloudCode.Authoring.Client.Http.HttpException">An exception containing the HttpClientResponse with headers, response code, and string of error.</exception>
+        public async Task<Response> AssignScriptReleaseAsync(Unity.Services.CloudCode.Authoring.Client.Default.AssignScriptReleaseRequest request,
+            Configuration operationConfiguration = null)
+        {
+            var statusCodeToTypeMap = new Dictionary<string, System.Type>() { {"204",  null },{"400", typeof(CloudCodeBasicErrorResponse)   },{"401", typeof(CloudCodeBasicErrorResponse)   },{"403", typeof(CloudCodeBasicErrorResponse)   },{"404", typeof(CloudCodeBasicErrorResponse)   },{"429", typeof(CloudCodeBasicErrorResponse)   },{"500", typeof(CloudCodeBasicErrorResponse)   },{"503", typeof(CloudCodeBasicErrorResponse)   } };
+
+            // Merge the operation/request level configuration with the client level configuration.
+            var finalConfiguration = Configuration.MergeConfigurations(operationConfiguration, Configuration);
+
+            var response = await HttpClient.MakeRequestAsync("PUT",
+                request.ConstructUrl(finalConfiguration.BasePath),
+                request.ConstructBody(),
+                request.ConstructHeaders(finalConfiguration),
+                finalConfiguration.RequestTimeout ?? _baseTimeout,
+                finalConfiguration.RetryPolicyConfiguration,
+                finalConfiguration.StatusCodePolicyConfiguration);
+
+            ResponseHandler.HandleAsyncResponse(response, statusCodeToTypeMap);
+            return new Response(response);
         }
 
 

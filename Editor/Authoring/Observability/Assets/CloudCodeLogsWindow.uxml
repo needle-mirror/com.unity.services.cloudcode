@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:HelpBox name="local-server-warning" message-type="Warning" class="logs-warning logs-hidden"
+                text="Cloud Code is set to use the local server. Logs are directly sent to the Console." />
+
+    <uie:Toolbar name="options-toolbar" class="logs-toolbar">
+        <ui:DropdownField name="time-range" tooltip="Time range covered by the query."
+                          class="logs-toolbar__time-range" />
+        <uie:EnumField name="severity-field"
+                       tooltip="Severity to show. Error also includes Fatal."
+                       class="logs-toolbar__severity" />
+        <uie:ToolbarButton name="refresh-button" text="Refresh" class="logs-toolbar__button" />
+    </uie:Toolbar>
+
+    <uie:Toolbar name="query-toolbar" class="logs-toolbar">
+        <ui:TextField name="query-field" label="Query" class="logs-toolbar__query" />
+        <uie:ToolbarButton name="search-button" text="Search" class="logs-toolbar__button" />
+        <uie:ToolbarButton name="syntax-button" text="Syntax" class="logs-toolbar__button" />
+    </uie:Toolbar>
+
+    <ui:TwoPaneSplitView name="body" fixed-pane-index="0" fixed-pane-initial-dimension="200"
+                         orientation="Vertical" class="logs-body">
+        <ui:ListView name="record-list" fixed-item-height="20" selection-type="Single"
+                     class="logs-list" />
+        <ui:ScrollView name="detail-scroll" mode="VerticalAndHorizontal" class="logs-detail-scroll">
+            <ui:VisualElement name="detail-content" class="logs-detail" />
+        </ui:ScrollView>
+    </ui:TwoPaneSplitView>
+
+    <uie:Toolbar name="footer-toolbar" class="logs-toolbar">
+        <ui:Label name="status-label" class="logs-status" />
+        <uie:ToolbarButton name="copy-selected-button" text="Copy Selected"
+                           class="logs-toolbar__button" />
+        <uie:ToolbarButton name="copy-all-button" text="Copy All" class="logs-toolbar__button" />
+        <uie:ToolbarButton name="prev-button" text="◂ Prev" class="logs-toolbar__button" />
+        <uie:ToolbarButton name="next-button" text="Next ▸" class="logs-toolbar__button" />
+    </uie:Toolbar>
+</ui:UXML>

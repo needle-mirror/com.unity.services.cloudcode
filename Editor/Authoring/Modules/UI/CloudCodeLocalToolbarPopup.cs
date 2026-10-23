@@ -1,6 +1,7 @@
 #if UNITY_6000_3_OR_NEWER
 
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using Unity.Services.DeploymentApi.Editor;
 using UnityEditor;
@@ -32,6 +33,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         const string k_ServerPopupWindowName = "popup-window-container";
         const string k_ServerStatusTitleTxtName = "server-status-title-txt";
         const string k_ServerEditOnlyHelpBoxName = "server-edit-only-info-box";
+        const string k_ServerScenarioHelpBoxName = "server-scenario-info-box";
+        const string k_ServerStatusContainerName = "server-status-container";
+        const string k_ServerResetRowName = "server-reset-row";
+        const string k_ServerActionRowName = "server-action-row";
         const string k_ServerStatusTxtName = "server-status-txt";
         const string K_ServerStatusIconName = "server-status-icon";
         const string k_ServerActionBtnName = "server-action-btn";
@@ -54,6 +59,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ServerSettingsTitleText = L10n.Tr("Project Settings");
         static readonly string k_DeploymentWindowTitleText = L10n.Tr("Deployment Window");
         static readonly string k_ServerStatusTitleText = L10n.Tr("Local Cloud Code Server");
+        static readonly string k_ServerStatusTitleTextScenario = L10n.Tr("Cloud Code Server");
         static readonly string k_ServerEditOnlyHelpBoxText =
             L10n.Tr("Local Cloud Code server can only be started or stopped when not in play mode.");
         static readonly string k_ServerResetButtonTitle = L10n.Tr("Local Server State");
@@ -62,6 +68,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ServerResetButtonToolTip = L10n.Tr("Clear data will require a local server restart. " +
             "This can only be performed while the server is " +
             "not running.");
+        static readonly string k_ServerResetButtonToolTipScenario = L10n.Tr("Clearing data stops the local server. " +
+            "The Play Mode Scenario starts it again on the next Play. This cannot be done during play mode.");
 
         // Visual elements of the Local Cloud Code Popup window
         VisualElement m_ServerStatusIcon;
@@ -71,10 +79,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         Label m_ServerPidText;
         VisualElement m_ServerPidCopyButton;
         HelpBox m_ServerEditOnlyHelpbox;
+        HelpBox m_ServerScenarioHelpbox;
+        VisualElement m_ServerStatusContainer;
+        TextElement m_ServerStatusTitleText;
+        VisualElement m_ServerResetRow;
+        VisualElement m_ServerActionRow;
         TextElement m_ServerResetButtonTitle;
         Button m_ServerResetButton;
 
         CloudCodeLocalToolbarController m_ToolbarController;
+        CloudCodeLocalServerScenarioControl.Info m_ScenarioControl;
         const string k_CloudCodeProjectSettingsPath = "Project/Services/Cloud Code";
 
         internal CloudCodeLocalToolbarPopup(CloudCodeLocalToolbarController toolbarController)
@@ -119,11 +133,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             serverSettings.clicked += OnServerSettingsClicked;
             serverSettings.text = k_ServerSettingsTitleText;
 
-            var serverStatusTitleText = m_Root.Q<TextElement>(k_ServerStatusTitleTxtName);
-            serverStatusTitleText.text = k_ServerStatusTitleText;
+            m_ServerStatusTitleText = m_Root.Q<TextElement>(k_ServerStatusTitleTxtName);
 
             m_ServerEditOnlyHelpbox = m_Root.Q<HelpBox>(k_ServerEditOnlyHelpBoxName);
             m_ServerEditOnlyHelpbox.text = k_ServerEditOnlyHelpBoxText;
+
+            m_ServerScenarioHelpbox = m_Root.Q<HelpBox>(k_ServerScenarioHelpBoxName);
+            m_ServerStatusContainer = m_Root.Q<VisualElement>(k_ServerStatusContainerName);
+            m_ServerResetRow = m_Root.Q<VisualElement>(k_ServerResetRowName);
+            m_ServerActionRow = m_Root.Q<VisualElement>(k_ServerActionRowName);
 
             // Bind reset server state controls
             m_ServerResetButtonTitle = m_Root.Q<TextElement>(k_ServerResetBtnText);
@@ -134,7 +152,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 m_ServerResetButton.enabledSelf = false;
                 m_ServerResetButton.text = k_ServerResetButtonTextPending;
-                m_ToolbarController.GetLocalServer().ClearServerState();
+                var server = m_ToolbarController.GetLocalServer();
+                if (m_ScenarioControl != null)
+                    await LocalServerStateReset.StopAndClearAsync(server);
+                else
+                    server.ClearServerState();
 
                 // Add custom delay for visual feedback since clearing can be quick.
                 await Task.Delay(500);
@@ -142,9 +164,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 m_ServerResetButton.enabledSelf = true;
                 m_ServerResetButton.text = k_ServerResetButtonTextAction;
             };
-            m_ServerResetButton.tooltip = k_ServerResetButtonToolTip;
-            m_ServerResetButtonTitle.tooltip = k_ServerResetButtonToolTip;
-
             RefreshPopupUI();
             return m_Root;
         }
@@ -157,11 +176,28 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             var server = m_ToolbarController.GetLocalServer();
             var currentStatus = server.GetCurrentServerStatus();
             var failure = server.GetLastServerFailure();
+            m_ScenarioControl = CloudCodeLocalServerScenarioControl.GetActiveControl?.Invoke();
             UpdateServerStatusText(currentStatus, failure);
             UpdateServerStatusIcon(currentStatus, failure);
             UpdateServerStatusPid(currentStatus);
-            UpdateServerToggleability(currentStatus);
-            UpdateServerAdditionalSettings(currentStatus);
+            UpdateServerToggleability(currentStatus, m_ScenarioControl != null);
+            UpdateServerAdditionalSettings(currentStatus, m_ScenarioControl != null);
+            UpdateScenarioControl(m_ScenarioControl);
+        }
+
+        void UpdateScenarioControl(CloudCodeLocalServerScenarioControl.Info scenarioControl)
+        {
+            var isScenarioControlled = scenarioControl != null;
+            m_ServerStatusTitleText.text = isScenarioControlled ? k_ServerStatusTitleTextScenario : k_ServerStatusTitleText;
+
+            m_ServerScenarioHelpbox.text = scenarioControl?.Message ?? string.Empty;
+            m_ServerScenarioHelpbox.style.display = isScenarioControlled ? DisplayStyle.Flex : DisplayStyle.None;
+
+            var showsLocalServer = !isScenarioControlled || scenarioControl.UsesLocalServer;
+            var localServerDisplay = showsLocalServer ? DisplayStyle.Flex : DisplayStyle.None;
+            m_ServerStatusContainer.style.display = localServerDisplay;
+            m_ServerResetRow.style.display = localServerDisplay;
+            m_ServerActionRow.style.display = isScenarioControlled ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         void UpdateServerStatusText(LocalCloudCodeServerStatus status, string failure)
@@ -241,11 +277,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_ServerPidText.text = hasStarted ? $"PID:{pid}" : "";
         }
 
-        void UpdateServerToggleability(LocalCloudCodeServerStatus status)
+        void UpdateServerToggleability(LocalCloudCodeServerStatus status, bool isScenarioControlled)
         {
             // If the Editor is in play mode, disable the ability to start / stop the server
             var isInPlayMode = EditorApplication.isPlaying;
-            m_ServerEditOnlyHelpbox.style.display = isInPlayMode ? DisplayStyle.Flex : DisplayStyle.None;
+            // A scenario hides the controls this box explains, and shows its own box instead.
+            var showsEditOnlyHelpBox = isInPlayMode && !isScenarioControlled;
+            m_ServerEditOnlyHelpbox.style.display = showsEditOnlyHelpBox ? DisplayStyle.Flex : DisplayStyle.None;
             m_ServerActionButton.enabledSelf = !isInPlayMode;
 
             switch (status)
@@ -270,10 +308,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             }
         }
 
-        void UpdateServerAdditionalSettings(LocalCloudCodeServerStatus status)
+        void UpdateServerAdditionalSettings(LocalCloudCodeServerStatus status, bool isScenarioControlled)
         {
-            var isIdle = status == LocalCloudCodeServerStatus.Idle;
-            m_ServerResetButton.enabledSelf = isIdle;
+            // A scenario's server cannot be stopped from here, so its clear stops the server itself.
+            var canClear = isScenarioControlled
+                ? !EditorApplication.isPlaying && status is LocalCloudCodeServerStatus.Idle or LocalCloudCodeServerStatus.Started
+                : status == LocalCloudCodeServerStatus.Idle;
+            m_ServerResetButton.enabledSelf = canClear;
+
+            var tooltip = isScenarioControlled ? k_ServerResetButtonToolTipScenario : k_ServerResetButtonToolTip;
+            m_ServerResetButton.tooltip = tooltip;
+            m_ServerResetButtonTitle.tooltip = tooltip;
         }
 
         void OnServerActionButtonClicked()

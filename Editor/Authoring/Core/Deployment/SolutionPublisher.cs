@@ -42,6 +42,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             await PublishSolution(solutionPath, outputPath, runtimeIdentifier, "Release", cancellationToken);
         }
 
+        internal static string NormalizePath(string path)
+        {
+            var normalized = (path ?? string.Empty).Replace('\\', '/');
+            return normalized.EndsWith("/") ? normalized : normalized + "/";
+        }
+
         async Task PublishSolution(
             string solutionPath,
             string outputPath,
@@ -50,7 +56,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             CancellationToken cancellationToken = default)
         {
             await m_DotnetRunner.ExecuteDotnetAsync(
-                new[] { $"publish \"{solutionPath}\" -c \"{configuration}\" -r \"{runtimeIdentifier}\" -o \"{outputPath}\"" },
+                new[] { $"publish \"{solutionPath}\" -c \"{configuration}\" -r \"{runtimeIdentifier}\" -p:PublishDir=\"{NormalizePath(outputPath)}\"" },
                 cancellationToken);
         }
     }

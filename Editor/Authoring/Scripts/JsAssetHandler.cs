@@ -39,11 +39,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         }
 
         [OnOpenAsset]
+#if UNITY_6000_4_OR_NEWER
+        static bool OpenAsset(EntityId instanceID, int line)
+        {
+            var obj = EditorUtility.EntityIdToObject(instanceID);
+#else
         static bool OpenAsset(int instanceID, int line)
         {
-#if UNITY_6000_4_OR_NEWER
-            var obj = EditorUtility.EntityIdToObject(new UnityEngine.EntityId());
-#else
             var obj = EditorUtility.InstanceIDToObject(instanceID);
 #endif
             var filePath = AssetDatabase.GetAssetPath(obj);

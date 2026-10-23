@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -42,7 +43,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             IProjectIdentifierProvider projectIdProvider,
             IDefaultApiClient client,
             IScriptBundler bundler,
-            IFileReader fileReader)
+            IFileReader fileReader
+            )
         {
             m_TokenProvider = tokenProvider;
             m_Client = client;
@@ -70,9 +72,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         public async Task Publish(ScriptName scriptName)
         {
             await UpdateToken();
+            var projectId = m_ProjectIdProvider.ProjectId;
+            var environmentId = m_EnvironmentProvider.Current;
             var request = new PublishScriptRequest(
-                m_ProjectIdProvider.ProjectId,
-                m_EnvironmentProvider.Current,
+                projectId,
+                environmentId,
                 scriptName.GetNameWithoutExtension());
 
             var res = await WrapRequest(m_Client.PublishScriptAsync(request));
@@ -82,7 +86,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             {
                 EnsureSuccess(scriptName, res);
             }
+
         }
+
 
         static bool IsDuplicatePublishError(ProblemJson problemJson)
         {

@@ -92,7 +92,7 @@ namespace Unity.Services.CloudCode
     /// <summary>
     /// Provides access to the Cloud Code methods
     /// </summary>
-    public class CloudCodeService
+    public sealed class CloudCodeService
     {
         /// <summary>
         /// The instance of the Cloud Code service

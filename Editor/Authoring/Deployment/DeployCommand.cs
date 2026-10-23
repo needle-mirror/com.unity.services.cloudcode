@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +24,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public DeployCommand(
             CloudCodeDeploymentHandler editorCloudCodeDeploymentHandler,
             IDeploymentAnalytics deploymentAnalytics,
-            IScriptReader scriptReader)
+            IScriptReader scriptReader
+            )
         {
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
             m_DeploymentAnalytics = deploymentAnalytics;
@@ -43,14 +43,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
             using (m_DeploymentAnalytics.Scope())
             {
+                // CloudCodeDeploymentHandler reports its own deploy failures, per asset.
                 try
                 {
                     await m_EditorCloudCodeDeploymentHandler.DeployAsync(scripts, m_reconcile, m_dryRun);
-                }
-                catch (Exception e)
-                {
-                    m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
-                    throw;
                 }
                 finally
                 {
@@ -58,6 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 }
             }
         }
+
 
         async Task<List<Script>> GetScriptsFromDeploymentItems(IEnumerable<IDeploymentItem> deploymentItems)
         {

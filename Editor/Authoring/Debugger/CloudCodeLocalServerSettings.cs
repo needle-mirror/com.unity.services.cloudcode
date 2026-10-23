@@ -10,7 +10,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 {
     internal class CloudCodeLocalServerSettings : ScriptableObject
     {
-        const string k_SettingsProviderPath = "Assets/CloudCode/CloudCodeLocalServerSettings.asset";
+        const string k_SettingsProviderPath = LocalServerProbe.k_SettingsAssetPath;
 
         // Re-exposed here because the port constant lives in the runtime assembly, which the
         // authoring test assembly cannot see. Tests that restore defaults should use this rather
@@ -54,10 +54,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             get => m_Port;
             set
             {
-                m_Port = value;
+                m_Port = ToValidPort(value);
                 EditorUtility.SetDirty(this);
             }
         }
+
+        static ushort ToValidPort(ushort port) => port == 0 ? k_DefaultPort : port;
 
         public TextAsset SecretsFile
         {
@@ -77,6 +79,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         private void OnValidate()
         {
+            m_Port = ToValidPort(m_Port);
+
             if (m_SecretsFile == null)
             {
                 m_PreviousSecretsFile = m_SecretsFile;
@@ -129,6 +133,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 return null;
             }
         }
+
+        internal static CloudCodeLocalServerSettings LoadExisting()
+            => AssetDatabase.LoadAssetAtPath<CloudCodeLocalServerSettings>(k_SettingsProviderPath);
+
+        internal static bool IsSettingsAssetPath(string assetPath) => assetPath == k_SettingsProviderPath;
 
         public static CloudCodeLocalServerSettings GetOrCreate()
         {

@@ -17,7 +17,7 @@ using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
+    [HelpURL("https://docs.unity.com/en-us/cloud-code/3.0.0/modules/how-to-guides/write-modules/unity-editor"),
      Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
     class CloudCodeModule : ScriptableObject, ICloudCodeModuleItem, IPath, ITrackableItem
     {
@@ -164,16 +164,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         /// <summary>Tracks the current local server status, if available. Lazily initialized for the same reason.</summary>
         public ObservableCollection<AssetState> States =>
             m_DeployedServerStatus ??= new SerializableObservableCollection<AssetState>();
-
-        [SerializeReference]
-        LastSuccessfulDeploymentInfo m_LastSuccessfulDeployment;
-
-        // Last successful deployment for this editor session.
-        public LastSuccessfulDeploymentInfo LastSuccessfulDeployment
-        {
-            get => m_LastSuccessfulDeployment;
-            set => SetField(ref m_LastSuccessfulDeployment, value);
-        }
 
         [SerializeField]
         string m_CurrentContentHash;

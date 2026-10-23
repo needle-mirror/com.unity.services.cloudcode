@@ -8,7 +8,7 @@
         <!-- Local Cloud Code Server Status -->
         <ui:VisualElement class="popup-row__container">
             <ui:TextElement name="server-status-title-txt" class="popup-row-server-title__text" />
-            <ui:VisualElement class="popup-row-sever-status__container">
+            <ui:VisualElement name="server-status-container" class="popup-row-sever-status__container">
                 <ui:VisualElement name="server-status-icon" />
                 <ui:TextElement name="server-status-txt" />
                 <ui:Label name="server-pid-txt" />
@@ -16,14 +16,17 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
+        <!-- Shown instead of the server controls when a Play Mode Scenario controls Cloud Code -->
+        <ui:HelpBox name="server-scenario-info-box" class="popup-row-server-scenario__infobox" message-type="Info" />
+
         <!-- Data Persistence controls -->
-        <ui:VisualElement class="popup-row__container">
+        <ui:VisualElement name="server-reset-row" class="popup-row__container">
             <ui:TextElement name="server-reset-btn-txt" class="popup-row-server-title__text" />
             <ui:Button name="server-reset-btn" text="Reset Data" class="popup-row-state-reset__container" />
         </ui:VisualElement>
 
         <!-- Local Cloud Code Server Start / Stop controls -->
-        <ui:VisualElement class="popup-row__container">
+        <ui:VisualElement name="server-action-row" class="popup-row__container">
             <ui:Button name="server-action-btn" class="popup-row-sever-action__button" />
         </ui:VisualElement>
 

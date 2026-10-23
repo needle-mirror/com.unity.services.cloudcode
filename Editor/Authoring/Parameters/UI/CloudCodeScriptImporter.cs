@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Unity.Services.CloudCode.Authoring.Editor.Parameters.UI
 {
     [CloudCodeImporter]
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_scripts.html")]
+    [HelpURL("https://docs.unity.com/en-us/cloud-code/3.0.0/scripts/how-to-guides/write-scripts/unity-editor")]
     class CloudCodeScriptImporter : ScriptedImporter
     {
         static readonly string k_FailedToLoadParametersMsg = "Failed to load in-script parameters.";

@@ -38,7 +38,17 @@ namespace Unity.Services.CloudCode
         ScriptError = 10,
 
         /// <summary>Subscription Error</summary>
-        SubscriptionError = 11
+        SubscriptionError = 11,
+
+        /// <summary>The scope's saved state no longer fits the deployed module, so it cannot be loaded</summary>
+        ScopeStateIncompatible = 12,
+
+        /// <summary>The caller is not allowed to invoke the function, typically because of its Access settings.</summary>
+        Forbidden = 13,
+
+        /// <summary>The call succeeded but its result could not be deserialized into the requested type.</summary>
+        DeserializationFailed = 14,
+
     }
 
     /// <summary>

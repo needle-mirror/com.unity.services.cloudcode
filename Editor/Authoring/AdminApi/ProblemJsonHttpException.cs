@@ -23,7 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             builder.Append($"[{scriptName}] {problemJson.Title}. {problemJson.Detail}");
             foreach (var error in problemJson.Errors ?? new List<ProblemJsonError>())
             {
-                builder.Append($"\nERROR [{error.Field}]: {string.Join(", ", error.Messages)}");
+                builder.Append($"\nERROR [{error.Field ?? error.Key}]: {string.Join(", ", error.Messages)}");
             }
 
             return builder.ToString();

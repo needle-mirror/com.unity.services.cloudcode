@@ -20,6 +20,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             m_Logger = logger;
         }
 
+        // Appends rather than Path.ChangeExtension, which would treat the last dot of a name like
+        // "Company.Game" as an extension and zip it as "Company.ccm".
+        internal static string ToZippedFileName(string moduleName)
+        {
+            var extension = "." + k_ZipFileExtension;
+            return moduleName.EndsWith(extension, System.StringComparison.Ordinal)
+                ? moduleName
+                : moduleName + extension;
+        }
+
         public async Task<string> ZipCompilation(
             string srcPath, string dstPath, string moduleName, CancellationToken cancellationToken = default)
         {
@@ -31,7 +41,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                     throw new DirectoryNotFoundException();
                 }
 
-                var zippedFileName = Path.ChangeExtension(moduleName, k_ZipFileExtension);
+                var zippedFileName = ToZippedFileName(moduleName);
                 var dstFileFullPath = Path.Join(dstPath, zippedFileName);
                 m_Logger.LogVerbose($"Zipping from '{srcPath}' to '{dstFileFullPath}'");
                 // Remove previously generated module

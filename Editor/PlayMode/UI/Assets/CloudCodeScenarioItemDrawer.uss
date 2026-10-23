@@ -1,0 +1,60 @@
+/* Drops the engine's item padding so these rows align with the Main Editor fields. */
+#additional-configuration-group .unity-instance-item-field__container.cloud-code-scenario-item {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.cloud-code-scenario-item__deploy-target {
+    margin-left: 15px;
+}
+
+/* The default button group keeps its natural width, but the design has it fill the value column. */
+.cloud-code-scenario-item__deploy-target .unity-button-group {
+    flex-grow: 1;
+}
+
+.cloud-code-scenario-item__deploy-target .unity-button-group__button {
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+.cloud-code-scenario-item__deploy-target .unity-button-group__button--right {
+    margin-right: 0;
+}
+
+.cloud-code-scenario-item__deploy-target Button:focus {
+    border-right-width: 1px;
+    border-left-color: var(--unity-colors-button-border_accent-focus);
+}
+
+.cloud-code-scenario-item__deploy-target .cloud-code-scenario-item__deploy-target-button--after-focused {
+    border-left-width: 0;
+}
+
+.cloud-code-scenario-item__warning {
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.cloud-code-scenario-item__warning .unity-help-box__label {
+    font-size: var(--unity-font-size);
+}
+
+.cloud-code-scenario-item__warning-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.cloud-code-scenario-item__link {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    margin-left: 4px;
+    color: var(--unity-colors-link-text);
+}
+
+.cloud-code-scenario-item__link:hover {
+    background-color: rgba(0, 0, 0, 0);
+}

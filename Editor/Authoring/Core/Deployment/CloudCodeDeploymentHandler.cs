@@ -8,6 +8,8 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.DeploymentApi.Editor;
 
+using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
+
 namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
 {
     class CloudCodeDeploymentHandler : ICloudCodeDeploymentHandler
@@ -16,17 +18,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         readonly IPreDeployValidator m_PreDeployValidator;
         readonly ICloudCodeClient m_Client;
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
+        readonly DeploymentAssetKind m_AssetKind;
 
         public CloudCodeDeploymentHandler(
             ICloudCodeClient client,
             IDeploymentAnalytics deploymentAnalytics,
             ILogger logger,
-            IPreDeployValidator preDeployValidator)
+            IPreDeployValidator preDeployValidator,
+            DeploymentAssetKind assetKind)
         {
             m_Client = client;
             m_DeploymentAnalytics = deploymentAnalytics;
             m_Logger = logger;
             m_PreDeployValidator = preDeployValidator;
+            m_AssetKind = assetKind;
         }
 
         public async Task<DeployResult> DeployAsync(IEnumerable<IScript> scripts, bool reconcile = false, bool dryRun = false)
@@ -215,7 +220,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                 m_Logger.LogVerbose($"[Upload] Uploading {script.Name}");
                 var sendTimer = m_DeploymentAnalytics.BeginDeploySend(
                     GetFileSize(script.Path),
-                    GetFileType(script.Language));
+                    m_AssetKind,
+                    DeploymentTarget.Remote,
+                    script.Name.ToString());
 
                 UpdateScriptStatus(script, "Uploading...", string.Empty, SeverityLevel.Info);
                 await m_Client.UploadFromFile(script);
@@ -227,7 +234,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             }
             catch (Exception e)
             {
-                m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().ToString());
+                m_DeploymentAnalytics.SendFailureDeploymentEvent(
+                    e.GetType().ToString(),
+                    AnalyticsErrorCode.k_AdminApiError,
+                    AnalyticsErrorData.FromException(e),
+                    m_AssetKind,
+                    DeploymentTarget.Remote,
+                    new[] { script.Name.ToString() });
                 UpdateScriptStatus(script,
                     DeploymentStatuses.DeployFailed,
                     e.Message,
@@ -273,7 +286,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
                     await m_Client.Publish(script.Name);
                 }
 
-                m_DeploymentAnalytics.SendSuccessfulPublishEvent();
+                m_DeploymentAnalytics.SendSuccessfulPublishEvent(m_AssetKind);
 
                 UpdateScriptProgress(script, 100f);
                 UpdateScriptStatus(script,
@@ -283,7 +296,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             }
             catch (Exception e)
             {
-                m_DeploymentAnalytics.SendFailurePublishEvent(e.GetType().ToString());
+                m_DeploymentAnalytics.SendFailurePublishEvent(e.GetType().ToString(), m_AssetKind);
                 OnPublishFailed(script, e);
                 throw;
             }
@@ -333,7 +346,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
             }
             catch (Exception e)
             {
-                m_DeploymentAnalytics.SendFailureDeploymentEvent(e.GetType().Name);
+                m_DeploymentAnalytics.SendFailureDeploymentEvent(
+                    e.GetType().Name,
+                    AnalyticsErrorCode.k_AdminApiError,
+                    AnalyticsErrorData.FromException(e),
+                    m_AssetKind,
+                    DeploymentTarget.Remote,
+                    localScripts.Select(s => s.Name.ToString()).ToList());
                 foreach (var script in localScripts)
                 {
                     UpdateScriptStatus(
@@ -364,16 +383,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Deployment
         {
             var fileInfo = new System.IO.FileInfo(filePath);
             return fileInfo.Exists ? (int)fileInfo.Length : -1;
-        }
-
-        internal static string GetFileType(Language? language)
-        {
-            return language switch
-            {
-                Language.JS => "script",
-                Language.CS => "module",
-                _ => "unknown"
-            };
         }
     }
 }

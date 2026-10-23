@@ -5,7 +5,7 @@ namespace Unity.Services.CloudCode.Subscriptions
     /// <summary>
     /// Provides access to different events when messages change states
     /// </summary>
-    public class SubscriptionEventCallbacks
+    public sealed class SubscriptionEventCallbacks
     {
         /// <summary>
         /// Event called when a message is received

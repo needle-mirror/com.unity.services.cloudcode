@@ -5,7 +5,9 @@ using System.Linq;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
 using Unity.Services.DeploymentApi.Editor;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 {
@@ -16,7 +18,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
         public ObservableCloudCodeScripts()
         {
             m_CloudCodeScripts = new ObservableAssets<CloudCodeScript>(new[] {CloudCodeFileExtensions.Js, CloudCodeFileExtensions.Es10});
-            foreach (var asset in m_CloudCodeScripts)
+            foreach (var asset in m_CloudCodeScripts.Where(a => IsDeveloperOwned(a.Path)))
             {
                 Add(asset.Model);
             }
@@ -40,11 +42,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
             if (e.NewItems != null)
             {
-                foreach (var newItem in e.NewItems.Cast<CloudCodeScript>())
+                foreach (var newItem in e.NewItems.Cast<CloudCodeScript>().Where(a => IsDeveloperOwned(a.Path)))
                 {
                     Add(newItem.Model);
                 }
             }
+        }
+
+        internal static bool IsDeveloperOwned(string path)
+        {
+            if (path.StartsWith("Assets/"))
+                return true;
+
+            var source = PackageInfo.FindForAssetPath(path)?.source;
+            return source == PackageSource.Embedded || source == PackageSource.Local;
         }
 
         CloudCodeScript RegenAsset(CloudCodeScript asset)

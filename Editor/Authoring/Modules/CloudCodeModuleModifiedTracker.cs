@@ -2,10 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.Deployment;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
+using Unity.Services.Core.Editor.Environments;
 using Unity.Services.DeploymentApi.Editor;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
@@ -16,6 +20,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         readonly IEnumerable<CloudCodeModule> m_CloudCodeModules;
         readonly AssetPostprocessorProxy m_PostprocessorProxy;
         readonly IModuleContentHasher m_ContentHasher;
+        readonly ILastSuccessfulDeploymentStore m_DeploymentStore;
+        readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly ILogger m_Logger;
 
         /// <summary>
@@ -30,8 +36,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             CloudCodeModuleCollection cloudCodeModules,
             AssetPostprocessorProxy assetPostprocessorProxy,
             IModuleContentHasher contentHasher,
+            ILastSuccessfulDeploymentStore deploymentStore,
+            IEnvironmentsApi environmentsApi,
             ILogger logger)
-            : this((IEnumerable<CloudCodeModule>)cloudCodeModules, assetPostprocessorProxy, contentHasher, logger)
+            : this((IEnumerable<CloudCodeModule>)cloudCodeModules, assetPostprocessorProxy, contentHasher, deploymentStore, environmentsApi, logger)
         {
         }
 
@@ -39,13 +47,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             IEnumerable<CloudCodeModule> cloudCodeModules,
             AssetPostprocessorProxy assetPostprocessorProxy,
             IModuleContentHasher contentHasher,
+            ILastSuccessfulDeploymentStore deploymentStore,
+            IEnvironmentsApi environmentsApi,
             ILogger logger)
         {
             m_CloudCodeModules = cloudCodeModules;
             m_PostprocessorProxy = assetPostprocessorProxy;
             m_ContentHasher = contentHasher;
+            m_DeploymentStore = deploymentStore;
+            m_EnvironmentsApi = environmentsApi;
             m_Logger = logger;
             m_PostprocessorProxy.AllAssetsPostprocessed += OnAllAssetsPostprocessed;
+            m_EnvironmentsApi.PropertyChanged += OnEnvironmentsChanged;
 
             if (m_CloudCodeModules is INotifyCollectionChanged observableModules)
                 observableModules.CollectionChanged += OnModulesChanged;
@@ -54,6 +67,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             // This tracker is reconstructed afterwards with the already-repopulated collection, so restore
             // each module's status from its cached hash here - no file I/O, since a reload changes no files.
             RestoreAll();
+        }
+
+        void OnEnvironmentsChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(IEnvironmentsApi.ActiveEnvironmentId))
+                return;
+
+            // "Deployed" describes a deploy to the previous environment.
+            foreach (var module in m_CloudCodeModules)
+            {
+                if (DeploymentStatusOwnership.Matches(module.Status, DeploymentStatusOwnership.Deployed))
+                    module.Status = DeploymentStatus.Empty;
+            }
+
+            ReconcileAll();
         }
 
         void OnModulesChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -80,7 +108,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
                 .Concat(e.DeletedAssetPaths)
                 .Concat(e.MovedAssetPaths)
                 .Concat(e.MovedFromAssetPaths)
-                .Any(IsTrackedExtension);
+                .Any(path => IsTrackedExtension(path) || path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));
 
             if (hasTrackedChange)
                 ReconcileAll();
@@ -108,11 +136,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             if (!IsReconcilable(module.Status))
                 return;
 
-            var baseline = module.LastSuccessfulDeployment?.ContentHash;
-            if (string.IsNullOrEmpty(baseline) || string.IsNullOrEmpty(module.CurrentContentHash))
+            var baseline = m_DeploymentStore.FreshestRecord(module);
+            if (string.IsNullOrEmpty(baseline?.LastDeployedContentHash))
+            {
+                ResetContentDerivedStatus(module);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(module.CurrentContentHash))
                 return;
 
-            module.Status = StatusFrom(module.CurrentContentHash, baseline);
+            module.Status = StatusFrom(module.Status, module.CurrentContentHash, baseline);
         }
 
         /// <summary>
@@ -128,9 +162,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
         /// <summary>
         /// Re-derives a module's status by hashing its current source and comparing it against the content
         /// captured at the last successful deploy, caching the result so a later reload can restore without
-        /// re-hashing. Only states this tracker owns (empty/unknown/up-to-date/modified-locally) are
-        /// touched; transient and error states are left alone. A module with no recorded deployment this
-        /// session has no baseline to compare against and is left as-is.
+        /// re-hashing. Only states this tracker owns (empty/unknown/deployed/up-to-date/modified-locally) are
+        /// touched; transient and error states are left alone. A module with no recorded deployment has no
+        /// baseline to compare against and is left as-is.
         ///
         /// Awaiting guarantees the status has been written by the time it completes, so a caller that must
         /// be the last writer (the deploy command, right after recording the new baseline) can await it.
@@ -140,9 +174,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             if (!IsReconcilable(module.Status))
                 return;
 
-            var baseline = module.LastSuccessfulDeployment?.ContentHash;
-            if (string.IsNullOrEmpty(baseline))
+            var baseline = m_DeploymentStore.FreshestRecord(module);
+            if (string.IsNullOrEmpty(baseline?.LastDeployedContentHash))
+            {
+                ResetContentDerivedStatus(module);
                 return;
+            }
 
             var generation = NextGeneration(module);
 
@@ -163,7 +200,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             }
 
             module.CurrentContentHash = current;
-            module.Status = StatusFrom(current, baseline);
+            module.Status = StatusFrom(module.Status, current, baseline);
+        }
+
+        void ResetContentDerivedStatus(CloudCodeModule module)
+        {
+            if (m_DeploymentStore.CanResolveKey(module)
+                && DeploymentStatusOwnership.IsContentDerived(module.Status))
+            {
+                module.Status = DeploymentStatus.Empty;
+            }
         }
 
         int NextGeneration(CloudCodeModule module)
@@ -179,10 +225,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             return m_Generations.TryGetValue(module.GetEntityId(), out var current) && current == generation;
         }
 
-        static DeploymentStatus StatusFrom(string current, string baseline)
+        static DeploymentStatus StatusFrom(DeploymentStatus status, string current, LastSuccessfulDeploymentInfo baseline)
         {
-            return string.Equals(current, baseline, StringComparison.Ordinal)
-                ? DeploymentStatus.UpToDate
+            return string.Equals(current, baseline.LastDeployedContentHash, StringComparison.Ordinal)
+                ? DeploymentStatusOwnership.InSync(status, baseline.Target)
                 : DeploymentStatus.ModifiedLocally;
         }
 
@@ -194,24 +240,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 
         /// <summary>
         /// Reconcilable when the module carries no meaningful status yet (empty, or the default value left
-        /// by a domain reload) or one of the two states derived from content.
+        /// by a domain reload) or one of the states derived from content.
         /// </summary>
         static bool IsReconcilable(DeploymentStatus status)
         {
-            return IsEmptyOrUnknown(status)
-                || Matches(status, DeploymentStatus.UpToDate)
-                || Matches(status, DeploymentStatus.ModifiedLocally);
-        }
-
-        static bool IsEmptyOrUnknown(DeploymentStatus status)
-        {
-            return string.IsNullOrEmpty(status.Message) && status.MessageSeverity == SeverityLevel.None;
-        }
-
-        static bool Matches(DeploymentStatus status, DeploymentStatus other)
-        {
-            return status.Message == other.Message
-                && status.MessageSeverity == other.MessageSeverity;
+            return DeploymentStatusOwnership.IsReconcilable(status);
         }
 
         public void Dispose()
@@ -219,6 +252,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             m_Disposed = true;
             m_Generations.Clear();
             m_PostprocessorProxy.AllAssetsPostprocessed -= OnAllAssetsPostprocessed;
+            m_EnvironmentsApi.PropertyChanged -= OnEnvironmentsChanged;
 
             if (m_CloudCodeModules is INotifyCollectionChanged observableModules)
                 observableModules.CollectionChanged -= OnModulesChanged;
