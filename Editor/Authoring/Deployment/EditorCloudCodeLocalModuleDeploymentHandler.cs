@@ -9,8 +9,11 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Core.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Logging;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
+using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.Core.Editor.Environments;
 using Unity.Services.DeploymentApi.Editor;
+using UnityEditor;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger;
 
 using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 
@@ -18,29 +21,53 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
 {
     class EditorCloudCodeLocalModuleDeploymentHandler
     {
-        const Environment.SpecialFolder k_LocalApplicationDataDir = Environment.SpecialFolder.LocalApplicationData;
+        const string k_LocalServerModulesFolder = "CloudCodeLocalServer";
+        // The server serves a module from the folder named by the caller's environment, so modules here
+        // are reachable only by a caller with none: local-only mode starts without any, see LocalServerMode.
+        internal const string k_LocalOnlyModulesFolder = "local-only";
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly IFileSystem m_FileSystem;
         readonly ILogger m_logger;
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
+        readonly Func<bool> m_IsPlaying;
+
+        public EditorCloudCodeLocalModuleDeploymentHandler(
+            IEnvironmentsApi environmentsApi,
+            IFileSystem fileSystem,
+            ILogger logger,
+            IDeploymentAnalytics deploymentAnalytics)
+            : this(environmentsApi, fileSystem, logger, deploymentAnalytics, () => EditorApplication.isPlaying)
+        {
+        }
 
         internal EditorCloudCodeLocalModuleDeploymentHandler(
             IEnvironmentsApi environmentsApi,
             IFileSystem fileSystem,
             ILogger logger,
-            IDeploymentAnalytics deploymentAnalytics)
+            IDeploymentAnalytics deploymentAnalytics,
+            Func<bool> isPlaying)
         {
             m_FileSystem = fileSystem;
             m_EnvironmentsApi = environmentsApi;
             m_logger = logger;
             m_DeploymentAnalytics = deploymentAnalytics;
+            m_IsPlaying = isPlaying;
+        }
+
+        internal static string ModulesRootFor(string projectRoot)
+        {
+            return Path.Combine(projectRoot, "Library", k_LocalServerModulesFolder);
         }
 
         internal static string GetModuleDestinationDir()
         {
-            return Path.Combine(Environment.GetFolderPath(k_LocalApplicationDataDir),
-                "UnityCloudCode",
-                "Modules");
+            return ModulesRootFor(CloudCodeInitializer.k_LocalServerProjectRoot);
+        }
+
+        internal static string GetModuleDestinationDir(Guid? environmentId)
+        {
+            return Path.Combine(GetModuleDestinationDir(),
+                EnvironmentIds.IsSet(environmentId) ? environmentId.Value.ToString() : k_LocalOnlyModulesFolder);
         }
 
         internal async Task<string> DeployAsync(Dictionary<IModuleItem, IScript> deploymentItems,
@@ -48,15 +75,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             DeploymentOrigin origin,
             CancellationToken cancellationToken)
         {
+            ThrowIfPlaying(deploymentItems.Keys);
+
             try
             {
                 var envId = m_EnvironmentsApi.ActiveEnvironmentId;
-                if (envId == null)
+                if (!EnvironmentIds.IsSet(envId) && !LocalServerMode.LocalOnly)
                 {
                     throw new EnvironmentNotFoundException("No active environment selected.");
                 }
 
                 var moduleDestinationDir = GetModuleDestinationDir();
+                var environmentDir = GetModuleDestinationDir(envId);
 
                 foreach (var deploymentItem in deploymentItems)
                 {
@@ -72,13 +102,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
                         scripts.Name.ToString())
                         : null;
 
-                    await CopyToTempFolder(scripts.Path, Path.Combine(moduleDestinationDir, envId.ToString()), cancellationToken);
+                    await CopyToTempFolder(scripts.Path, environmentDir, cancellationToken);
 
                     // Only dispose the timer if the copy succeeded.
                     sendTimer?.Dispose();
 
                     UpdateDeployStatus(module, "Deployed Successfully", severity: SeverityLevel.Info);
-                    UpdateDeployStatus(module, "Up to date", severity: SeverityLevel.Success);
+                    module.Progress = 100f;
+                    module.UpdateLogStatus(DeploymentStatusOwnership.DeployedToLocalServer);
                     SetDeployStatusWithState(module, "Deployed to Local Server", severity: SeverityLevel.Info);
 
                     // Do not continue if a cancellation was requested
@@ -102,6 +133,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
 
                 throw;
             }
+        }
+
+        // Unity cannot rebuild module assemblies in play mode; Deploy-on-Play runs after isPlaying is reset.
+        internal void ThrowIfPlaying(IEnumerable<IModuleItem> items)
+        {
+            if (!m_IsPlaying())
+                return;
+
+            const string refusal = "Not deployed to the local server: exit play mode and deploy again.";
+            UpdateDeployStatuses(items, refusal, severity: SeverityLevel.Error);
+            throw new InvalidOperationException(refusal);
         }
 
         static int GetFileSize(string filePath)
@@ -156,11 +198,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
         }
 
         internal void UpdateDeployStatuses(IEnumerable<IModuleItem> deploymentItems, string message,
-            string detail = null, SeverityLevel severity = SeverityLevel.Info, bool shouldLog = true)
+            string detail = null, SeverityLevel severity = SeverityLevel.Info, bool shouldLog = true,
+            bool logToConsole = true)
         {
             var deploymentList = deploymentItems.ToList();
             foreach (var deploymentItem in deploymentList)
-                UpdateDeployStatus(deploymentItem, message, detail, severity, shouldLog);
+                UpdateDeployStatus(deploymentItem, message, detail, severity, shouldLog, logToConsole);
         }
 
         internal void SetDeployStatusesWithState(IEnumerable<IModuleItem> deploymentItems, string message,

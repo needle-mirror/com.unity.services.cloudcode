@@ -1,0 +1,40 @@
+{
+    "name": "Unity.Services.CloudCode.Cli.Tests",
+    "rootNamespace": "Unity.Services.CloudCode.Cli.Tests",
+    "references": [
+        "Unity.Services.CloudCode.Cli",
+        "Unity.Services.CloudCode.Authoring.Editor",
+        "Unity.Pipeline",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "UNITY_2021_3_OR_NEWER",
+        "DEPLOYMENT_API_AVAILABLE_V1_0",
+        "UNITY_PIPELINE_AVAILABLE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0-pre.5,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_0"
+        },
+        {
+            "name": "com.unity.pipeline",
+            "expression": "0.9.0-exp.1",
+            "define": "UNITY_PIPELINE_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

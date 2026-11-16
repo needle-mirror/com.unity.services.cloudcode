@@ -1,4 +1,4 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,9 +31,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
     {
         const string k_CompilationFailureTitle = "Compilation Failure";
         const string k_CompilationFailureDetails = "Script compilation has failed. Please fix all compilation errors before deploying Cloud Code Modules.";
+        const string k_CompilationFailureInAssembliesDetails = "Script compilation has failed in {0}. Please fix all compilation errors before deploying Cloud Code Modules.";
         const string k_UnsupportedAPICompatiblityLevel = "Unsupported API Compatibility Level";
         const string k_UnsupportedAPICompatiblityLevelDetails = "The project uses an unsupported API compatibillity level. Consider switching \"Api Compatiblity Level\" to \".NET Standard 2.1\" in player settings.";
+        const string k_CompilingTitle = "Scripts Compiling";
+        const string k_CompilingDetails = "Unity is compiling scripts. Deploy again once compilation finishes, so the latest code is deployed.";
         static readonly string k_CloudCodeModulesDirectory =  Path.Combine(Application.dataPath, "../Library/CloudModules/");
+        static readonly HashSet<string> s_FailedAssemblies = new();
+
+        internal static IReadOnlyCollection<string> FailedAssemblies => s_FailedAssemblies;
 
         readonly IDeploymentAnalytics m_DeploymentAnalytics;
         readonly IFileSystem m_FileSystem;
@@ -54,7 +60,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             IModuleZipper moduleZipper,
             EditorCloudCodeLocalModuleDeploymentHandler localDeploymentHandler,
             IModuleContentHasher contentHasher,
-            ILastSuccessfulDeploymentStore deploymentStore)
+            ILastSuccessfulDeploymentStore deploymentStore
+            )
         {
             m_DeploymentAnalytics = analytics;
             m_FileSystem = fileSystem;
@@ -76,8 +83,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 PlayerSettings.GetApiCompatibilityLevel(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup));
             if (apiCompatibilityLevel != ApiCompatibilityLevel.NET_Standard)
             {
-                m_LocalDeploymentHandler.SetDeployStatusesWithState(moduleReferences, k_UnsupportedAPICompatiblityLevel,
-                    k_UnsupportedAPICompatiblityLevelDetails, SeverityLevel.Error);
+                FailAll(moduleReferences, k_UnsupportedAPICompatiblityLevel, k_UnsupportedAPICompatiblityLevelDetails, fromDeploymentWindow: true);
                 m_DeploymentAnalytics.SendFailureDeploymentEvent(
                     k_UnsupportedAPICompatiblityLevel,
                     AnalyticsErrorCode.k_UnsupportedApiCompatibilityLevel,
@@ -85,13 +91,84 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                     DeploymentAssetKind.Module,
                     ShouldDeployToLocal() ? DeploymentTarget.Local : DeploymentTarget.Remote,
                     moduleReferences.Select(GetDeployModuleName).ToList());
-                return;
+                throw new Exception(k_UnsupportedAPICompatiblityLevelDetails);
             }
 
             if (ShouldDeployToLocal())
                 await GenerateAndDeployToLocalAsync(moduleReferences, DeploymentOrigin.Manual, cancellationToken);
             else
                 await GenerateAndDeployToRemoteAsync(moduleReferences, cancellationToken);
+        }
+
+        [InitializeOnLoadMethod]
+        static void TrackFailedAssemblies()
+        {
+            CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
+            CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
+        }
+
+        internal static void OnAssemblyCompilationFinished(string assemblyPath, CompilerMessage[] messages)
+        {
+            var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+            if (messages.Any(m => m.type == CompilerMessageType.Error))
+                s_FailedAssemblies.Add(assemblyName);
+            else
+                s_FailedAssemblies.Remove(assemblyName);
+        }
+
+        static string[] CurrentFailedAssemblies()
+        {
+            var current = new HashSet<string>(CompilationPipeline.GetAssemblies().Select(a => a.name));
+            return s_FailedAssemblies.Where(current.Contains).ToArray();
+        }
+
+        internal void ThrowIfScriptsNotCompiled(List<CloudCodeModule> modules, DeploymentTarget target,
+            bool reportFailure, bool compilationFailed, bool compiling,
+            IReadOnlyCollection<string> failedAssemblies = null)
+        {
+            if (compilationFailed)
+            {
+                var details = CompilationFailureDetails(failedAssemblies);
+                FailAll(modules, k_CompilationFailureTitle, details, reportFailure);
+                if (reportFailure)
+                    SendCompilationFailure(modules, target);
+
+                throw new Exception(details);
+            }
+
+            if (compiling)
+            {
+                FailAll(modules, k_CompilingTitle, k_CompilingDetails, reportFailure);
+                throw new Exception(k_CompilingDetails);
+            }
+        }
+
+        internal void MarkScriptsNotCompiled(List<CloudCodeModule> modules)
+        {
+            m_LocalDeploymentHandler.ClearDeploymentStatuses(modules);
+            m_LocalDeploymentHandler.UpdateDeployStatuses(modules, k_CompilationFailureTitle,
+                CompilationFailureDetails(CurrentFailedAssemblies()), SeverityLevel.Error,
+                shouldLog: false, logToConsole: false);
+        }
+
+        internal static bool IsMarkedNotCompiled(CloudCodeModule module)
+        {
+            return module.Status.Message == k_CompilationFailureTitle;
+        }
+
+        static string CompilationFailureDetails(IReadOnlyCollection<string> failedAssemblies)
+        {
+            return failedAssemblies?.Count > 0
+                ? string.Format(k_CompilationFailureInAssembliesDetails,
+                    string.Join(", ", failedAssemblies.OrderBy(n => n, StringComparer.Ordinal)))
+                : k_CompilationFailureDetails;
+        }
+
+        // Deployment window deploys already log the thrown exception to the Console.
+        void FailAll(List<CloudCodeModule> modules, string title, string details, bool fromDeploymentWindow)
+        {
+            m_LocalDeploymentHandler.UpdateDeployStatuses(modules, title, details, SeverityLevel.Error,
+                logToConsole: !fromDeploymentWindow);
         }
 
         void SendCompilationFailure(List<CloudCodeModule> modules, DeploymentTarget target)
@@ -131,19 +208,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         {
             // Start from a clean status so a failure left from an earlier attempt is not read as this one's.
             m_LocalDeploymentHandler.ClearDeploymentStatuses(moduleReferences);
-
-            if (EditorUtility.scriptCompilationFailed)
-            {
-                m_LocalDeploymentHandler.SetDeployStatusesWithState(moduleReferences, k_CompilationFailureTitle,
-                    k_CompilationFailureDetails,
-                    severity: SeverityLevel.Error);
-                if (origin == DeploymentOrigin.Manual)
-                {
-                    SendCompilationFailure(moduleReferences, DeploymentTarget.Local);
-                }
-
-                throw new Exception(k_CompilationFailureDetails);
-            }
+            m_LocalDeploymentHandler.ThrowIfPlaying(moduleReferences);
+            // Automatic deploys are rerun by LocalAutoDeployer once compilation finishes.
+            var manual = origin == DeploymentOrigin.Manual;
+            ThrowIfScriptsNotCompiled(moduleReferences, DeploymentTarget.Local, manual,
+                EditorUtility.scriptCompilationFailed, manual && EditorApplication.isCompiling, CurrentFailedAssemblies());
 
             // Ensure that each CCMs references unique assemblies representing their module
             var(validCCMs, invalidCCMs) = PartitionValidCCMs(moduleReferences);
@@ -158,8 +227,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var deploymentDict = await ZipCloudCodeModuleAsync(modulesToZip, cancellationToken);
             var moduleDestinationDir = await m_LocalDeploymentHandler.DeployAsync(deploymentDict, DeploymentAssetKind.Module, origin, cancellationToken);
 
-            // Records the last successful deploy of the module. This reflects that the module was
-            // deployed, separate from whether the local server is currently running.
+            // The store keeps this Local record only while the local server is running.
             RecordSuccessfulDeployments(deploymentDict.Keys.ToList(), DeploymentTarget.Local, deployedHashes);
             await ReconcileAfterDeployAsync(deploymentDict.Keys);
 
@@ -169,14 +237,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
         async Task GenerateAndDeployToRemoteAsync(List<CloudCodeModule> moduleReferences,
             CancellationToken cancellationToken = default)
         {
-            if (EditorUtility.scriptCompilationFailed)
-            {
-                m_LocalDeploymentHandler.SetDeployStatusesWithState(moduleReferences, k_CompilationFailureTitle,
-                    k_CompilationFailureDetails,
-                    severity: SeverityLevel.Error);
-                SendCompilationFailure(moduleReferences, DeploymentTarget.Remote);
-                return;
-            }
+            ThrowIfScriptsNotCompiled(moduleReferences, DeploymentTarget.Remote, reportFailure: true,
+                EditorUtility.scriptCompilationFailed, EditorApplication.isCompiling, CurrentFailedAssemblies());
 
             // Ensure that each CCMs references unique assemblies representing their module
             var(validCCMs, invalidCCMs) = PartitionValidCCMs(moduleReferences);
@@ -189,8 +251,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var deployedHashes = await SnapshotContentHashesAsync(validCCMs);
             var modulesToZip = GetAllAssemblyPathsForModules(validCCMs);
             var deploymentDict = await ZipCloudCodeModuleAsync(modulesToZip, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            DeployResult result;
+            DeployResult result = null;
             try
             {
                 result = await m_RemoteDeploymentHandler.DeployAsync(deploymentDict.Values.ToList());
@@ -203,8 +266,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 throw;
             }
 
-            await RecordRemoteDeploymentsAsync(deploymentDict, result, deployedHashes);
+            if (result != null)
+                await RecordRemoteDeploymentsAsync(deploymentDict, result, deployedHashes);
         }
+
 
         async Task RecordRemoteDeploymentsAsync(
             Dictionary<IModuleItem, IScript> deploymentDict, DeployResult result,
@@ -252,6 +317,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 ccm.CurrentContentHash = contentHash;
 
                 m_DeploymentStore.Record(ccm, LastSuccessfulDeploymentInfo.Create(target, contentHash));
+
+                if (target == DeploymentTarget.Remote)
+                    ccm.UpdateLogStatus(DeploymentStatusOwnership.Deployed);
             }
         }
 
@@ -284,9 +352,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 .GroupBy(ccm => AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(ccm.CloudAssemblyDefinition)))
                 .ToList();
 
+            // A module without an asmdef stays valid so the assembly step reports it rather than dropping it.
             var validNCCms = assemblyGuidGroups
                 .Where(g => g.Count() == 1)
                 .SelectMany(g => g)
+                .Concat(ccms.Where(ccm => ccm.CloudAssemblyDefinition == null))
                 .ToList();
 
             var invalidNCCMs = assemblyGuidGroups
@@ -387,14 +457,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 assemblyCache[Path.GetFileNameWithoutExtension(path).ToLowerInvariant()] = path;
             }
 
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             ApplyEditorLoadedAssemblyPaths(assemblyCache);
 #endif
 
             return assemblyCache;
         }
 
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         static void ApplyEditorLoadedAssemblyPaths(Dictionary<string, string> assemblyCache)
         {
             foreach (var entry in UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies()
@@ -481,6 +551,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 }
                 catch (Exception e)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     m_LocalDeploymentHandler.UpdateDeployStatus(ccm, $"Zip Failure {e.Message}", severity: SeverityLevel.Error);
                 }
             }

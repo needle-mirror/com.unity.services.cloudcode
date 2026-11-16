@@ -4,6 +4,7 @@
     "references": [
         "Unity.Services.Core",
         "Unity.Services.Core.Editor",
+        "Unity.Services.Core.Releases.Editor",
         "Unity.Services.Core.Internal",
         "Unity.Services.DeploymentApi",
         "Unity.Services.CloudCode.Authoring.Core.Editor",
@@ -41,7 +42,7 @@
         },
         {
             "name": "com.unity.services.multiplayer",
-            "expression": "",
+            "expression": "2.2.0",
             "define": "MULTIPLAYER_AVAILABLE"
         }
     ],

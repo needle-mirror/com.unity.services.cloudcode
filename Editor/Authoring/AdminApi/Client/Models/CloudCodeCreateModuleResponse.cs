@@ -32,10 +32,12 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         /// Creates an instance of CloudCodeCreateModuleResponse.
         /// </summary>
         /// <param name="dateCreated">Date time in ISO 8601 format. Null if there is no associated value.</param>
+        /// <param name="version">The version a module write created. Omitted for a project without module versions enabled, where a write does not produce an identifiable version.</param>
         [Preserve]
-        public CloudCodeCreateModuleResponse(DateTime? dateCreated = default)
+        public CloudCodeCreateModuleResponse(DateTime? dateCreated = default, long? version = default)
         {
             DateCreated = dateCreated;
+            Version = version;
         }
 
         /// <summary>
@@ -44,6 +46,13 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
         [Preserve]
         [DataMember(Name = "dateCreated", EmitDefaultValue = false)]
         public DateTime? DateCreated{ get; }
+
+        /// <summary>
+        /// The version a module write created. Omitted for a project without module versions enabled, where a write does not produce an identifiable version.
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "version", EmitDefaultValue = false)]
+        public long? Version{ get; }
 
         /// <summary>
         /// Formats a CloudCodeCreateModuleResponse into a string of key-value pairs for use as a path parameter.
@@ -55,7 +64,11 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
 
             if (DateCreated != null)
             {
-                serializedModel += "dateCreated," + DateCreated.ToString();
+                serializedModel += "dateCreated," + DateCreated.ToString() + ",";
+            }
+            if (Version != null)
+            {
+                serializedModel += "version," + Version.ToString();
             }
             return serializedModel;
         }
@@ -72,6 +85,12 @@ namespace Unity.Services.CloudCode.Authoring.Client.Models
             {
                 var dateCreatedStringValue = DateCreated.ToString();
                 dictionary.Add("dateCreated", dateCreatedStringValue);
+            }
+
+            if (Version != null)
+            {
+                var versionStringValue = Version.ToString();
+                dictionary.Add("version", versionStringValue);
             }
 
             return dictionary;

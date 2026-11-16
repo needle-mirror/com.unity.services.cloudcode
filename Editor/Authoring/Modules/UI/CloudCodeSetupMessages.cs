@@ -1,4 +1,4 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using System.Collections.Generic;
 using UnityEditor;
 
@@ -54,7 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         // Starting-point copy for design to refine. Per-condition anchors can be added later.
         const string k_ModulesDocumentationUrl =
-            "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html";
+            "https://docs.unity.com/en-us/cloud-code/3.0.0/modules/how-to-guides/write-modules/unity-editor";
 
         static readonly Dictionary<CloudCodeSetupError, CloudCodeSetupMessage> k_Messages =
             new Dictionary<CloudCodeSetupError, CloudCodeSetupMessage>
@@ -139,6 +139,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             string.Format(
                 L10n.Tr("A Cloud Code module named '{0}' already exists at {1}."),
                 moduleName, existingPath);
+
+        internal static string AssemblyFileExists(string existingPath) =>
+            string.Format(
+                L10n.Tr("An Assembly Definition file already exists at {0}."),
+                existingPath);
 
         internal static readonly string AssemblyMissingReferences = L10n.Tr(
             "Asmdef Template corrupted - Missing Core + API Assembly references.");

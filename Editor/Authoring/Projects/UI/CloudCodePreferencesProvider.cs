@@ -9,7 +9,6 @@ using Unity.Services.CloudCode.Editor.Shared.Assets;
 using Unity.Services.CloudCode.Editor.Shared.EditorUtils;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using Unity.Services.CloudCode.Editor.Shared.UI;
-using UnityEngine.UIElements;
 using Logger = Unity.Services.CloudCode.Editor.Shared.Logging.Logger;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
@@ -56,25 +55,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
 
         bool m_Dirty;
 
-        protected GUIStyle m_Heading1;
-        protected GUIStyle m_Style;
+        // EditorStyles is null until the editor skin loads, which can be after activation on Editor startup.
+        GUIStyle m_Heading1;
+        bool m_Heading1ProSkin;
 
-        void OnActivated(string searchContext, VisualElement visualElement)
+        // The copy keeps boldLabel's skin colors, so rebuild it when the Editor theme changes.
+        GUIStyle Heading1
         {
-            m_Heading1 = new GUIStyle(EditorStyles.boldLabel)
+            get
             {
-                fontSize = 16
-            };
-
-            m_Style = new GUIStyle()
-            {
-                margin = new RectOffset(6, 0, 0, 0)
-            };
+                if (m_Heading1 == null || m_Heading1ProSkin != EditorGUIUtility.isProSkin)
+                {
+                    m_Heading1 = new GUIStyle(EditorStyles.boldLabel) { fontSize = 16 };
+                    m_Heading1ProSkin = EditorGUIUtility.isProSkin;
+                }
+                return m_Heading1;
+            }
         }
+
+        GUIStyle m_Style;
+        GUIStyle Style => m_Style ??= new GUIStyle { margin = new RectOffset(6, 0, 0, 0) };
 
         internal CloudCodePreferencesProvider() : base("Preferences/Cloud Code", SettingsScope.User)
         {
-            activateHandler = OnActivated;
         }
 
         [SettingsProvider]
@@ -154,7 +157,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
         {
             base.OnGUI(searchContext);
 
-            EditorGUILayout.BeginVertical(m_Style);
+            EditorGUILayout.BeginVertical(Style);
             DrawVerticalSettingsArea();
             EditorGUILayout.EndVertical();
         }
@@ -172,7 +175,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
 
         void DrawJsDevEnvironment()
         {
-            EditorGUILayout.LabelField(k_JavascriptEnv, m_Heading1);
+            EditorGUILayout.LabelField(k_JavascriptEnv, Heading1);
             EditorGUILayout.Space();
 
             var nodeJSPathValue = Preferences.NodeJsPath;
@@ -215,7 +218,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
 
         void DrawExternalEditor()
         {
-            EditorGUILayout.LabelField(k_JavascriptEditor, m_Heading1);
+            EditorGUILayout.LabelField(k_JavascriptEditor, Heading1);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField(k_JsEditorInfo);
             EditorGUILayout.Space();
@@ -267,7 +270,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.UI
 
         void DrawDotnetDevEnvironment()
         {
-            EditorGUILayout.LabelField(k_DotnetEnv, m_Heading1);
+            EditorGUILayout.LabelField(k_DotnetEnv, Heading1);
             EditorGUILayout.Space();
             var dotnetPathValue = Preferences.DotnetPath;
 

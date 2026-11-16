@@ -48,7 +48,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             IPreDeployValidator validator,
             CloudCodeModuleReferenceLocalDeployCommand cloudCodeLocalModuleDeployCommand,
             IDashboardUrlResolver dashboardUrlResolver,
-            ILastSuccessfulDeploymentStore deploymentStore)
+            ILastSuccessfulDeploymentStore deploymentStore
+            )
         {
             m_ModuleBuilder = moduleBuilder;
             m_CloudCodeDeploymentHandler =
@@ -68,7 +69,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             IDeploymentAnalytics analytics,
             ILogger logger,
             IPreDeployValidator validator,
-            IDashboardUrlResolver dashboardUrlResolver)
+            IDashboardUrlResolver dashboardUrlResolver
+            )
         {
             m_ModuleBuilder = moduleBuilder;
 
@@ -97,10 +99,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var cloudCodeModuleReferences = items.ToList();
             OnDeploy(cloudCodeModuleReferences);
             var deployStartedAtUtc = DateTime.UtcNow;
-            var sourceLastWriteUtcAtDeployStart = SnapshotSourceLastWriteUtc(cloudCodeModuleReferences);
+            var sourceAtDeployStart = SnapshotSource(cloudCodeModuleReferences);
             var compiled = await Compile(cloudCodeModuleReferences, cancellationToken);
             ReportCompileFailures(m_Analytics, cloudCodeModuleReferences, DeploymentTarget.Remote);
-            DeployResult result;
+            cancellationToken.ThrowIfCancellationRequested();
+            DeployResult result = null;
             try
             {
                 result = await m_CloudCodeDeploymentHandler.DeployAsync(compiled.Values.ToList(), m_Reconcile, m_DryRun);
@@ -109,55 +112,77 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             {
                 // A mixed batch throws AFTER some scripts already reached the backend. Record those
                 // successes before rethrowing, otherwise the modules that did deploy keep no baseline.
-                RecordSuccessfulDeployments(compiled, e.Result, deployStartedAtUtc, sourceLastWriteUtcAtDeployStart);
-                await ReconcileAfterDeployAsync(compiled, e.Result);
+                await CompleteDeployment(compiled, e.Result, deployStartedAtUtc, sourceAtDeployStart);
                 throw;
             }
 
-            RecordSuccessfulDeployments(compiled, result, deployStartedAtUtc, sourceLastWriteUtcAtDeployStart);
-            await ReconcileAfterDeployAsync(compiled, result);
+            if (result != null)
+                await CompleteDeployment(compiled, result, deployStartedAtUtc, sourceAtDeployStart);
             var dashboardUrl = await m_DashboardUrlResolver.CloudCodeModules();
             Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "[Cloud Code] Cloud Code Modules are deployed to the remote server successfully. <a href=\"{0}\">View on Dashboard</a>", dashboardUrl);
         }
 
+        internal readonly struct SourceSnapshot
+        {
+            public readonly DateTime LastWriteUtc;
+            public readonly string Fingerprint;
+
+            public SourceSnapshot(DateTime lastWriteUtc, string fingerprint)
+            {
+                LastWriteUtc = lastWriteUtc;
+                Fingerprint = fingerprint;
+            }
+        }
+
         /// <summary>
-        /// Records the last successful remote deployment of each module reference.
-        /// No content hash, so staleness for module references is judged by file timestamps
-        /// against the recorded deploy time. Success is what the handler reports
+        /// Records the last successful remote deployment of each module reference, with a fingerprint of its
+        /// source taken when the deploy started. Success is what the handler reports
         /// in <see cref="DeployResult.Deployed"/>, never inferred from status severity.
         /// </summary>
-        void RecordSuccessfulDeployments(
+        internal void RecordSuccessfulDeployments(
             IReadOnlyDictionary<CloudCodeModuleReference, IScript> compiled, DeployResult result, DateTime deployStartedAtUtc,
-            IReadOnlyDictionary<CloudCodeModuleReference, DateTime> sourceLastWriteUtcAtDeployStart)
+            IReadOnlyDictionary<CloudCodeModuleReference, SourceSnapshot> sourceAtDeployStart)
         {
 #if UNITY_6000_3_OR_NEWER
+            var uploadCompletedAtUtc = DateTime.UtcNow;
             foreach (var entry in compiled)
             {
                 if (!result.Deployed.Contains(entry.Value))
                     continue;
 
+                sourceAtDeployStart.TryGetValue(entry.Key, out var source);
                 var deploymentInfo = new LastSuccessfulDeploymentInfo
                 {
                     Target = LastSuccessfulDeploymentInfo.DeploymentTarget.Remote,
                     DeployedAtUtc = deployStartedAtUtc,
-                    LastDeployedContentHash = null
+                    UploadCompletedAtUtc = uploadCompletedAtUtc,
+                    LastDeployedContentHash = source.Fingerprint
                 };
-                m_DeploymentStore.Record(entry.Key, deploymentInfo,
-                    sourceLastWriteUtcAtDeployStart.TryGetValue(entry.Key, out var sourceLastWriteUtc) ? sourceLastWriteUtc : default);
+                m_DeploymentStore.Record(entry.Key, deploymentInfo, source.LastWriteUtc);
+                entry.Key.UpdateLogStatus(DeploymentStatusOwnership.Deployed);
             }
 #endif
         }
 
-        static Dictionary<CloudCodeModuleReference, DateTime> SnapshotSourceLastWriteUtc(List<CloudCodeModuleReference> items)
+        async Task CompleteDeployment(
+            IReadOnlyDictionary<CloudCodeModuleReference, IScript> compiled, DeployResult result, DateTime deployStartedAtUtc,
+            IReadOnlyDictionary<CloudCodeModuleReference, SourceSnapshot> sourceAtDeployStart)
         {
-            var snapshot = new Dictionary<CloudCodeModuleReference, DateTime>();
+            RecordSuccessfulDeployments(compiled, result, deployStartedAtUtc, sourceAtDeployStart);
+            await ReconcileAfterDeployAsync(compiled, result);
+        }
+
+        static Dictionary<CloudCodeModuleReference, SourceSnapshot> SnapshotSource(List<CloudCodeModuleReference> items)
+        {
+            var snapshot = new Dictionary<CloudCodeModuleReference, SourceSnapshot>();
             foreach (var ccmr in items)
             {
-                var sourceLastWriteUtc = default(DateTime);
 #if UNITY_6000_3_OR_NEWER
-                sourceLastWriteUtc = LocalAutoDeployer.SourceLastWriteUtcFor(ccmr);
+                snapshot[ccmr] = new SourceSnapshot(
+                    LocalAutoDeployer.SourceLastWriteUtcFor(ccmr), LocalAutoDeployer.SourceFingerprintFor(ccmr));
+#else
+                snapshot[ccmr] = default;
 #endif
-                snapshot[ccmr] = sourceLastWriteUtc;
             }
 
             return snapshot;
@@ -203,9 +228,13 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             var generationList = new Dictionary<CloudCodeModuleReference, IScript>();
             foreach (var ccmr in items)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     await m_ModuleBuilder.CreateCloudCodeModuleFromSolution(ccmr, cancellationToken);
+
+                    // Cancelled after publishing, the builder returns with CcmPath still on an earlier zip.
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (ccmr.Status.MessageSeverity == SeverityLevel.Error)
                     {
                         continue;
@@ -214,6 +243,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 }
                 catch (Exception e)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     ccmr.UpdateLogStatus(new DeploymentStatus("Failed to compile", e.Message, SeverityLevel.Error));
                 }
             }
@@ -243,6 +273,23 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
                 DeploymentAssetKind.ModuleReference,
                 target,
                 failed);
+        }
+
+        // Deployed under the solution's main entry project name. Falls back to the asset name when the
+        // solution cannot be read.
+        internal static string GetDeployModuleName(CloudCodeModuleReference ccmr, IModuleProjectRetriever retriever)
+        {
+            try
+            {
+                var name = string.IsNullOrEmpty(ccmr.ModuleName)
+                    ? retriever.GetMainEntryProjectName(ccmr.SolutionPath)
+                    : ccmr.ModuleName;
+                return System.IO.Path.GetFileNameWithoutExtension(name);
+            }
+            catch (Exception)
+            {
+                return System.IO.Path.GetFileNameWithoutExtension(ccmr.Name);
+            }
         }
 
         internal static Module GenerateModule(CloudCodeModuleReference moduleReference)

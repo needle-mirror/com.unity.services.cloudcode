@@ -17,7 +17,7 @@ using SystemPath = System.IO.Path;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
+    [HelpURL("https://docs.unity.com/en-us/cloud-code/3.0.0/modules/how-to-guides/write-modules/unity-editor-module-reference"),
      Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/CloudCodeAsset.png")]
     class CloudCodeModuleReference : ScriptableObject, ICopyable<CloudCodeModuleReference>, IPath, ISolutionModuleItem
         , ITrackableItem

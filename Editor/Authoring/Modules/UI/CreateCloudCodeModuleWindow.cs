@@ -1,7 +1,8 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using System;
 using System.IO;
 using System.Linq;
+using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
 using UnityEditor;
 using UnityEngine;
@@ -54,7 +55,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
         static readonly string k_ButtonConfirmText = L10n.Tr("Confirm");
         static readonly string k_ButtonCancelText = L10n.Tr("Cancel");
         static readonly string k_InvalidCharToolTip =
-            L10n.Tr("A file name can't contain any of the following characters: /?<>\\:*|\"");
+            L10n.Tr("A script name can't contain any of the following characters: /?<>\\:*|\".-");
+        static readonly string k_InvalidModuleNameToolTip =
+            L10n.Tr("A module name can only contain letters, digits and underscores, up to 50 characters, and must start with a letter.");
 
         internal delegate bool OnSubmitCallback(string moduleName, string cloudScriptName, string clientScriptName,
             string cloudAssemblyName, string clientAssemblyName);
@@ -101,7 +104,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             m_CloudScriptNameInputField.value = assetName;
             m_ClientSideBindings.text = $"{assetName}Client.cs";
             m_CloudScriptNameInputField.tooltip = k_InvalidCharToolTip;
-            m_CloudModuleNameInputField.tooltip = k_InvalidCharToolTip;
+            m_CloudModuleNameInputField.tooltip = k_InvalidModuleNameToolTip;
             RefreshDirectoryPreview(moduleName);
             UpdateConfirmButtonState();
         }
@@ -181,12 +184,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
             m_CloudScriptNameInputField.RegisterValueChangedCallback((evt) =>
             {
-                EnsureValidField(m_CloudScriptNameInputField, evt);
+                ApplySanitizedValue(m_CloudScriptNameInputField, ScriptNameSanitizer.Sanitize(evt.newValue));
                 m_ClientSideBindings.text = $"{m_CloudScriptNameInputField.text}Client.cs";
             });
             m_CloudModuleNameInputField.RegisterValueChangedCallback((evt) =>
             {
-                EnsureValidField(m_CloudModuleNameInputField, evt);
+                ApplySanitizedValue(m_CloudModuleNameInputField, ModuleNameSanitizer.Sanitize(evt.newValue));
 
                 var sanitzedModuleName = m_CloudModuleNameInputField.text;
                 m_CloudAssemblyNameInputField.text = $"{sanitzedModuleName}.asmdef";
@@ -234,15 +237,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             return scriptPath;
         }
 
-        void EnsureValidField(TextField field, ChangeEvent<string> evt)
+        void ApplySanitizedValue(TextField field, string sanitizedValue)
         {
-            // Next check for invalid names.
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var textValue = evt.newValue;
-            var sanitizedAssetName = new string(textValue !.Where(c => !invalidChars.Contains(c)).ToArray());
-
-            field.value = sanitizedAssetName;
-
+            field.value = sanitizedValue;
             UpdateConfirmButtonState();
         }
 

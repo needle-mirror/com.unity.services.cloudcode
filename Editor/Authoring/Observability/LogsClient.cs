@@ -8,6 +8,7 @@ using Unity.Services.CloudCode.Editor.Shared.Clients;
 using Unity.Services.Core.Editor;
 using Unity.Services.Core.Editor.Environments;
 using UnityEngine.Networking;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger;
 
 #if DEPLOYMENT_API_AVAILABLE_V1_1
 using IProjectID = Unity.Services.DeploymentApi.Editor.IProjectIdentifierProvider;
@@ -90,7 +91,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Observability
                 return new LogsTarget(null, null, k_NoProjectMessage);
             }
 
-            if (environmentId == null)
+            if (!EnvironmentIds.IsSet(environmentId))
             {
                 return new LogsTarget(projectId, null, k_NoEnvironmentMessage);
             }

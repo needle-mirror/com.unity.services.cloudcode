@@ -15,7 +15,7 @@ using UnityEditor;
 #if MPPM_API_AVAILABLE_V2_0_OR_NEWER
 using Unity.Multiplayer.PlayMode;
 #endif
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules;
 #endif
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
@@ -46,22 +46,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         readonly IModuleProjectRetriever m_ProjectRetriever;
         readonly IEnvironmentsApi m_EnvironmentsApi;
         readonly ILogger m_Logger;
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         readonly IEnumerable<CloudCodeModule> m_Modules;
         readonly CloudCodeModuleDeployCommand m_ModuleDeployCommand;
+        readonly Dictionary<CloudCodeModule, string> m_ReportedClosureErrors = new Dictionary<CloudCodeModule, string>();
 #endif
 
-        Task m_InFlightDeploy;
-#if UNITY_6000_5_OR_NEWER
+        Task<bool> m_InFlightDeploy;
         bool m_PlayModeChangeReported;
-#endif
 
         public LocalAutoDeployer(
             ICloudCodeLocalServer localServer,
             CloudCodeModuleReferenceCollection moduleReferences,
             CloudCodeModuleReferenceLocalDeployCommand moduleReferenceDeployCommand,
             IModuleProjectRetriever projectRetriever,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             CloudCodeModuleCollection modules,
             CloudCodeModuleDeployCommand moduleDeployCommand,
 #endif
@@ -72,7 +71,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 (IEnumerable<CloudCodeModuleReference>)moduleReferences,
                 moduleReferenceDeployCommand,
                 projectRetriever,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
                 (IEnumerable<CloudCodeModule>)modules,
                 moduleDeployCommand,
 #endif
@@ -87,7 +86,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             IEnumerable<CloudCodeModuleReference> moduleReferences,
             CloudCodeModuleReferenceLocalDeployCommand moduleReferenceDeployCommand,
             IModuleProjectRetriever projectRetriever,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             IEnumerable<CloudCodeModule> modules,
             CloudCodeModuleDeployCommand moduleDeployCommand,
 #endif
@@ -98,7 +97,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             m_ModuleReferences = moduleReferences;
             m_ModuleReferenceDeployCommand = moduleReferenceDeployCommand;
             m_ProjectRetriever = projectRetriever;
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             m_Modules = modules;
             m_ModuleDeployCommand = moduleDeployCommand;
 #endif
@@ -113,7 +112,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // the domain reload this instance was constructed by - the server's status is restored during
             // that same reload, so checking immediately could read a stale Idle.
             EditorApplication.focusChanged += OnFocusChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             ScheduleCheck();
+        }
+
+        void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.EnteredEditMode)
+                ScheduleCheck();
         }
 
         void OnFocusChanged(bool hasFocus)
@@ -148,20 +154,24 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         {
             return IsMainEditor()
                 && m_LocalServer.GetCurrentServerStatus() == LocalCloudCodeServerStatus.Started
-                && m_EnvironmentsApi.ActiveEnvironmentId != null;
+                && HasLocalDeployTarget();
         }
+
+        bool HasLocalDeployTarget()
+            => LocalServerMode.LocalOnly || EnvironmentIds.IsSet(m_EnvironmentsApi.ActiveEnvironmentId);
 
         /// <summary>
         /// Redeploys every module whose source changed since it was deployed to the running server, and
         /// throws when that cannot be done. A check already in flight is joined rather than started again.
         /// Cancelling ends only this caller's wait. The shared check runs to completion.
+        /// Returns whether any module was deployed.
         /// </summary>
-        internal Task DeployChangedModulesAsync(CancellationToken cancellationToken)
+        internal Task<bool> DeployChangedModulesAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
-                return Task.FromCanceled(cancellationToken);
+                return Task.FromCanceled<bool>(cancellationToken);
 
-            if (m_InFlightDeploy is not { IsCompleted: false })
+            if (m_InFlightDeploy is not { IsCompleted : false })
             {
                 m_InFlightDeploy = DeployChangedModulesCore(CancellationToken.None);
                 _ = ObserveFailure(m_InFlightDeploy);
@@ -170,7 +180,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             return WaitCancellable(m_InFlightDeploy, cancellationToken);
         }
 
-        static async Task ObserveFailure(Task task)
+        internal static async Task ObserveFailure(Task task)
         {
             try
             {
@@ -180,6 +190,27 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             {
                 // Once every caller has stopped waiting nobody observes a failure, and the deploy commands
                 // already report it on the module.
+            }
+        }
+
+        // Unlike DeployChangedModulesAsync, never starts a deploy.
+        internal Task WaitForInFlightDeployAsync(CancellationToken cancellationToken)
+        {
+            return WaitForCompletion(m_InFlightDeploy, cancellationToken);
+        }
+
+        internal static async Task WaitForCompletion(Task task, CancellationToken cancellationToken)
+        {
+            if (task == null)
+                return;
+
+            try
+            {
+                await WaitCancellable(task, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // The deploy commands already report the failure on the module.
             }
         }
 
@@ -199,11 +230,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             }
         }
 
-        async Task DeployChangedModulesCore(CancellationToken cancellationToken)
+        internal static async Task<T> WaitCancellable<T>(Task<T> task, CancellationToken cancellationToken)
+        {
+            await WaitCancellable((Task)task, cancellationToken).ConfigureAwait(false);
+            return await task.ConfigureAwait(false);
+        }
+
+        async Task<bool> DeployChangedModulesCore(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (m_EnvironmentsApi.ActiveEnvironmentId == null)
+            if (!HasLocalDeployTarget())
             {
                 throw new InvalidOperationException(
                     "Cloud Code: no active environment is selected. Select one in Project Settings > Services > Environments.");
@@ -213,14 +250,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // Unity is still importing or compiling would compare against, or package, a stale DLL.
             await WaitUntilEditorSettled(cancellationToken);
 
-            var deployedDir = Path.Combine(
-                EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir(),
-                m_EnvironmentsApi.ActiveEnvironmentId.ToString());
+            var deployedDir = EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir(m_EnvironmentsApi.ActiveEnvironmentId);
 
-            await DeployChangedModuleReferences(deployedDir, cancellationToken);
-#if UNITY_6000_5_OR_NEWER
-            await DeployChangedCloudCodeModules(deployedDir, cancellationToken);
+            // A Cloud Code Module is deployed from the assembly Unity compiles for it, and that assembly
+            // cannot be rebuilt reliably during play mode: depending on Script Changes While Playing, Unity
+            // either does not compile at all, or reloads the domain and resets the running scene's
+            // non-serialized state. Point the change out instead of acting on it.
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                ReportModulesChangedInPlayMode(deployedDir);
+                return false;
+            }
+
+            m_PlayModeChangeReported = false;
+
+            var deployed = await DeployChangedModuleReferences(deployedDir, cancellationToken);
+#if UNITY_6000_7_OR_NEWER
+            deployed |= await DeployChangedCloudCodeModules(deployedDir, cancellationToken);
 #endif
+            return deployed;
         }
 
         static async Task WaitUntilEditorSettled(CancellationToken cancellationToken)
@@ -263,7 +311,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         {
             var failed = new List<IDeploymentItem>();
             AddModulesInErrorState(m_ModuleReferences, failed);
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             AddModulesInErrorState(m_Modules, failed);
 #endif
             return failed;
@@ -301,17 +349,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 #endif
         }
 
-        async Task DeployChangedModuleReferences(string deployedDir, CancellationToken cancellationToken)
+        async Task<bool> DeployChangedModuleReferences(string deployedDir, CancellationToken cancellationToken)
         {
             var changed = m_ModuleReferences
                 .Where(ccmr => IsStale(GetSourceDir(ccmr), DeployedZipPath(deployedDir, ccmr)))
                 .ToList();
 
             if (changed.Count == 0)
-                return;
+                return false;
 
             await m_ModuleReferenceDeployCommand.CompileAndDeployAsync(changed, DeploymentOrigin.Automatic, cancellationToken);
             LogReloaded(changed);
+            return true;
         }
 
         /// <summary>
@@ -331,6 +380,49 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
             m_Logger.LogInfo(
                 $"Local Cloud Code server reloaded: {string.Join(", ", reloaded)}.");
+        }
+
+        /// <summary>
+        /// Names the modules whose source changed since the copy on the local server was deployed, so
+        /// a change made in play mode is not silently ignored. Source timestamps rather than the compiled
+        /// assembly, because the point is to report the edit Unity has not compiled yet. Reported once per
+        /// play session, since the check runs on every focus change.
+        /// </summary>
+        void ReportModulesChangedInPlayMode(string deployedDir)
+        {
+            if (m_PlayModeChangeReported)
+                return;
+
+            var changed = m_ModuleReferences
+                .Where(ccmr => IsStale(GetSourceDir(ccmr), DeployedZipPath(deployedDir, ccmr)))
+                .Select(ccmr => ccmr.Name)
+#if UNITY_6000_7_OR_NEWER
+                .Concat(m_Modules
+                    .Where(ccm => HasChangedCloudSource(ccm, deployedDir))
+                    .Select(ccm => ccm.name))
+#endif
+                .ToList();
+
+            if (changed.Count == 0)
+                return;
+
+            m_PlayModeChangeReported = true;
+            m_Logger.LogWarning(
+                $"Cloud Code module(s) {string.Join(", ", changed)} changed while in play mode and were not " +
+                "deployed to the local server: nothing is deployed to it until play mode ends. Exit play mode, " +
+                "wait for \"Local Cloud Code server reloaded\", then enter play mode again to run the new code.");
+            ShowPlayModeBanner();
+        }
+
+        static void ShowPlayModeBanner()
+        {
+            var banner = new UnityEngine.GUIContent("Cloud Code changes not deployed: exit play mode");
+            foreach (var window in UnityEngine.Resources.FindObjectsOfTypeAll<EditorWindow>())
+            {
+                // GameView is internal, so it can only be matched by name.
+                if (window is SceneView || window.GetType().FullName == "UnityEditor.GameView")
+                    window.ShowNotification(banner, 10);
+            }
         }
 
         internal static string GetSourceDir(CloudCodeModuleReference ccmr)
@@ -361,7 +453,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                     ? m_ProjectRetriever.GetMainEntryProjectName(ccmr.SolutionPath)
                     : ccmr.ModuleName;
 
-                return Path.Combine(deployedDir, Path.GetFileNameWithoutExtension(moduleName) + ".zip");
+                // Strip only the .ccm the build appends; a dotted project name has no extension to remove.
+                if (moduleName.EndsWith(".ccm", StringComparison.Ordinal))
+                    moduleName = moduleName.Substring(0, moduleName.Length - ".ccm".Length);
+
+                return Path.Combine(deployedDir, moduleName + ".zip");
             }
             catch (Exception)
             {
@@ -449,6 +545,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             }
         }
 
+        internal static string SourceFingerprintFor(CloudCodeModuleReference ccmr)
+        {
+            try
+            {
+                return ModuleReferenceBuildInputs.Fingerprint(ccmr.SolutionPath);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         internal static bool IsNewerThanDeployed(IEnumerable<string> sourceFiles, string deployedZipPath)
         {
             if (!File.Exists(deployedZipPath))
@@ -478,56 +586,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 .Any(segment => k_IgnoredDirectories.Contains(segment, StringComparer.OrdinalIgnoreCase));
         }
 
-#if UNITY_6000_5_OR_NEWER
-        async Task DeployChangedCloudCodeModules(string deployedDir, CancellationToken cancellationToken)
+#if UNITY_6000_7_OR_NEWER
+        internal async Task<bool> DeployChangedCloudCodeModules(string deployedDir, CancellationToken cancellationToken)
         {
-            // A Cloud Code Module is deployed from the assembly Unity compiles for it, and that assembly
-            // cannot be rebuilt reliably during play mode: depending on Script Changes While Playing, Unity
-            // either does not compile at all, or reloads the domain and resets the running scene's
-            // non-serialized state. Point the change out instead of acting on it.
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            if (EditorUtility.scriptCompilationFailed)
             {
-                ReportModulesChangedInPlayMode(deployedDir);
-                return;
+                var changed = m_Modules.Where(ccm => HasChangedCloudSource(ccm, deployedDir)).ToList();
+                if (changed.Count > 0)
+                    m_ModuleDeployCommand.MarkScriptsNotCompiled(changed);
+                return false;
             }
 
-            m_PlayModeChangeReported = false;
-
-            if (EditorUtility.scriptCompilationFailed)
-                return;
-
-            var modified = m_Modules.Where(ccm => IsModuleStale(ccm, deployedDir)).ToList();
+            var modified = m_Modules
+                .Where(ccm => IsModuleStale(ccm, deployedDir) || CloudCodeModuleDeployCommand.IsMarkedNotCompiled(ccm))
+                .ToList();
             if (modified.Count == 0)
-                return;
+                return false;
 
             await m_ModuleDeployCommand.GenerateAndDeployToLocalAsync(modified, DeploymentOrigin.Automatic, cancellationToken);
             LogReloaded(modified);
-        }
-
-        /// <summary>
-        /// Names the modules whose cloud source changed since the copy on the local server was deployed, so
-        /// a change made in play mode is not silently ignored. Source timestamps rather than the compiled
-        /// assembly, because the point is to report the edit Unity has not compiled yet. Reported once per
-        /// play session, since the check runs on every focus change.
-        /// </summary>
-        void ReportModulesChangedInPlayMode(string deployedDir)
-        {
-            if (m_PlayModeChangeReported)
-                return;
-
-            var changed = m_Modules
-                .Where(ccm => HasChangedCloudSource(ccm, deployedDir))
-                .Select(ccm => ccm.name)
-                .ToList();
-
-            if (changed.Count == 0)
-                return;
-
-            m_PlayModeChangeReported = true;
-            m_Logger.LogWarning(
-                $"Cloud Code Module(s) {string.Join(", ", changed)} changed while in play mode and were not " +
-                "deployed to the local server: Unity cannot rebuild them until play mode ends. Exit play mode " +
-                "and enter it again to run the new code.");
+            return true;
         }
 
         // What an assembly-definition module is built from, taken from the hasher so the play-mode warning
@@ -538,7 +616,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         // Spans the module's whole assembly closure, not just its cloud directory: an edit to a shared
         // assembly changes what a redeploy would carry just as much as an edit to the module itself.
-        static bool HasChangedCloudSource(CloudCodeModule ccm, string deployedDir)
+        internal bool HasChangedCloudSource(CloudCodeModule ccm, string deployedDir)
         {
             if (ccm.CloudAssemblyDefinition == null)
                 return false;
@@ -546,8 +624,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             var moduleName = CloudCodeModuleDeployCommand.GetDeployModuleName(ccm);
             var deployedZip = Path.Combine(deployedDir, moduleName + ".zip");
 
-            return ModuleAssemblyClosure.ProjectSourceDirectories(ccm.CloudAssemblyDefinition)
-                .Any(directory => IsStale(directory, deployedZip, TrackedModuleSourcePatterns));
+            try
+            {
+                var directories = ModuleAssemblyClosure.ProjectSourceDirectories(ccm.CloudAssemblyDefinition);
+                m_ReportedClosureErrors.Remove(ccm);
+                return directories.Any(directory => IsStale(directory, deployedZip, TrackedModuleSourcePatterns));
+            }
+            catch (InvalidOperationException e)
+            {
+                ReportClosureErrorOnce(ccm, e.Message);
+                return false;
+            }
         }
 
         /// <summary>
@@ -556,7 +643,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         /// recompiled yet leaves them untouched, and redeploying would reload the running module for no change
         /// at all.
         /// </summary>
-        static bool IsModuleStale(CloudCodeModule ccm, string deployedDir)
+        bool IsModuleStale(CloudCodeModule ccm, string deployedDir)
         {
             var moduleName = CloudCodeModuleDeployCommand.GetDeployModuleName(ccm);
             var assemblyPaths = PackagedAssemblyPaths(ccm);
@@ -572,7 +659,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         /// with, so this sees exactly the files a redeploy would upload. A shared assembly rebuilt on its own,
         /// or a precompiled DLL reimported on its own, still counts as a change.
         /// </summary>
-        static List<string> PackagedAssemblyPaths(CloudCodeModule ccm)
+        List<string> PackagedAssemblyPaths(CloudCodeModule ccm)
         {
             if (ccm.CloudAssemblyDefinition == null)
                 return new List<string>();
@@ -581,10 +668,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             try
             {
                 ModuleAssemblyClosure.CollectAssemblyNames(ccm.CloudAssemblyDefinition, references);
+                m_ReportedClosureErrors.Remove(ccm);
             }
-            catch (Exception)
+            catch (InvalidOperationException e)
             {
-                // A malformed asmdef is surfaced by a real deploy, not by this check.
+                ReportClosureErrorOnce(ccm, e.Message);
                 return new List<string>();
             }
 
@@ -593,6 +681,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 .Where(assemblyCache.ContainsKey)
                 .Select(reference => assemblyCache[reference])
                 .ToList();
+        }
+
+        void ReportClosureErrorOnce(CloudCodeModule ccm, string error)
+        {
+            if (m_ReportedClosureErrors.TryGetValue(ccm, out var reported) && reported == error)
+                return;
+
+            m_ReportedClosureErrors[ccm] = error;
+            m_Logger.LogWarning($"Cloud Code: '{ccm.name}' was not auto-deployed. {error}");
         }
 
 #endif

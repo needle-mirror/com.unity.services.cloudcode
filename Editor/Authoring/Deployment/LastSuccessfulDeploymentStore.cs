@@ -7,6 +7,7 @@ using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
 using Unity.Services.CloudCode.Authoring.Editor.Modules;
 using Unity.Services.Core.Editor.Environments;
 using UnityEditor;
+using Unity.Services.CloudCode.Authoring.Editor.Debugger;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 #if DEPLOYMENT_API_AVAILABLE_V1_1
@@ -28,10 +29,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         void Record(string assetPath, LastSuccessfulDeploymentKind kind, LastSuccessfulDeploymentInfo info, DateTime sourceLastWriteUtc = default);
         LastSuccessfulDeploymentInfo GetRecord(string assetPath, LastSuccessfulDeploymentKind kind, DeploymentTarget target);
         DateTime GetSourceLastWriteUtc(string assetPath, LastSuccessfulDeploymentKind kind, DeploymentTarget target);
+        void Forget(DeploymentTarget target);
 
         bool CanResolveKey(string assetPath);
 
-        // Raised after a deployment is recorded.
+        // Raised after a deployment is recorded or forgotten.
         event Action Changed;
     }
 
@@ -63,13 +65,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             return store.CanResolveKey(moduleReference.Path);
         }
 
+        public static DateTime? GetRemoteUploadCompletedUtc(
+            this ILastSuccessfulDeploymentStore store, CloudCodeModuleReference moduleReference)
+        {
+            return UploadCompletedUtc(store.GetRecord(moduleReference, DeploymentTarget.Remote));
+        }
+
         public static LastSuccessfulDeploymentInfo FreshestRecord(
             this ILastSuccessfulDeploymentStore store, CloudCodeModuleReference moduleReference)
         {
             return store.FreshestRecord(moduleReference.Path, LastSuccessfulDeploymentKind.ModuleReference);
         }
 
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         public static void Record(
             this ILastSuccessfulDeploymentStore store, CloudCodeModule module, LastSuccessfulDeploymentInfo info)
         {
@@ -93,7 +101,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             return store.CanResolveKey(module.Path);
         }
 
+        public static DateTime? GetRemoteUploadCompletedUtc(this ILastSuccessfulDeploymentStore store, CloudCodeModule module)
+        {
+            return UploadCompletedUtc(store.GetRecord(module, DeploymentTarget.Remote));
+        }
+
 #endif
+        static DateTime? UploadCompletedUtc(LastSuccessfulDeploymentInfo record)
+        {
+            if (record == null)
+                return null;
+
+            return record.UploadCompletedAtUtc != default ? record.UploadCompletedAtUtc : record.DeployedAtUtc;
+        }
+
         public static LastSuccessfulDeploymentInfo FreshestRecord(
             this ILastSuccessfulDeploymentStore store, string assetPath, LastSuccessfulDeploymentKind kind)
         {
@@ -118,6 +139,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
     /// The single source of truth for each module's last successful deployment,
     /// for the current editor session. Backed by <see cref="SessionState"/> rather than plain memory
     /// because entering Play mode is a domain reload. Entries are scoped by asset GUID, project and environment.
+    /// A Local entry means the running local server serves that deploy, so Local entries are only kept while it runs.
     /// </summary>
     class LastSuccessfulDeploymentStore : ILastSuccessfulDeploymentStore
     {
@@ -136,6 +158,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             public string Kind;
             public string Target;
             public DateTime DeployedAtUtc;
+            public DateTime UploadCompletedAtUtc;
 
             // Only meaningful for ModuleReference entries, whose staleness is judged by file timestamps.
             public DateTime SourceLastWriteUtc;
@@ -149,6 +172,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         readonly Func<string> m_ProjectId;
         readonly Func<Guid?> m_EnvironmentId;
         readonly Func<string, string> m_AssetGuidResolver;
+        readonly Func<bool> m_IsLocalServerActive;
         readonly ILogger m_Logger;
 
         StoreData m_Data;
@@ -160,6 +184,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 () => projectId.ProjectId,
                 () => environmentsApi.ActiveEnvironmentId,
                 AssetDatabase.AssetPathToGUID,
+                IsLocalServerActive,
                 logger)
         {
         }
@@ -170,6 +195,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             Func<string> projectId,
             Func<Guid?> environmentId,
             Func<string, string> assetGuidResolver,
+            Func<bool> isLocalServerActive,
             ILogger logger)
         {
             m_LoadState = loadState;
@@ -177,7 +203,16 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             m_ProjectId = projectId;
             m_EnvironmentId = environmentId;
             m_AssetGuidResolver = assetGuidResolver;
+            m_IsLocalServerActive = isLocalServerActive;
             m_Logger = logger;
+        }
+
+        // Looked up rather than injected: the server already depends on this store. Preparing counts as
+        // active so the deploys a start makes are kept.
+        internal static bool IsLocalServerActive()
+        {
+            var server = CloudCodeAuthoringServices.Instance.GetService<ICloudCodeLocalServer>();
+            return server.GetCurrentServerStatus() != ICloudCodeLocalServer.LocalCloudCodeServerStatus.Idle;
         }
 
         public event Action Changed;
@@ -185,6 +220,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public void Record(string assetPath, LastSuccessfulDeploymentKind kind, LastSuccessfulDeploymentInfo info, DateTime sourceLastWriteUtc = default)
         {
             if (info == null || !TryResolveEntryKey(assetPath, out var assetGuid, out var projectId, out var environmentId))
+                return;
+
+            // A local deploy still in flight when the server stopped finishes after Forget(Local) has run.
+            if (info.Target == DeploymentTarget.Local && !m_IsLocalServerActive())
                 return;
 
             var data = GetData();
@@ -203,8 +242,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             }
 
             entry.DeployedAtUtc = info.DeployedAtUtc;
+            entry.UploadCompletedAtUtc = info.UploadCompletedAtUtc;
             entry.SourceLastWriteUtc = sourceLastWriteUtc;
             entry.LastDeployedContentHash = info.LastDeployedContentHash;
+            Save();
+            Changed?.Invoke();
+        }
+
+        public void Forget(DeploymentTarget target)
+        {
+            var targetName = target.ToString();
+            if (GetData().Entries.RemoveAll(entry => entry.Target == targetName) == 0)
+                return;
+
             Save();
             Changed?.Invoke();
         }
@@ -230,6 +280,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             {
                 Target = target,
                 DeployedAtUtc = entry.DeployedAtUtc,
+                UploadCompletedAtUtc = entry.UploadCompletedAtUtc,
                 LastDeployedContentHash = entry.LastDeployedContentHash
             };
         }
@@ -243,7 +294,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         {
             assetGuid = string.IsNullOrEmpty(assetPath) ? null : m_AssetGuidResolver(assetPath);
             projectId = m_ProjectId();
-            environmentId = m_EnvironmentId()?.ToString();
+            var id = m_EnvironmentId();
+            environmentId = EnvironmentIds.IsSet(id) ? id.Value.ToString() : null;
 
             return !string.IsNullOrEmpty(assetGuid)
                 && !string.IsNullOrEmpty(projectId)
@@ -296,6 +348,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 foreach (var entry in parsed.Entries)
                 {
                     entry.DeployedAtUtc = NormalizeUtc(entry.DeployedAtUtc);
+                    entry.UploadCompletedAtUtc = NormalizeUtc(entry.UploadCompletedAtUtc);
                     entry.SourceLastWriteUtc = NormalizeUtc(entry.SourceLastWriteUtc);
                 }
 

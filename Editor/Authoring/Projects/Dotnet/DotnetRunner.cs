@@ -41,19 +41,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet
             }
             catch (Exception)
             {
+                var configuredPath = m_Preferences.DotnetPath;
                 try
                 {
                     m_Preferences.DotnetPath = k_DotnetDefaultPathFallback;
-                    m_Preferences.WriteToEditorPrefs();
 
                     await ExecuteDotnetAsync(new List<string>
                     {
                         k_VersionCommand
                     });
+                    m_Preferences.WriteToEditorPrefs();
                     return true;
                 }
                 catch (Exception e)
                 {
+                    m_Preferences.DotnetPath = configuredPath;
                     m_Logger.LogVerbose($"Error executing .NET: {e}");
                     return false;
                 }

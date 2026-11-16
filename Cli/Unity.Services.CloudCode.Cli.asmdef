@@ -1,0 +1,36 @@
+{
+    "name": "Unity.Services.CloudCode.Cli",
+    "rootNamespace": "Unity.Services.CloudCode.Cli",
+    "references": [
+        "Unity.Services.CloudCode.Authoring.Editor",
+        "Unity.Services.CloudCode.Shared.Editor",
+        "Unity.Services.CloudCode",
+        "Unity.Services.CloudBehaviours.Runtime",
+        "Unity.Pipeline",
+        "Unity.Pipeline.Attributes"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_2021_3_OR_NEWER",
+        "DEPLOYMENT_API_AVAILABLE_V1_0",
+        "UNITY_PIPELINE_AVAILABLE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.deployment.api",
+            "expression": "[1.0.0-pre.5,1.3.0-exp.1)",
+            "define": "DEPLOYMENT_API_AVAILABLE_V1_0"
+        },
+        {
+            "name": "com.unity.pipeline",
+            "expression": "0.9.0-exp.1",
+            "define": "UNITY_PIPELINE_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

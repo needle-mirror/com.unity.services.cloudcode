@@ -1,3 +1,7 @@
+#if UNITY_EDITOR && UNITY_6000_7_OR_NEWER
+#define CLOUD_CODE_ENDPOINT_FROM_EDITOR_PREFS
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,6 +16,9 @@ using Unity.Services.Wire.Internal;
 using UnityEngine;
 
 #if UNITY_EDITOR
+using System.IO;
+#endif
+#if CLOUD_CODE_ENDPOINT_FROM_EDITOR_PREFS
 using UnityEditor;
 #endif
 
@@ -22,10 +29,19 @@ namespace Unity.Services.CloudCode
         const string k_CloudEnvironmentKey = "com.unity.services.core.cloud-environment";
         const string k_StagingEnvironment = "staging";
         internal const ushort k_DefaultLocalCloudCodeServerPort = 14750;
-        const string k_LocalCloudCodePidPrefs = "LOCAL_CLOUD_CODE_PID";
-        const string k_LocalCloudCodePortPrefs = "CLOUD_CODE_DEBUG_PORT";
         const string k_LocalCloudCodeDebuggerArg = "--cloud-code-local-debugger";
         const int k_ConfigurationReqTimeoutSec = 30;
+#if UNITY_EDITOR
+        const string k_LocalCloudCodePidPrefs = "LOCAL_CLOUD_CODE_PID";
+        const string k_LocalCloudCodePortPrefs = "CLOUD_CODE_DEBUG_PORT";
+        // EditorPrefs are machine-wide, so the keys the local server publishes for Play Mode are
+        // suffixed per project; otherwise one project's Play Mode routes to another project's server.
+        internal static readonly string k_LocalServerProjectRoot = MainProjectRoot(
+            ResolveProjectRoot(Path.GetDirectoryName(Application.dataPath), Environment.GetCommandLineArgs()));
+        internal static readonly string k_LocalServerProjectKey = ProjectKey(k_LocalServerProjectRoot);
+        internal static readonly string k_LocalServerPidPrefsKey = $"{k_LocalCloudCodePidPrefs}_{k_LocalServerProjectKey}";
+        internal static readonly string k_LocalServerPortPrefsKey = $"{k_LocalCloudCodePortPrefs}_{k_LocalServerProjectKey}";
+#endif
         const string k_PackageName = "com.unity.services.cloudcode";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -50,19 +66,17 @@ namespace Unity.Services.CloudCode
                 .OptionallyDependsOn<IWireFactory>();
         }
 
-        public Task Initialize(CoreRegistry registry)
+        public async Task Initialize(CoreRegistry registry)
         {
-            CloudCodeService.Instance = InitializeService(registry);
-            return Task.CompletedTask;
+            CloudCodeService.Instance = await InitializeServiceAsync(registry);
         }
 
-        public Task InitializeInstanceAsync(CoreRegistry registry)
+        public async Task InitializeInstanceAsync(CoreRegistry registry)
         {
-            _ = InitializeService(registry);
-            return Task.CompletedTask;
+            await InitializeServiceAsync(registry);
         }
 
-        static ICloudCodeService InitializeService(CoreRegistry registry)
+        static async Task<ICloudCodeService> InitializeServiceAsync(CoreRegistry registry)
         {
             var cloudProjectId = registry.GetServiceComponent<ICloudProjectId>();
             var accessToken = registry.GetServiceComponent<IAccessToken>();
@@ -70,7 +84,7 @@ namespace Unity.Services.CloudCode
             var installationId = registry.GetServiceComponent<IInstallationId>();
             var projectConfiguration = registry.GetServiceComponent<IProjectConfiguration>();
             var externalUserId = registry.GetServiceComponent<IExternalUserId>();
-            var localDebugPortOrNull = TryGetLocalDebugPort(out var localDebugPort) ? localDebugPort : (int?)null;
+            var localDebugPortOrNull = await GetLocalDebugPortAsync();
             var wire = GetWire(registry, localDebugPortOrNull);
 
             var configuration = new Configuration(GetHost(projectConfiguration, localDebugPortOrNull), GetTimeout(localDebugPortOrNull), null, GetServiceHeaders(installationId, externalUserId));
@@ -83,7 +97,7 @@ namespace Unity.Services.CloudCode
                 accessToken,
                 configuration);
 
-            var service = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken);
+            var service = new CloudCodeInternal(wire, cloudProjectId, cloudCodeApiClient, playerId, accessToken, localDebugPortOrNull != null);
             registry.RegisterService<ICloudCodeService>(service);
             registry.RegisterService<ICloudCodeWarmup>(new CloudCodeWarmup(cloudProjectId, cloudCodeApiClient, playerId, accessToken));
             return service;
@@ -174,26 +188,111 @@ namespace Unity.Services.CloudCode
             return $"UnityPlayer/{Application.unityVersion} ({packageName}/{packageVersion})";
         }
 
-        internal static bool TryGetLocalDebugPort(out int port)
+#if CLOUD_CODE_ENDPOINT_FROM_EDITOR_PREFS
+        static Task<int?> GetLocalDebugPortAsync()
         {
-            port = k_DefaultLocalCloudCodeServerPort;
+            return Task.FromResult(GetLocalDebugPortFromEditorPrefs() ?? GetLocalDebugPortFromCommandLine());
+        }
 
-#if UNITY_EDITOR
-            if (EditorPrefs.GetInt(k_LocalCloudCodePidPrefs, -1) != -1)
+        internal static int? GetLocalDebugPortFromEditorPrefs()
+        {
+            if (EditorPrefs.GetInt(k_LocalServerPidPrefsKey, -1) == -1)
             {
-                port = EditorPrefs.GetInt(k_LocalCloudCodePortPrefs, k_DefaultLocalCloudCodeServerPort);
-                return true;
+                return null;
             }
+
+            return EditorPrefs.GetInt(k_LocalServerPortPrefsKey, k_DefaultLocalCloudCodeServerPort);
+        }
+#elif UNITY_EDITOR
+        static async Task<int?> GetLocalDebugPortAsync()
+        {
+            var serverPort = LocalServerProbe.ReadPort(
+                Path.Combine(Path.GetDirectoryName(Application.dataPath), LocalServerProbe.k_SettingsAssetPath),
+                k_DefaultLocalCloudCodeServerPort);
+            var (result, detail) = await LocalServerProbe.ProbeAsync(serverPort);
+            return LogLocalServerProbe(result, serverPort, detail) ? serverPort : GetLocalDebugPortFromCommandLine();
+        }
 #else
+        static Task<int?> GetLocalDebugPortAsync()
+        {
             // A release build must never be redirectable to a local server by a command line argument.
-            if (!Debug.isDebugBuild)
-            {
-                return false;
-            }
+            return Task.FromResult(Debug.isDebugBuild ? GetLocalDebugPortFromCommandLine() : null);
+        }
 #endif
 
-            return TryGetLocalDebugPortFromCommandLine(Environment.GetCommandLineArgs(), ref port);
+        static int? GetLocalDebugPortFromCommandLine()
+        {
+            var port = (int)k_DefaultLocalCloudCodeServerPort;
+            return TryGetLocalDebugPortFromCommandLine(Environment.GetCommandLineArgs(), ref port) ? port : (int?)null;
         }
+
+#if UNITY_EDITOR
+        // Returns whether to route to the local server. A server that isn't running
+        // stays silent, since most projects never use it; the other failures warn because the developer
+        // likely expected local routing.
+        internal static bool LogLocalServerProbe(LocalServerProbe.Result result, int port, string detail)
+        {
+            switch (result)
+            {
+                case LocalServerProbe.Result.Healthy:
+                    Debug.Log($"Cloud Code calls go to the local server on port {port}.");
+                    return true;
+                case LocalServerProbe.Result.TimedOut:
+                    Debug.LogWarning(
+                        $"The Cloud Code local server on port {port} accepted a connection but didn't answer within"
+                        + $" {LocalServerProbe.k_Timeout.TotalMilliseconds} ms. Cloud Code calls still go to it;"
+                        + " it may be paused at a breakpoint.");
+                    return true;
+                case LocalServerProbe.Result.Unexpected:
+                    Debug.LogWarning(
+                        $"Port {port} didn't respond like a running Cloud Code local server ({detail}),"
+                        + " so Cloud Code calls go to the deployed environment.");
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        // Multiplayer Play Mode clones play against the main Editor's local server, so they map to the main
+        // project's key via their -library-redirect argument, falling back to the /Library/VP/ folder convention.
+        internal static string ResolveProjectRoot(string projectPath, string[] commandLineArgs)
+        {
+            var index = commandLineArgs == null ? -1 : Array.IndexOf(commandLineArgs, "-library-redirect");
+            if (index >= 0 && index + 1 < commandLineArgs.Length)
+            {
+                var library = Path.GetFullPath(Path.Combine(projectPath, commandLineArgs[index + 1]))
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var root = library.Length == 0 ? null : Path.GetDirectoryName(library);
+                if (!string.IsNullOrEmpty(root))
+                {
+                    return root;
+                }
+            }
+
+            if (commandLineArgs != null && Array.IndexOf(commandLineArgs, "--virtual-project-clone") >= 0)
+            {
+                Debug.LogWarning(
+                    "Cloud Code could not map this Multiplayer Play Mode clone to its main project from"
+                    + " -library-redirect, so it falls back to the /Library/VP/ folder convention.");
+            }
+
+            return projectPath;
+        }
+
+        internal static string MainProjectRoot(string projectPath)
+        {
+            var path = Path.GetFullPath(projectPath).Replace('\\', '/').TrimEnd('/');
+            var clone = path.LastIndexOf("/Library/VP/", StringComparison.Ordinal);
+            if (clone >= 0)
+            {
+                path = path.Substring(0, clone);
+            }
+
+            return path;
+        }
+
+        internal static string ProjectKey(string projectPath) => Hash128.Compute(MainProjectRoot(projectPath)).ToString();
+#endif
 
         internal static bool TryGetLocalDebugPortFromCommandLine(string[] commandLineArgs, ref int port)
         {

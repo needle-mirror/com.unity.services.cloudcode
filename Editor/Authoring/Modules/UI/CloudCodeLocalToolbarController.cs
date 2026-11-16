@@ -44,9 +44,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
 
         internal event Action OnToolbarInvalidated;
 
-        internal CloudCodeLocalToolbarController()
+        internal CloudCodeLocalToolbarController(ICloudCodeLocalServer localServer = null)
         {
-            m_LocalServer = CloudCodeAuthoringServices.Instance.GetService<ICloudCodeLocalServer>();
+            m_LocalServer = localServer ?? CloudCodeAuthoringServices.Instance.GetService<ICloudCodeLocalServer>();
             m_LocalServer.OnServerStatusChanged += OnServerStatusChanged;
 
             m_PopupWindow = new CloudCodeLocalToolbarPopup(this);

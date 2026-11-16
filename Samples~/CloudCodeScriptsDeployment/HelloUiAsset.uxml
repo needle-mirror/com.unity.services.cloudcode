@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:TextField label="Input" placeholder-text="Enter a name" name="NameInput" />
+        <ui:Button text="Invoke Cloud Code Script" name="InvokeCloudCodeButton" />
+    </ui:VisualElement>
+</ui:UXML>

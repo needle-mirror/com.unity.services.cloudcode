@@ -3,19 +3,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
-#if UNITY_EDITOR_WIN
-using System.Net.NetworkInformation;
-#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Core.Model;
-#if UNITY_6000_3_OR_NEWER
-using Unity.Multiplayer.PlayMode;
-#endif
 using Unity.Services.CloudCode.Authoring.Editor.Analytics;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment;
@@ -33,6 +28,8 @@ using UnityEngine;
 using MainThreadScheduler = Unity.Services.CloudCode.Authoring.Client.Scheduler;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 using LocalCloudCodeServerStatus = Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.LocalCloudCodeServerStatus;
+using ILastSuccessfulDeploymentStore = Unity.Services.CloudCode.Authoring.Editor.Deployment.ILastSuccessfulDeploymentStore;
+using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 using ClearStateResult = Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.ClearStateResult;
 
 using Unity.Services.CloudCode.Authoring.Editor.Core.Analytics;
@@ -45,11 +42,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         const int k_InvalidPID = -1;
         const string k_ServerUrl = "http://localhost";
         const int k_HealthCheckIntervalMs = 1000;
+
+        // Core's GatewayTokens hands out a cached token until 30 minutes before it
+        // expires (k_RefreshGracePeriod), so pushing every 10 minutes keeps at least 20 minutes of headroom.
+        // Revisit this if that grace period ever drops near 10 minutes.
+        const int k_AdminTokenRefreshIntervalMs = 10 * 60 * 1000;
         const int k_MaxRetainedServerLogs = 5;
 
         // How often the startup wait re-checks whether the server process died while the health
         // check is still retrying.
         const int k_StartupExitPollMs = 250;
+
+        // A cold start on a loaded machine can take longer to bind its port than one health check's retries cover.
+        static readonly TimeSpan k_StartupTimeout = TimeSpan.FromSeconds(30);
 
         // A launch failure's stderr is a full stack trace; the first frames identify it, the rest
         // only belong in the log file.
@@ -59,10 +64,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         // asynchronous, so the fatal line can still be in flight when the exit is observed; without
         // this wait the failure is occasionally reported as having produced no output at all.
         const int k_StartupErrorFlushMs = 2000;
-        const string k_ServerLogSearchPattern = "server-*.log";
         const string K_ServerPidKey = "LOCAL_CLOUD_CODE_PID";
         const string K_ServerStatus = "LOCAL_CLOUD_CODE_STATUS";
         const string K_ServerFailure = "LOCAL_CLOUD_CODE_FAILURE";
+        const string k_ServerNoLogFile = "LOCAL_CLOUD_CODE_NO_LOG_FILE";
+        const string K_ServerStartTicksKey = "LOCAL_CLOUD_CODE_START_TICKS";
+        const string k_ServerModulesRootKey = "LOCAL_CLOUD_CODE_MODULES_ROOT";
         // Must match where the debugger writes it: LocalScopeHost puts scope state in <modules>/ScopeState.
         const string k_CloudCodeLocalStatePath = "ScopeState";
 
@@ -77,22 +84,28 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         readonly ILogger m_Logger;
         readonly IProcessRunner m_ProcessRunner;
         readonly CloudCodeModuleReferenceLocalDeployCommand m_CloudCodeLocalDeployCommand;
-    #if UNITY_6000_5_OR_NEWER
+    #if UNITY_6000_7_OR_NEWER
         readonly CloudCodeModuleDeployCommand m_CloudCodeModuleDeployCommand;
     #endif
         readonly EditorCloudCodeLocalModuleDeploymentHandler m_DeployHandler;
         readonly ILocalServerAnalytics m_Analytics;
         readonly LocalServerRunClock m_RunClock = new LocalServerRunClock();
         internal IAccessTokens AccessTokens { get; set; }
+        internal ILastSuccessfulDeploymentStore DeploymentStore { get; set; }
 
-        // Launches with --local-only-mode, stubbing the server's lobby lookup and access control.
-        // Only the test harness sets it; an interactive Editor validates against the real Lobby.
-        internal bool LocalOnlyMode { get; set; }
+        // Launches with --local-only-mode. See LocalServerMode for what the mode lifts on this side.
+        internal bool LocalOnlyMode
+        {
+            get => LocalServerMode.LocalOnly;
+            set => LocalServerMode.LocalOnly = value;
+        }
+
+        const string k_LocalOnlyGatewayToken = "local-only";
         readonly ICloudCodePreferences m_Preferences;
         readonly IDotnetRunner m_DotnetRunner;
         readonly ICloudCodeLocalServerApi m_LocalServerClient;
         readonly CloudCodeModuleReferenceCollection m_CloudCodeModuleReferenceCollection;
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         readonly CloudCodeModuleCollection m_CloudCodeModuleCollection;
 #endif
 
@@ -102,7 +115,21 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         // The start and stop in flight, so a later call can wait for one to settle before it reports.
         Task m_StartTask = Task.CompletedTask;
         Task m_StopTask = Task.CompletedTask;
+
+        internal ICloudCodeLocalServerApi LocalServerClient => m_LocalServerClient;
+
+        internal Task StartTask => m_StartTask;
+
+        /// <summary>Ends the health checks and token refreshes this instance runs, as a domain reload does.</summary>
+        /// <returns>The token a restore after the reload runs on, which Stop cancels.</returns>
+        internal CancellationToken CancelBackgroundTasks()
+        {
+            m_CancellationTokenSource.Cancel();
+            m_CancellationTokenSource = new CancellationTokenSource();
+            return m_CancellationTokenSource.Token;
+        }
         int m_CurrentServerPid;
+        long m_CurrentServerStartTicks;
         string m_LastKnownFailure;
         // Not persisted: every failure is reported in the same call stack that records it.
         string m_LastFailureErrorCode;
@@ -130,7 +157,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             }
         }
 
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         internal CloudCodeLocalServer(
             ILogger logger,
             IProcessRunner processRunner,
@@ -143,9 +170,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             IDotnetRunner dotnetRunner,
             CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection,
             CloudCodeModuleCollection cloudCodeModuleCollection,
-            ILocalServerAnalytics analytics)
+            ILocalServerAnalytics analytics,
+            ILastSuccessfulDeploymentStore deploymentStore)
         {
             AccessTokens = accessTokens;
+            DeploymentStore = deploymentStore;
             m_Logger = logger;
             m_ProcessRunner = processRunner;
             m_CloudCodeLocalDeployCommand = cloudCodeLocalDeployCommand;
@@ -177,9 +206,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             ICloudCodePreferences preferences,
             IDotnetRunner dotnetRunner,
             CloudCodeModuleReferenceCollection cloudCodeModuleReferenceCollection,
-            ILocalServerAnalytics analytics)
+            ILocalServerAnalytics analytics,
+            ILastSuccessfulDeploymentStore deploymentStore)
         {
             AccessTokens = accessTokens;
+            DeploymentStore = deploymentStore;
             m_Logger = logger;
             m_ProcessRunner = processRunner;
             m_CloudCodeLocalDeployCommand = cloudCodeLocalDeployCommand;
@@ -203,19 +234,35 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         void Initialize()
         {
             m_LogTailer = new LocalServerLogTailer(m_Logger);
-            m_CurrentServerPid = EditorPrefs.GetInt(K_ServerPidKey, k_InvalidPID);
+            // SessionState, not EditorPrefs: this state belongs to this Editor process and must only
+            // survive domain reloads, since the server exits with its parent Editor (--parent-pid).
+            m_CurrentServerPid = SessionState.GetInt(K_ServerPidKey, k_InvalidPID);
+            long.TryParse(SessionState.GetString(K_ServerStartTicksKey, null), out m_CurrentServerStartTicks);
             m_CancellationTokenSource = new CancellationTokenSource();
 
-            m_LastKnownFailure = EditorPrefs.GetString(K_ServerFailure);
+            m_LastKnownFailure = SessionState.GetString(K_ServerFailure, null);
             m_LastKnownFailure = string.IsNullOrEmpty(m_LastKnownFailure) ? null : m_LastKnownFailure;
 
-            if (!Enum.TryParse(EditorPrefs.GetString(K_ServerStatus), true, out m_CurrentServerStatus))
+            if (!Enum.TryParse(SessionState.GetString(K_ServerStatus, null), true, out m_CurrentServerStatus))
                 m_CurrentServerStatus = LocalCloudCodeServerStatus.Idle;
 
             OnApplicationRestore();
 
             // Ensure all servers are stopped when the application quits
             EditorApplication.quitting += OnApplicationQuit;
+
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.ExitingEditMode
+                || m_CurrentServerStatus != LocalCloudCodeServerStatus.Started
+                || LocalOnlyMode
+                || !LocalAutoDeployer.IsMainEditor())
+                return;
+
+            _ = PushAdminToken(m_CancellationTokenSource.Token);
         }
 
         void OnApplicationRestore()
@@ -229,7 +276,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // performing restoration if needed.
             EditorApplication.delayCall += () =>
             {
-                if (CurrentPlayer.IsMainEditor)
+                if (LocalAutoDeployer.IsMainEditor())
                     RestoreLocalServer(m_CancellationTokenSource.Token);
             };
 #else
@@ -239,6 +286,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         void OnApplicationQuit()
         {
+            // Clones read the main Editor's server from the shared EditorPrefs; closing one must not stop it.
+            if (!LocalAutoDeployer.IsMainEditor())
+                return;
+
             // Sanity check
             if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Idle &&
                 m_CurrentServerPid == k_InvalidPID)
@@ -284,9 +335,77 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             CloudCodeLocalServerSettings.SecretsFile = path;
         }
 
+        async Task ResumeStartingServer(CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!await AwaitHealthy(m_LocalServerClient, () => !IsLocalServerProcess(m_CurrentServerPid), k_StartupTimeout,
+                        cancellationToken))
+                {
+                    const string kExitedMessage = "The local Cloud Code server exited while it was starting.";
+                    SetAndTrackServerFailure(kExitedMessage);
+                    SetDeployStatusWithState("Local Server Error", kExitedMessage, SeverityLevel.Error);
+                    m_Logger.LogError(kExitedMessage);
+                    ForceStopLocalServerSafe();
+                    return;
+                }
+
+                ResumeStartedServer(cancellationToken);
+                m_Logger.LogInfo($"Connected to local server on port {GetPort()}");
+            }
+            catch (OperationCanceledException)
+            {
+                ForceStopLocalServerSafe();
+            }
+            catch (Exception e)
+            {
+                SetAndTrackServerFailure(e.Message, AnalyticsErrorCode.FromException(e), AnalyticsErrorData.FromException(e));
+                SetDeployStatusWithState("Local Server Error", e.Message, SeverityLevel.Error);
+                m_Logger.LogError($"Local Server Restore Failed: {e}");
+                ForceStopLocalServerSafe();
+            }
+        }
+
+        void ResumeStartedServer(CancellationToken cancellationToken)
+        {
+            // Resume Health check.
+            SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
+            _ = Task.Run(
+                () => PeriodicHealthCheckTask(m_LocalServerClient,
+                    () => IsLocalServerProcess(m_CurrentServerPid), OnHealthCheckPingsFail, cancellationToken),
+                cancellationToken);
+
+            StartAdminTokenRefresh(pushImmediately: true, cancellationToken);
+
+            m_Logger.LogVerbose("Local Server has Restored to a Started State.");
+        }
+
         public int GetServerPid()
         {
             return m_CurrentServerPid;
+        }
+
+        // Test seam: redirects the log folder, e.g. to one the server cannot write to.
+        internal static string s_ServerLogDirectoryOverride;
+
+        internal static string ServerLogDirectory => s_ServerLogDirectoryOverride ??
+            LocalServerLogReader.ServerLogDirectory(CloudCodeInitializer.k_LocalServerProjectRoot);
+
+        bool RunsWithoutLogFile
+        {
+            get => SessionState.GetBool(k_ServerNoLogFile, false);
+            set => SessionState.SetBool(k_ServerNoLogFile, value);
+        }
+
+        public string GetLogDirectory() => ServerLogDirectory;
+
+        public string GetModulesDirectory() => EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir();
+
+        public string GetLogFilePath()
+        {
+            return LocalServerLogReader.ResolveLogFile(
+                m_LogTailer.LogFilePath, ServerLogDirectory,
+                RunsWithoutLogFile && m_CurrentServerStatus != LocalCloudCodeServerStatus.Idle);
         }
 
         public ClearStateResult ClearServerState()
@@ -327,11 +446,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             return m_LastKnownFailure;
         }
 
-        public Task StartCompilationAndService(bool restore)
+        public Task StartCompilationAndService(bool restore) => StartCompilationAndService(restore, localOnlyMode: false);
+
+        // Every fresh start sets the mode, and only the test harness asks for local-only, so a mode that a
+        // stopped test run left on never reaches a start made from the Editor. A restore resumes the server
+        // the mode was set for.
+        internal Task StartCompilationAndService(bool restore, bool localOnlyMode)
         {
             // Sanity check
             if (!restore && m_CurrentServerStatus != LocalCloudCodeServerStatus.Idle)
                 return m_StartTask;
+
+            if (!restore)
+                LocalOnlyMode = localOnlyMode;
 
             m_StartTask = RunStartCompilationAndService();
             return m_StartTask;
@@ -341,16 +468,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         {
             SetAndTrackServerStatus(LocalCloudCodeServerStatus.Preparing);
             SetAndTrackServerFailure(null);
+            RunsWithoutLogFile = false;
 
             try
             {
                 m_CancellationTokenSource = new CancellationTokenSource();
                 var cancelToken = m_CancellationTokenSource.Token;
 
-                var environment = await m_EnvironmentsApi.ValidateEnvironmentAsync();
-                cancelToken.ThrowIfCancellationRequested();
-                if (environment.Failed)
-                    throw new Exception($"Cannot start the local Cloud Code server. {environment.ErrorMessage}");
+                if (!LocalOnlyMode)
+                {
+                    var environment = await m_EnvironmentsApi.ValidateEnvironmentAsync();
+                    cancelToken.ThrowIfCancellationRequested();
+                    if (environment.Failed)
+                        throw new Exception($"Cannot start the local Cloud Code server. {environment.ErrorMessage}");
+                }
 
                 m_Logger.LogVerbose($"Connecting to new local server on port {GetPort()}");
 
@@ -364,7 +495,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                         ? "'dotnet' from the system PATH"
                         : $"the configured path '{configuredDotnetPath}' and 'dotnet' from the system PATH";
                     throw new Exception($"Could not find a usable .NET SDK. Tried {tried}. " +
-                        $"Set a valid .NET path at Preferences > Cloud Code > .NET Path.");
+                        "Set a valid .NET SDK path at Preferences > Cloud Code > .NET Path. A .NET or ASP.NET Core runtime on its own is not enough.");
                 }
 
                 // Fail fast on the problems that would otherwise only show up as the server process
@@ -449,7 +580,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         // Generates and compiles modules in preparation for Local CC Server deployment
         async Task<string> CompileAndDeployAllModules(CancellationToken cancellationToken)
         {
-            await m_EnvironmentsApi.RefreshAsync();
+            if (!LocalOnlyMode)
+                await m_EnvironmentsApi.RefreshAsync();
             cancellationToken.ThrowIfCancellationRequested();
 
             var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
@@ -459,7 +591,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             // Abort early if a cancellation request was done.
             cancellationToken.ThrowIfCancellationRequested();
 
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             var cloudCodeModules = m_CloudCodeModuleCollection.ToList();
             var cloudCodeModulesDir = await m_CloudCodeModuleDeployCommand.GenerateAndDeployToLocalAsync(cloudCodeModules, DeploymentOrigin.Automatic, cancellationToken);
 
@@ -482,7 +614,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         {
             var referencedModules = m_CloudCodeModuleReferenceCollection.ToList();
             List<IModuleItem> allModuleItems = new List<IModuleItem>();
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             var cloudCodeModules = m_CloudCodeModuleCollection.ToList();
             allModuleItems.AddRange(cloudCodeModules);
 #endif
@@ -511,16 +643,26 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 }
                 ;
                 var port = GetPort();
-                var logDir = PathUtils.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "UnityCloudCode", "Logs");
-                var logfile = PathUtils.Join(logDir, $"server-{DateTime.Now:yyyyMMdd-HHmmss-fff}.log");
+                var logDir = ServerLogDirectory;
+                var logReady = TryPrepareServerLogFile(logDir, DateTime.Now, out var logfile, out var logFailure);
 
-                // Each run gets its own log file, kept on disk for post-mortem inspection. Prune the
-                // oldest so they don't accumulate without bound.
-                PruneServerLogs(logDir, k_MaxRetainedServerLogs);
+                if (logReady)
+                {
+                    // Each run gets its own log file, kept on disk for post-mortem inspection. Prune the
+                    // oldest so they don't accumulate without bound.
+                    PruneServerLogs(logDir, k_MaxRetainedServerLogs);
 
-                // Tail the server's log file into the Editor console, so log capture survives domain reloads.
-                m_LogTailer.Start(logfile);
+                    // Tail the server's log file into the Editor console, so log capture survives domain reloads.
+                    m_LogTailer.Start(logfile);
+                }
+                else
+                {
+                    m_Logger.LogWarning(
+                        $"The local Cloud Code server will run without a log file because {logDir} is not writable: {logFailure}");
+                    m_LogTailer.Stop();
+                    RunsWithoutLogFile = true;
+                }
+
                 var editorProcess = Process.GetCurrentProcess();
                 var startInfo = new ProcessStartInfo()
                 {
@@ -530,7 +672,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                     FileName = m_Preferences.DotnetPath,
                     Arguments = $"\"{compiledCloudCodeServerPath}\" run" +
                         $" -p \"{compiledModuleDir}\"" +
-                        $" --log-file \"{logfile}\"" +
+                        (logReady ? $" --log-file \"{logfile}\"" : "") +
                         $" --log-level {k_ServerLogLevel}" +
                         $" --port {port}" +
                         $" --parent-pid {editorProcess.Id}" +
@@ -545,7 +687,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 LastServerLaunchArguments = $"{startInfo.FileName} {startInfo.Arguments}";
                 m_Logger.LogVerbose($"Starting local server with arguments {LastServerLaunchArguments}");
 
-                startInfo.EnvironmentVariables["GATEWAY_JWT"] = await AccessTokens.GetServicesGatewayTokenAsync();
+                // The server refuses to start without a token. In local-only mode it only mints service
+                // tokens with it, and swallows their failure, so a signed-out start gets a placeholder.
+                var gatewayToken = await AccessTokens.GetServicesGatewayTokenAsync();
+                if (string.IsNullOrEmpty(gatewayToken) && LocalOnlyMode)
+                    gatewayToken = k_LocalOnlyGatewayToken;
+                startInfo.EnvironmentVariables["GATEWAY_JWT"] = gatewayToken;
 
                 // Re-check now that compilation is done; the ports may have been taken meanwhile.
                 await EnsureRequiredPortsAvailable(cancellationToken);
@@ -553,7 +700,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
                 // Reset the Client's configuration to point to the new port
                 ((CloudCodeLocalServerApi)m_LocalServerClient).Configuration.BasePath = $"{k_ServerUrl}:{port}";
-                EditorPrefs.SetInt("CLOUD_CODE_DEBUG_PORT", port);
+                EditorPrefs.SetInt(CloudCodeInitializer.k_LocalServerPortPrefsKey, port);
+                AssetDatabase.SaveAssetIfDirty(CloudCodeLocalServerSettings);
 
                 // Ongoing logs are surfaced by tailing the server's log file (which survives domain
                 // reloads). stderr is captured only for the launch phase to surface early/fatal
@@ -565,6 +713,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 using var process = m_ProcessRunner.RunAsyncFireAndForget(
                     startInfo, OnServerStartupError, () => standardErrorEnd.TrySetResult(true));
                 SetAndTrackServerPid(process.Id);
+                var startTicks = ReadStartTicks(process);
+                SetAndTrackServerStartTicks(startTicks);
+                SetAndTrackServerModulesRoot(process.Id, startTicks, compiledModuleDir);
 
                 // If the user force cancels, abort
                 cancellationToken.ThrowIfCancellationRequested();
@@ -587,8 +738,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 // announcement is plumbing, and the state transition is traced by
                 // SetAndTrackServerStatus.
                 SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
-                _ = Task.Run(() => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
+                _ = Task.Run(() => PeriodicHealthCheckTask(m_LocalServerClient,
+                        () => IsLocalServerProcess(m_CurrentServerPid), OnHealthCheckPingsFail, cancellationToken),
                     cancellationToken);
+                StartAdminTokenRefresh(pushImmediately: false, cancellationToken);
                 m_Logger.LogInfo($"Connected to local server on port {GetPort()}");
             }
             catch (Exception e)
@@ -617,9 +770,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                     m_CancellationTokenSource.Cancel();
 
                 // Process Sanity check using the PID
+                if (!IsLocalServerProcess(m_CurrentServerPid))
+                {
+                    m_Logger.LogWarning("The local Cloud Code server had already stopped.");
+                    ForceStopLocalServerSafe();
+                    return;
+                }
+
                 using var process = Process.GetProcessById(m_CurrentServerPid);
-                if (process.HasExited)
-                    throw new Exception($"Server has already stopped with exit code {process.ExitCode}.");
 
                 // Perform graceful termination, wait for the server to gracefully stop
                 // If the server had not yet stopped, force kill it.
@@ -627,8 +785,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 if (!process.HasExited)
                     throw new Exception("Server has failed to stop.");
 
-                if (process.ExitCode != 0)
-                    m_Logger.LogError($"Server has exited with an error ExitCode: {process.ExitCode}");
+                var exitCode = TryGetExitCode(process);
+                if (exitCode == null)
+                    m_Logger.LogVerbose("Could not read the local Cloud Code server's exit code.");
+                else if (exitCode != 0)
+                    m_Logger.LogError($"Server has exited with an error ExitCode: {exitCode}");
 
                 m_LogTailer.Stop();
 
@@ -638,6 +799,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             }
             catch (Exception e)
             {
+                m_Logger.LogError($"Failed to stop the local Cloud Code server: {e.Message}");
                 SetAndTrackServerFailure(
                     e.Message, AnalyticsErrorCode.FromException(e), AnalyticsErrorData.FromException(e));
 
@@ -676,7 +838,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                     m_CancellationTokenSource.Cancel();
 
                 // Kill the tracked PID if we have it
-                if (m_CurrentServerPid != k_InvalidPID)
+                if (m_CurrentServerPid != k_InvalidPID && IsLocalServerProcess(m_CurrentServerPid))
                     m_ProcessRunner.Stop(m_CurrentServerPid);
             }
             catch (Exception)
@@ -693,6 +855,61 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             m_Logger.LogVerbose("Local Server has Force Stopped.");
         }
 
+        bool IsLocalServerProcess(int pid)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(pid);
+                return !process.HasExited && IsLocalServerProcess(process, m_Preferences.DotnetPath, m_CurrentServerStartTicks);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        // A reused PID can land on any process, other dotnet hosts included, so the start time recorded at
+        // launch must match too. An unreadable name or start time counts as not ours.
+        internal static bool IsLocalServerProcess(Process process, string dotnetPath, long recordedStartTicks)
+        {
+            try
+            {
+                // Mono on Linux can report the whole argv[0] path rather than just the executable's name.
+                var name = Path.GetFileName(process.ProcessName);
+                if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    name = name.Substring(0, name.Length - ".exe".Length);
+                var configuredName = string.IsNullOrWhiteSpace(dotnetPath)
+                    ? null
+                    : Path.GetFileNameWithoutExtension(dotnetPath);
+
+                if (!string.Equals(name, "dotnet", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(name, configuredName, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                // Only a server launched before start times were recorded has none; the name is all there is.
+                if (recordedStartTicks == 0)
+                    return true;
+
+                return Math.Abs(ReadStartTicks(process) - recordedStartTicks) < TimeSpan.TicksPerSecond;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        static long ReadStartTicks(Process process)
+        {
+            try
+            {
+                return process.StartTime.ToUniversalTime().Ticks;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
         internal void RestoreLocalServer(CancellationToken cancellationToken)
         {
             // Under MPPM this runs deferred, so a start or stop can land after the reload and before it; that
@@ -705,6 +922,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 m_CurrentServerStatus == LocalCloudCodeServerStatus.Idle &&
                 m_LastKnownFailure == null)
             {
+                // Clears what a crashed session of this project may have published for Play Mode.
+                EditorPrefs.DeleteKey(CloudCodeInitializer.k_LocalServerPidPrefsKey);
                 return;
             }
 
@@ -737,6 +956,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 if (process.HasExited)
                     throw new Exception("Local Server has Exited.");
 
+                // After an Editor crash the server exits with it, and the OS can hand its PID to another program.
+                if (!IsLocalServerProcess(process, m_Preferences.DotnetPath, m_CurrentServerStartTicks))
+                {
+                    WarnLocalServerNotRestored($"its process id {m_CurrentServerPid} now belongs to another program");
+                    ForceStopLocalServerSafe();
+                    return;
+                }
+
                 // At this point we have a PID, look at the current status.
                 // If we were restoring to a stopping state, stop the server.
                 if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Stopping)
@@ -746,16 +973,28 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                     return;
                 }
 
+                // A null root means the server was started by a version that deployed elsewhere.
+                if (!IsSameFolder(
+                        ReadRecordedModulesRoot(
+                            SessionState.GetString(k_ServerModulesRootKey, null), m_CurrentServerPid, m_CurrentServerStartTicks),
+                        EditorCloudCodeLocalModuleDeploymentHandler.GetModuleDestinationDir()))
+                {
+                    WarnLocalServerNotRestored("it loads modules from a folder this version no longer deploys to");
+                    ForceStopLocalServerSafe();
+                    return;
+                }
+
                 // Resume tailing the server log file from the persisted offset.
                 m_LogTailer.Restore();
 
-                // Resume Health check.
-                SetAndTrackServerStatus(LocalCloudCodeServerStatus.Started);
-                _ = Task.Run(
-                    () => PeriodicHealthCheckTask(m_LocalServerClient, OnHealthCheckPingsFail, cancellationToken),
-                    cancellationToken);
+                // A reload during the startup wait leaves a live server that may not be listening yet.
+                if (m_CurrentServerStatus == LocalCloudCodeServerStatus.Starting)
+                {
+                    m_StartTask = ResumeStartingServer(cancellationToken);
+                    return;
+                }
 
-                m_Logger.LogVerbose("Local Server has Restored to a Started State.");
+                ResumeStartedServer(cancellationToken);
             }
             catch (Exception e)
             {
@@ -791,6 +1030,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
             return PathUtils.Join(packageInfo.resolvedPath, "Editor", "CloudCodeDebugger~", "CloudCodeDebugger.dll");
         }
 
+        // The server creates its own log file, so a project folder we can't write to must not block startup:
+        // false means launch without --log-file.
+        internal static bool TryPrepareServerLogFile(string logDir, DateTime now, out string logFile, out string failure)
+        {
+            try
+            {
+                Directory.CreateDirectory(logDir);
+                var probe = Path.Combine(logDir, $".write-test-{Guid.NewGuid():N}");
+                File.WriteAllBytes(probe, Array.Empty<byte>());
+                File.Delete(probe);
+            }
+            catch (Exception e)
+            {
+                logFile = null;
+                failure = e.Message;
+                return false;
+            }
+
+            logFile = PathUtils.Join(logDir, LocalServerLogReader.ServerLogFileName(now));
+            failure = null;
+            return true;
+        }
+
         // Keeps the most recent per-run server logs and deletes the rest, so they don't accumulate
         // without bound. Best-effort: any file that can't be enumerated or deleted is skipped.
         internal static void PruneServerLogs(string logDir, int maxRetained)
@@ -800,7 +1062,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 if (!Directory.Exists(logDir))
                     return;
 
-                var logs = Directory.GetFiles(logDir, k_ServerLogSearchPattern);
+                var logs = Directory.GetFiles(logDir, LocalServerLogReader.k_ServerLogSearchPattern);
                 if (logs.Length <= maxRetained)
                     return;
 
@@ -856,28 +1118,32 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         // nothing about why it crashed.
         async Task AwaitServerReady(Process process, Task standardErrorEnd, CancellationToken cancellationToken)
         {
-            var healthCheck = m_LocalServerClient.HealthCheck(cancellationToken);
+            if (await AwaitHealthy(m_LocalServerClient, () => process.HasExited, k_StartupTimeout, cancellationToken))
+                return;
 
-            // If we abandon the health check below, its failure must still be observed.
-            _ = healthCheck.ContinueWith(
-                t => _ = t.Exception,
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted,
-                TaskScheduler.Default);
+            // stderr is delivered asynchronously, so the fatal line the process wrote on its
+            // way out can still be in flight when the exit is observed. Wait for the reader
+            // to reach EOF - bounded, so a pipe that never closes cannot wedge the start -
+            // before concluding anything about what it did or didn't write.
+            await Task.WhenAny(standardErrorEnd, Task.Delay(k_StartupErrorFlushMs));
+            throw StartupExitFailure(process);
+        }
+
+        /// <summary>Retries the health check until it answers or <paramref name="timeout"/> passes; false if the process exits first.</summary>
+        internal static async Task<bool> AwaitHealthy(ICloudCodeLocalServerApi client, Func<bool> hasExited, TimeSpan timeout,
+            CancellationToken cancellationToken)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            using var attempts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var healthCheck = StartHealthCheck();
+            Exception lastFault = null;
 
             while (true)
             {
                 var finished = await Task.WhenAny(healthCheck, Task.Delay(k_StartupExitPollMs, cancellationToken));
 
-                if (process.HasExited)
-                {
-                    // stderr is delivered asynchronously, so the fatal line the process wrote on its
-                    // way out can still be in flight when the exit is observed. Wait for the reader
-                    // to reach EOF - bounded, so a pipe that never closes cannot wedge the start -
-                    // before concluding anything about what it did or didn't write.
-                    await Task.WhenAny(standardErrorEnd, Task.Delay(k_StartupErrorFlushMs));
-                    throw StartupExitFailure(process);
-                }
+                if (hasExited())
+                    return false;
 
                 // WhenAny completes rather than throws when the poll delay is cancelled, so the
                 // cancellation has to be acted on here or the loop spins.
@@ -885,10 +1151,39 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
                 if (finished == healthCheck)
                 {
+                    if (healthCheck.IsFaulted && DateTime.UtcNow < deadline)
+                    {
+                        lastFault = healthCheck.Exception?.GetBaseException();
+                        healthCheck = StartHealthCheck();
+                        continue;
+                    }
+
                     // Surfaces a genuine health-check failure against a server that is still alive.
                     await healthCheck;
-                    return;
+                    return true;
                 }
+
+                if (DateTime.UtcNow >= deadline)
+                {
+                    attempts.Cancel();
+                    var message = $"The local Cloud Code server did not answer a health check within {timeout.TotalSeconds:0} seconds.";
+                    throw lastFault == null
+                        ? new TimeoutException(message)
+                        : new TimeoutException($"{message} The last health check failed: {lastFault.Message}", lastFault);
+                }
+            }
+
+            Task StartHealthCheck()
+            {
+                var check = client.HealthCheck(attempts.Token);
+
+                // If we abandon the health check below, its failure must still be observed.
+                _ = check.ContinueWith(
+                    t => _ = t.Exception,
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
+                return check;
             }
         }
 
@@ -949,20 +1244,73 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         internal void SetAndTrackServerPid(int value)
         {
-            EditorPrefs.SetInt(K_ServerPidKey, value);
+            SessionState.SetInt(K_ServerPidKey, value);
+            EditorPrefs.SetInt(CloudCodeInitializer.k_LocalServerPidPrefsKey, value);
             m_CurrentServerPid = value;
             m_Logger.LogVerbose($"Local Server tracked with PID: {value}");
+
+            if (value == k_InvalidPID)
+                SetAndTrackServerStartTicks(0);
+        }
+
+        internal void SetAndTrackServerStartTicks(long value)
+        {
+            SessionState.SetString(K_ServerStartTicksKey, value.ToString(CultureInfo.InvariantCulture));
+            m_CurrentServerStartTicks = value;
+        }
+
+        internal static bool IsSameFolder(string recorded, string current)
+        {
+            if (string.IsNullOrEmpty(recorded))
+                return false;
+
+            // Windows and macOS file systems are case-insensitive by default; Linux is not.
+            var comparison = Application.platform == RuntimePlatform.LinuxEditor
+                ? StringComparison.Ordinal
+                : StringComparison.OrdinalIgnoreCase;
+            return string.Equals(
+                Path.GetFullPath(recorded).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(current).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                comparison);
+        }
+
+        internal void SetAndTrackServerModulesRoot(int pid, long startTicks, string value)
+        {
+            if (value == null)
+                SessionState.EraseString(k_ServerModulesRootKey);
+            else
+                SessionState.SetString(
+                    k_ServerModulesRootKey,
+                    string.Join("|", pid.ToString(CultureInfo.InvariantCulture),
+                        startTicks.ToString(CultureInfo.InvariantCulture), value));
+        }
+
+        // The root is only trusted for the process it was recorded with; a server started by another version
+        // replaces the PID and start ticks but leaves this key behind.
+        internal static string ReadRecordedModulesRoot(string stored, int pid, long startTicks)
+        {
+            var parts = stored?.Split(new[] { '|' }, 3);
+            if (parts is not { Length: 3 } ||
+                parts[0] != pid.ToString(CultureInfo.InvariantCulture) ||
+                parts[1] != startTicks.ToString(CultureInfo.InvariantCulture))
+                return null;
+
+            return parts[2];
         }
 
         internal void SetAndTrackServerStatus(LocalCloudCodeServerStatus value)
         {
             var previous = m_CurrentServerStatus;
 
-            EditorPrefs.SetString(K_ServerStatus, value.ToString());
+            SessionState.SetString(K_ServerStatus, value.ToString());
             m_CurrentServerStatus = value;
             m_Logger.LogVerbose($"Local Server tracked with State: {value}");
 
             SendLifecycleAnalytics(previous, value);
+
+            // The modules stay on disk, but a stopped server serves none of them; a start deploys them all again.
+            if (value == LocalCloudCodeServerStatus.Idle && previous != LocalCloudCodeServerStatus.Idle)
+                DeploymentStore.Forget(DeploymentTarget.Local);
 
             OnServerStatusChanged?.Invoke(this, value);
         }
@@ -996,7 +1344,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         internal void SetAndTrackServerFailure(string value, string errorCode = null, string errorData = null)
         {
-            EditorPrefs.SetString(K_ServerFailure, value);
+            SessionState.SetString(K_ServerFailure, value ?? string.Empty);
             m_LastKnownFailure = value;
             m_LastFailureErrorCode = errorCode;
             m_LastFailureErrorData = errorData;
@@ -1005,30 +1353,113 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 m_Logger.LogVerbose($"Local Server tracked with Failure: {value}");
         }
 
-        static async Task PeriodicHealthCheckTask(ICloudCodeLocalServerApi client, Action onFail, CancellationToken cancellationToken)
+        internal static async Task PeriodicHealthCheckTask(ICloudCodeLocalServerApi client, Func<bool> isServerProcessAlive,
+            Action onFail, CancellationToken cancellationToken)
         {
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    await client.HealthCheck(cancellationToken);
+                    try
+                    {
+                        await client.HealthCheck(cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && isServerProcessAlive())
+                    {
+                        // A request timeout from a live process means it is busy, e.g. paused at a debugger
+                        // breakpoint: keep watching rather than kill it. A wedged server is left to Stop, which
+                        // force-kills it. Any other failure still ends monitoring.
+                    }
+
                     await Task.Delay(k_HealthCheckIntervalMs, cancellationToken);
                 }
             }
-            catch (Exception e)
+            catch (Exception) when (cancellationToken.IsCancellationRequested)
             {
-                // Ignore if cancelled, else continue assuming health check failed
-                if (e is OperationCanceledException)
-                    return;
+                return;
+            }
+            catch (Exception)
+            {
+                // The server failed a health check, or timed out after its process exited.
             }
 
-            // Else a health check failure may be an indication where:
-            // 1 - The Server hanged, but process is running
-            // 2 - The Server process suddenly stopped without warning.
-            // 3 - Network issues prevent us from communicating with the server.
-            // Regardless, we need to properly force terminate to enable users to retry.
-            await Task.Factory.StartNew(onFail, CancellationToken.None, TaskCreationOptions.None,
-                MainThreadScheduler.ThreadHelper.TaskScheduler);
+            // Force terminate whatever is left so the user can start again.
+            await Task.Factory.StartNew(() =>
+            {
+                // A stop or restore that cancelled this monitor meanwhile owns the server now.
+                if (!cancellationToken.IsCancellationRequested)
+                    onFail();
+            }, CancellationToken.None, TaskCreationOptions.None, MainThreadScheduler.ThreadHelper.TaskScheduler);
+        }
+
+        void StartAdminTokenRefresh(bool pushImmediately, CancellationToken cancellationToken)
+        {
+            if (LocalOnlyMode)
+                return;
+
+            var scheduler = MainThreadScheduler.ThreadHelper.TaskScheduler;
+            if (scheduler == null)
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    if (!cancellationToken.IsCancellationRequested && MainThreadScheduler.ThreadHelper.TaskScheduler != null)
+                        StartAdminTokenRefresh(pushImmediately, cancellationToken);
+                };
+                return;
+            }
+
+            _ = Task.Factory.StartNew(
+                () => PeriodicAdminTokenRefreshTask(pushImmediately, cancellationToken),
+                cancellationToken, TaskCreationOptions.None, scheduler)
+                .Unwrap();
+        }
+
+        async Task PeriodicAdminTokenRefreshTask(bool pushImmediately, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!pushImmediately)
+                    await Task.Delay(k_AdminTokenRefreshIntervalMs, cancellationToken);
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await PushAdminToken(cancellationToken);
+                    await Task.Delay(k_AdminTokenRefreshIntervalMs, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // The server is stopping.
+            }
+        }
+
+        async Task PushAdminToken(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var token = await AccessTokens.GetServicesGatewayTokenAsync();
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // No gateway token (signed out). Keep the server's current token rather than push an empty one.
+                if (string.IsNullOrEmpty(token))
+                {
+                    m_Logger.LogVerbose("Skipped refreshing the local server's gateway token: no signed-in user.");
+                    return;
+                }
+
+                await m_LocalServerClient.UpdateAdminToken(token, cancellationToken);
+                m_Logger.LogVerbose("Refreshed the local server's gateway token.");
+            }
+            // An HttpClient timeout is also an OperationCanceledException, and that must not stop the loop.
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                // Not fatal: the server keeps its current token, and the next push retries.
+                m_Logger.LogWarning($"Could not refresh the local Cloud Code server's gateway token: {e.Message}");
+            }
         }
 
         // Checks every port the server needs, not just the configured one. The Orleans ports are
@@ -1037,9 +1468,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         async Task EnsureRequiredPortsAvailable(CancellationToken cancellationToken)
         {
             var port = GetPort();
-            if (!await IsPortAvailable(port, cancellationToken))
-                throw new PortInUseException($"Server Port {port} is not available. " +
-                    "Choose a different port in the Cloud Code Local Server Settings asset.");
+            if (await LocalServerPort.IsLoopbackListeningAsync(port, cancellationToken))
+                throw new PortInUseException(LocalServerPort.InUseMessage(port));
         }
 
         // The server ships as a framework-dependent build, so the .NET runtimes named in its
@@ -1081,12 +1511,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 var found = installed.Count == 0
                     ? "none are installed"
                     : $"found {string.Join(", ", installed.Where(v => v != null).Select(v => v.Version.ToString()))}";
-                // The ASP.NET Core Runtime carries both frameworks the server declares, so it is the
-                // right remedy whichever one is missing - the plain .NET Runtime download does not
-                // include Microsoft.AspNetCore.App.
+                // The SDK carries both frameworks the server declares, so it is the right remedy
+                // whichever one is missing.
                 throw new Exception(
                     $"The local Cloud Code server requires the {name} {version.Major}.{version.Minor} runtime, but {found}. " +
-                    $"Install the ASP.NET Core Runtime {version.Major}.{version.Minor}, or the .NET SDK, from " +
+                    $"Install the .NET SDK {version.Major}.{version.Minor} from " +
                     "https://dotnet.microsoft.com/download/dotnet and restart the Editor.");
             }
         }
@@ -1175,37 +1604,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 return installed.Minor > required.Minor;
 
             return installed.Build >= required.Build;
-        }
-
-        async Task<bool> IsPortAvailable(int port, CancellationToken cancellationToken = default)
-        {
-#if UNITY_EDITOR_WIN
-            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-            TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
-
-            foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
-            {
-                if (tcpi.LocalEndPoint.Port == port && tcpi.State == TcpState.Listen)
-                {
-                    return await Task.FromResult(false);
-                }
-            }
-
-            return await Task.FromResult(true);
-#else
-            var lsofStartInfo = new ProcessStartInfo
-            {
-                FileName = "lsof",
-                Arguments = $"-i :{port} -s TCP:LISTEN",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false
-            };
-
-            var lsofProcess = await m_ProcessRunner.RunAsync(lsofStartInfo, cancellationToken : cancellationToken);
-            return lsofProcess.ExitCode == 1;
-#endif
         }
 
         #endregion

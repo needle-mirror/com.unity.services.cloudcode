@@ -42,6 +42,42 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
             return DeserializeFromPath(assetPath);
         }
 
+        internal static bool IsUnreadable(string asmdefPath)
+        {
+            try
+            {
+                ParseAssemblyDefinitionAssetOrThrow(AssetDatabase.LoadAssetAtPath<AssemblyDefinitionAsset>(asmdefPath));
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return true;
+            }
+        }
+
+        internal static AsmdefJsonData ParseAssemblyDefinitionAssetOrThrow(AssemblyDefinitionAsset asmdefAsset)
+        {
+            var path = AssetDatabase.GetAssetPath(asmdefAsset);
+            AsmdefJsonData data;
+            try
+            {
+                data = DeserializeFromPath(path);
+            }
+            catch (ArgumentException e)
+            {
+                throw new InvalidOperationException($"The assembly definition '{path}' is not valid JSON: {e.Message}", e);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException($"The assembly definition '{path}' could not be read: {e.Message}", e);
+            }
+
+            if (string.IsNullOrEmpty(data?.name))
+                throw new InvalidOperationException($"The assembly definition '{path}' has no name.");
+
+            return data;
+        }
+
         internal static AsmdefJsonData DeserializeFromPath(string assetPath)
         {
             if (string.IsNullOrEmpty(assetPath))
@@ -93,23 +129,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Scripts
 
         internal bool HasAssemblyReferenceAtPath(string asmdefPath)
         {
-            string newReference;
-            if (ReferencesUseGUIDs())
-                newReference = $"GUID:{AssetDatabase.AssetPathToGUID(asmdefPath)}";
-            else
-                newReference = Path.GetFileNameWithoutExtension(asmdefPath);
+            var guidReference = $"GUID:{AssetDatabase.AssetPathToGUID(asmdefPath)}";
+            var nameReference = DeserializeFromPath(asmdefPath)?.name;
 
-            if (string.IsNullOrEmpty(newReference))
-                return false;
-
-            bool found = false;
             foreach (var reference in references)
             {
-                if (reference.ToLowerInvariant() == newReference.ToLowerInvariant())
-                    found = true;
+                var isGuid = reference.StartsWith("GUID:", StringComparison.Ordinal);
+                var target = isGuid ? guidReference : nameReference;
+                // Hex GUIDs match in either case; asmdef names are resolved case-sensitively by CompilationPipeline.
+                if (string.Equals(reference, target, isGuid ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+                    return true;
             }
 
-            return found;
+            return false;
         }
 
         internal bool HasNameThatMatches(AssemblyDefinitionAsset asmdefAsset)

@@ -16,6 +16,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
     {
         Task<CloudCodeLocalHealthCheckResponse> HealthCheck(CancellationToken cancellationToken);
         Task<CloudCodeLocalShutdownResponse> Shutdown(CancellationToken cancellationToken);
+        Task UpdateAdminToken(string token, CancellationToken cancellationToken);
     }
 
     class CloudCodeLocalServerApi : ICloudCodeLocalServerApi
@@ -49,6 +50,15 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Apis
         {
             return await PostAsync<CloudCodeLocalShutdownResponse, CloudCodeLocalShutdownRequest>(
                 new CloudCodeLocalShutdownRequest(), cancellationToken);
+        }
+
+        public async Task UpdateAdminToken(string token, CancellationToken cancellationToken)
+        {
+            var request = new CloudCodeLocalAdminTokenRequest(token);
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            using var response = await m_HttpClient.PutAsync(request.ConstructUrl(Configuration.BasePath), content, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"UpdateAdminToken failed with HttpStatusCode: {response.StatusCode}");
         }
 
         private async Task<T1> GetAsync<T1, T2>(T2 request, CancellationToken cancellationToken)

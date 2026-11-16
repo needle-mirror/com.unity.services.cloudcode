@@ -58,18 +58,26 @@ namespace Unity.Services.CloudCode
             }
             catch (HttpException<BasicErrorResponse> e)
             {
-                throw CloudCodeInternal.CreateException(e.Response.IsNetworkError, e.Response.StatusCode,
-                    e.ActualError?.Code ?? (int)e.Response.StatusCode, e.Message, e);
+                throw FromBasicError(e);
             }
-            catch (HttpException e)
+            catch (HttpException e) when (e.Response != null)
             {
-                throw CloudCodeInternal.CreateException(e.Response.IsNetworkError, e.Response.StatusCode,
-                    (int)e.Response.StatusCode, e.Message, e);
+                throw FromBasicError(CloudCodeInternal.ToBasicHttpException(e.Response));
+            }
+            catch (ResponseDeserializationException e) when (e.response != null && (e.response.IsHttpError || e.response.IsNetworkError))
+            {
+                throw FromBasicError(CloudCodeInternal.ToBasicHttpException(e.response));
             }
             catch (Exception e)
             {
                 throw new CloudCodeException(CloudCodeExceptionReason.Unknown, CommonErrorCodes.Unknown, e.Message, e);
             }
+        }
+
+        static CloudCodeException FromBasicError(HttpException<BasicErrorResponse> e)
+        {
+            return CloudCodeInternal.CreateException(e.Response.IsNetworkError, e.Response.StatusCode,
+                CloudCodeInternal.ErrorCodeOf(e.Response, e.ActualError?.Code), e.Message, e);
         }
 
         void ValidateRequiredDependencies()

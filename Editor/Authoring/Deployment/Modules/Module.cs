@@ -20,11 +20,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment.Modules
             set
             {
                 base.Progress = value;
-                if (value <= 0f)
-                {
-                    m_Parent.Progress = 0f;
-                    return;
-                }
                 m_Parent.Progress = (float)Math.Round(66.6f + value / 3f, 0, MidpointRounding.AwayFromZero);
             }
         }

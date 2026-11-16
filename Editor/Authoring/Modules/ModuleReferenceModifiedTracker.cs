@@ -52,8 +52,17 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 
         void OnEnvironmentsChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(IEnvironmentsApi.ActiveEnvironmentId))
-                ReconcileAll();
+            if (e.PropertyName != nameof(IEnvironmentsApi.ActiveEnvironmentId))
+                return;
+
+            // "Deployed" describes a deploy to the previous environment.
+            foreach (var moduleReference in m_ModuleReferences.ToList())
+            {
+                if (DeploymentStatusOwnership.Matches(moduleReference.Status, DeploymentStatusOwnership.Deployed))
+                    moduleReference.Status = DeploymentStatus.Empty;
+            }
+
+            ReconcileAll();
         }
 
         void OnFocusChanged(bool hasFocus)
@@ -139,7 +148,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             if (stale == null)
                 return;
 
-            var next = stale.Value ? DeploymentStatus.ModifiedLocally : DeploymentStatus.UpToDate;
+            var next = stale.Value
+                ? DeploymentStatus.ModifiedLocally
+                : DeploymentStatusOwnership.InSync(moduleReference.Status, freshest.Target);
 
             if (DeploymentStatusOwnership.Matches(moduleReference.Status, next))
                 return;

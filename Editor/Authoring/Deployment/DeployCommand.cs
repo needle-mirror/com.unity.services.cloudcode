@@ -24,7 +24,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public DeployCommand(
             CloudCodeDeploymentHandler editorCloudCodeDeploymentHandler,
             IDeploymentAnalytics deploymentAnalytics,
-            IScriptReader scriptReader)
+            IScriptReader scriptReader
+            )
         {
             m_EditorCloudCodeDeploymentHandler = editorCloudCodeDeploymentHandler;
             m_DeploymentAnalytics = deploymentAnalytics;
@@ -53,6 +54,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 }
             }
         }
+
 
         async Task<List<Script>> GetScriptsFromDeploymentItems(IEnumerable<IDeploymentItem> deploymentItems)
         {

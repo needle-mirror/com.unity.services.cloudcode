@@ -11,6 +11,8 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Editor")]
 [assembly: InternalsVisibleTo("CloudCode.Runtime.Tests")]
 [assembly: InternalsVisibleTo("CloudCode.Editor.Tests")]
+[assembly: InternalsVisibleTo("Unity.Services.CloudCode.PlayMode.Tests.Editor")]
+[assembly: InternalsVisibleTo("Unity.Services.CloudCode.Cli.Tests")]
 #endif
 
 [assembly: InternalsVisibleTo("Unity.Services.CloudCode.Cli")]

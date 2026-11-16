@@ -63,6 +63,13 @@
     margin-right: 0px;
 }
 
+.popup-row-server-scenario__infobox {
+    width: 270px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 4px;
+}
+
 .popup-row-divider__image {
     height: 1px;
     background-color: var(--unity-colors-slider_groove-background);

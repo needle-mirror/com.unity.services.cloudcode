@@ -11,7 +11,7 @@
     ],
     "autoReferenced": true,
     "defineConstraints": [
-        "UNITY_6000_5_OR_NEWER"
+        "UNITY_6000_7_OR_NEWER"
     ],
     "versionDefines": [],
     "noEngineReferences": true

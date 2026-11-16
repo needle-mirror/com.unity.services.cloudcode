@@ -39,7 +39,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             IEnvironmentProvider environmentProvider,
             IProjectIdentifierProvider projectIdProvider,
             IDefaultApiClient client,
-            IFileReader fileReader)
+            IFileReader fileReader
+            )
         {
             m_TokenProvider = tokenProvider;
             m_Client = client;
@@ -51,17 +52,25 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
         public async Task<ScriptName> UploadFromFile(IScript script)
         {
             await UpdateToken();
-            if (!await ScriptExists(script.Name))
+            var projectId = m_ProjectIdProvider.ProjectId;
+            var environmentId = m_EnvironmentProvider.Current;
+            long? version;
+            if (!await ScriptExists(script.Name, projectId, environmentId))
             {
-                EnsureSuccess(script.Name, await CreateScript(script));
+                var response = await CreateScript(script, projectId, environmentId);
+                EnsureSuccess(script.Name, response);
+                version = response.Result?.Version;
             }
             else
             {
-                EnsureSuccess(script.Name, await UpdateScript(script));
+                var response = await UpdateScript(script, projectId, environmentId);
+                EnsureSuccess(script.Name, response);
+                version = response.Result?.Version;
             }
 
             return script.Name;
         }
+
 
         public Task Publish(ScriptName scriptName)
         {
@@ -155,7 +164,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 Language.CS);
         }
 
-        async Task<Response> CreateScript(IScript script)
+        async Task<Response<CloudCodeCreateModuleResponse>> CreateScript(IScript script, string projectId, string environmentId)
         {
             Stream stream = null;
             Response<CloudCodeCreateModuleResponse> response;
@@ -163,8 +172,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             {
                 stream = await LoadModuleContentsAsync(script.Path);
                 var request = new CreateModuleRequest(
-                    m_ProjectIdProvider.ProjectId,
-                    m_EnvironmentProvider.Current,
+                    projectId,
+                    environmentId,
                     script.Name.GetNameWithoutExtension(),
                     "CS", stream);
                 response = await WrapRequest(m_Client.CreateModuleAsync(request));
@@ -179,7 +188,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             return response;
         }
 
-        async Task<Response> UpdateScript(IScript script)
+        async Task<Response<CloudCodeUpdateModuleResponse>> UpdateScript(IScript script, string projectId, string environmentId)
         {
             Stream stream = null;
             Response<CloudCodeUpdateModuleResponse> response;
@@ -188,11 +197,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
                 stream = await LoadModuleContentsAsync(script.Path);
 
                 var request = new UpdateModuleRequest(
-                    m_ProjectIdProvider.ProjectId,
-                    m_EnvironmentProvider.Current,
+                    projectId,
+                    environmentId,
                     script.Name.GetNameWithoutExtension(),
-                    null,
-                    stream);
+                    tags: null,
+                    file: stream);
 
                 response = await WrapRequest(m_Client.UpdateModuleAsync(request));
             }
@@ -207,11 +216,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.AdminApi
             return response;
         }
 
-        async Task<bool> ScriptExists(ScriptName scriptName)
+        async Task<bool> ScriptExists(ScriptName scriptName, string projectId, string environmentId)
         {
             var existsRequest = new GetModuleRequest(
-                m_ProjectIdProvider.ProjectId,
-                m_EnvironmentProvider.Current,
+                projectId,
+                environmentId,
                 scriptName.GetNameWithoutExtension());
 
             var res =

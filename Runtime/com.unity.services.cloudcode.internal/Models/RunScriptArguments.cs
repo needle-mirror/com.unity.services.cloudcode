@@ -32,10 +32,12 @@ namespace Unity.Services.CloudCode.Internal.Models
         /// Creates an instance of RunScriptArguments.
         /// </summary>
         /// <param name="@params">Object containing key-value pairs that map on to the parameter definitions for the script. Parameters are required according to the definition. </param>
+        /// <param name="version">The script version to run: `latest`, a version number, or a release ID.</param>
         [Preserve]
-        public RunScriptArguments(object @params)
+        public RunScriptArguments(object @params, string version = default)
         {
             Params = (IDeserializable) JsonObject.GetNewJsonObjectResponse(@params);
+            Version = version;
         }
 
         /// <summary>
@@ -44,6 +46,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         [Preserve][JsonConverter(typeof(JsonObjectConverter))]
         [DataMember(Name = "params", IsRequired = true, EmitDefaultValue = true)]
         public IDeserializable Params{ get; }
+
+        /// <summary>
+        /// The script version to run: `latest`, a version number, or a release ID.
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "version", EmitDefaultValue = false)]
+        public string Version{ get; }
 
         /// <summary>
         /// Formats a RunScriptArguments into a string of key-value pairs for use as a path parameter.
@@ -55,7 +64,11 @@ namespace Unity.Services.CloudCode.Internal.Models
 
             if (Params != null)
             {
-                serializedModel += "params," + Params.ToString();
+                serializedModel += "params," + Params.ToString() + ",";
+            }
+            if (Version != null)
+            {
+                serializedModel += "version," + Version;
             }
             return serializedModel;
         }

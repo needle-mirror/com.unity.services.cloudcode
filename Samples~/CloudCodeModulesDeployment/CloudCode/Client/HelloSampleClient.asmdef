@@ -1,0 +1,18 @@
+{
+    "name": "HelloSampleClient",
+    "rootNamespace": "",
+    "references": [
+        "GUID:dcea414711a1d417c899526c51c49ae6",
+        "GUID:f220a277eefae4d3aa9e31c2b43bb307",
+        "GUID:bcd2700290dea934cbfe2d4bc262a47f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

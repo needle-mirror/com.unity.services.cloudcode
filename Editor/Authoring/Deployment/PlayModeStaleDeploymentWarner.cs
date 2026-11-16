@@ -1,7 +1,6 @@
 #if UNITY_6000_3_OR_NEWER
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
@@ -11,7 +10,6 @@ using Unity.Services.Core.Editor.Environments;
 using UnityEditor;
 using UnityEngine;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
-using DeploymentTarget = Unity.Services.CloudCode.Authoring.Editor.Core.Model.LastSuccessfulDeploymentInfo.DeploymentTarget;
 using LocalCloudCodeServerStatus = Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.LocalCloudCodeServerStatus;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
@@ -26,18 +24,18 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         internal enum StaleReason
         {
             ModifiedSinceLastDeploy,
-            SourceNewerOnDisk
+            SourceNewerOnDisk,
+            NeverDeployed
         }
 
         readonly ICloudCodeLocalServer m_LocalServer;
         readonly IEnvironmentsApi m_EnvironmentsApi;
-        readonly ILastSuccessfulDeploymentStore m_DeploymentStore;
+        readonly RemoteModuleStaleness m_Staleness;
         readonly IEnumerable<CloudCodeModuleReference> m_ModuleReferences;
         readonly ILogger m_Logger;
         readonly Func<bool> m_IsBatchMode;
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
         readonly IEnumerable<CloudCodeModule> m_Modules;
-        readonly IModuleContentHasher m_ContentHasher;
 #endif
 
         bool m_EvaluationInFlight;
@@ -47,21 +45,19 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         public PlayModeStaleDeploymentWarner(
             ICloudCodeLocalServer localServer,
             IEnvironmentsApi environmentsApi,
-            ILastSuccessfulDeploymentStore deploymentStore,
+            RemoteModuleStaleness staleness,
             CloudCodeModuleReferenceCollection moduleReferences,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             CloudCodeModuleCollection modules,
-            IModuleContentHasher contentHasher,
 #endif
             ILogger logger)
             : this(
                 localServer,
                 environmentsApi,
-                deploymentStore,
+                staleness,
                 (IEnumerable<CloudCodeModuleReference>)moduleReferences,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
                 (IEnumerable<CloudCodeModule>)modules,
-                contentHasher,
 #endif
                 logger,
                 () => Application.isBatchMode)
@@ -72,22 +68,20 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         internal PlayModeStaleDeploymentWarner(
             ICloudCodeLocalServer localServer,
             IEnvironmentsApi environmentsApi,
-            ILastSuccessfulDeploymentStore deploymentStore,
+            RemoteModuleStaleness staleness,
             IEnumerable<CloudCodeModuleReference> moduleReferences,
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             IEnumerable<CloudCodeModule> modules,
-            IModuleContentHasher contentHasher,
 #endif
             ILogger logger,
             Func<bool> isBatchMode)
         {
             m_LocalServer = localServer;
             m_EnvironmentsApi = environmentsApi;
-            m_DeploymentStore = deploymentStore;
+            m_Staleness = staleness;
             m_ModuleReferences = moduleReferences;
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
             m_Modules = modules;
-            m_ContentHasher = contentHasher;
 #endif
             m_Logger = logger;
             m_IsBatchMode = isBatchMode;
@@ -101,7 +95,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                 || !LocalAutoDeployer.IsMainEditor()
                 || m_LocalServer.GetCurrentServerStatus()
                 is LocalCloudCodeServerStatus.Started or LocalCloudCodeServerStatus.Starting
-                || m_EnvironmentsApi.ActiveEnvironmentId == null)
+                || !EnvironmentIds.IsSet(m_EnvironmentsApi.ActiveEnvironmentId))
             {
                 return;
             }
@@ -114,12 +108,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
         {
             try
             {
-                var stale = new List<(string Name, StaleReason Reason)>();
-#if UNITY_6000_5_OR_NEWER
-                await CollectStaleModulesAsync(stale);
-#endif
-                await CollectStaleModuleReferencesAsync(stale);
-
+                var stale = await CollectStaleAsync();
                 if (stale.Count == 0)
                     return;
 
@@ -138,69 +127,62 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
             }
         }
 
-#if UNITY_6000_5_OR_NEWER
-        async Task CollectStaleModulesAsync(List<(string Name, StaleReason Reason)> stale)
+        /// <summary>
+        /// The modules whose source changed since their last deploy to the remote environment. A module
+        /// never deployed remotely in this session has nothing to compare against: it is left out, unless
+        /// <paramref name="includeNeverDeployed"/> asks for it, for a caller that knows a deploy happened.
+        /// </summary>
+        internal async Task<List<(string Name, StaleReason Reason)>> CollectStaleAsync(bool includeNeverDeployed = false)
+        {
+            var stale = new List<(string Name, StaleReason Reason)>();
+#if UNITY_6000_7_OR_NEWER
+            await CollectStaleModulesAsync(stale, includeNeverDeployed);
+#endif
+            await CollectStaleModuleReferencesAsync(stale, includeNeverDeployed);
+            return stale;
+        }
+
+#if UNITY_6000_7_OR_NEWER
+        async Task CollectStaleModulesAsync(List<(string Name, StaleReason Reason)> stale, bool includeNeverDeployed)
         {
             foreach (var module in m_Modules.ToList())
             {
-                // Records are session-scoped, so a missing remote record is the
-                // default state of a fresh session, stay silent.
-                var remote = m_DeploymentStore.GetRecord(module, DeploymentTarget.Remote);
-                if (remote == null)
-                    continue;
-
-                // A remote record without a hash means the module could not be hashed when it was deployed;
-                // there is nothing to compare, but the record still proves a remote deploy happened.
-                if (string.IsNullOrEmpty(remote.LastDeployedContentHash))
-                    continue;
-
-                var current = module.CurrentContentHash;
-                if (string.IsNullOrEmpty(current))
-                    current = await m_ContentHasher.ComputeHashAsync(module);
-
-                if (string.IsNullOrEmpty(current))
-                    continue;
-
-                if (!string.Equals(current, remote.LastDeployedContentHash, StringComparison.Ordinal))
-                    stale.Add((module.Name, StaleReason.ModifiedSinceLastDeploy));
+                var verdict = await m_Staleness.EvaluateAsync(module);
+                if (TryGetReason(verdict, includeNeverDeployed, out var reason))
+                    stale.Add((module.Name, reason));
             }
         }
 
 #endif
 
-        async Task CollectStaleModuleReferencesAsync(List<(string Name, StaleReason Reason)> stale)
+        async Task CollectStaleModuleReferencesAsync(List<(string Name, StaleReason Reason)> stale, bool includeNeverDeployed)
         {
-            var toScan = new List<(string Name, string SourceDir, DateTime FloorUtc)>();
             foreach (var ccmr in m_ModuleReferences.ToList())
             {
-                // Records are session-scoped, so a missing remote record is the
-                // default state of a fresh session, not evidence of staleness - stay silent.
-                var remote = m_DeploymentStore.GetRecord(ccmr, DeploymentTarget.Remote);
-                if (remote == null)
-                    continue;
-
-                var sourceDir = LocalAutoDeployer.GetSourceDir(ccmr);
-                if (sourceDir == null)
-                    continue;
-
-                // The staleness floor is the LATER of the deploy's wall-clock time and the newest
-                // source mtime snapshotted at that deploy. Comparing against the deploy time alone breaks on
-                // a file whose mtime lies in the future (a clock-skewed archive, VM copy, or cloud-sync write).
-                // Entries persisted before the snapshot existed read as the default, which falls back to the clock-only comparison.
-                var sourceSnapshotUtc = m_DeploymentStore.GetSourceLastWriteUtc(ccmr, DeploymentTarget.Remote);
-                var floorUtc = remote.DeployedAtUtc > sourceSnapshotUtc ? remote.DeployedAtUtc : sourceSnapshotUtc;
-                toScan.Add((ccmr.Name, sourceDir, floorUtc));
+                var verdict = await m_Staleness.EvaluateAsync(ccmr);
+                if (TryGetReason(verdict, includeNeverDeployed, out var reason))
+                    stale.Add((ccmr.Name, reason));
             }
+        }
 
-            if (toScan.Count == 0)
-                return;
-
-            var changed = await Task.Run(() => toScan
-                .Where(candidate => LocalAutoDeployer.HasSourceNewerThanSafe(candidate.SourceDir, candidate.FloorUtc))
-                .Select(candidate => candidate.Name)
-                .ToList());
-
-            stale.AddRange(changed.Select(name => (name, StaleReason.SourceNewerOnDisk)));
+        // A missing record is the normal state of a fresh session, not evidence of staleness.
+        static bool TryGetReason(StalenessVerdict verdict, bool includeNeverDeployed, out StaleReason reason)
+        {
+            switch (verdict.Reason)
+            {
+                case StalenessReason.ModifiedSinceLastDeploy:
+                    reason = StaleReason.ModifiedSinceLastDeploy;
+                    return true;
+                case StalenessReason.SourceChangedOnDisk:
+                    reason = StaleReason.SourceNewerOnDisk;
+                    return true;
+                case StalenessReason.NoRemoteRecord:
+                    reason = StaleReason.NeverDeployed;
+                    return includeNeverDeployed;
+                default:
+                    reason = default;
+                    return false;
+            }
         }
 
         internal static string ComposeWarning(
@@ -224,6 +206,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
                     return "modified since last deploy";
                 case StaleReason.SourceNewerOnDisk:
                     return "source files changed on disk since the last deploy";
+                case StaleReason.NeverDeployed:
+                    return "not deployed yet";
                 default:
                     return reason.ToString();
             }

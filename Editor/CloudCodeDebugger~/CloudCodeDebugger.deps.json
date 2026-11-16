@@ -26,18 +26,18 @@
       "sha512": "",
       "type": "project"
     },
-    "Com.Unity.Services.CloudCode.Apis/0.0.27": {
-      "hashPath": "com.unity.services.cloudcode.apis.0.0.27.nupkg.sha512",
-      "path": "com.unity.services.cloudcode.apis/0.0.27",
+    "Com.Unity.Services.CloudCode.Apis/0.0.28": {
+      "hashPath": "com.unity.services.cloudcode.apis.0.0.28.nupkg.sha512",
+      "path": "com.unity.services.cloudcode.apis/0.0.28",
       "serviceable": true,
-      "sha512": "sha512-7QFjw5xKFF7x7+u3+Sprv8GiVHzADChdOi7zoDDTnrZkCKNM2CgpwrTAlERJE8Fb8QFG1UAlIr4y7w/Fd3ZbKw==",
+      "sha512": "sha512-CzosjqlCo/IIl6kaomXdfmosJdnbEkU4K8vq2aoeq2lnwgEGuXmF7d/V8LcLWjV2VJHFO3aWYihm0f71szh8Vw==",
       "type": "package"
     },
-    "Com.Unity.Services.CloudCode.Core/0.0.7": {
-      "hashPath": "com.unity.services.cloudcode.core.0.0.7.nupkg.sha512",
-      "path": "com.unity.services.cloudcode.core/0.0.7",
+    "Com.Unity.Services.CloudCode.Core/0.0.9": {
+      "hashPath": "com.unity.services.cloudcode.core.0.0.9.nupkg.sha512",
+      "path": "com.unity.services.cloudcode.core/0.0.9",
       "serviceable": true,
-      "sha512": "sha512-pzVj14yog0OIaneX20OLcJmqRTgcIA4reBJa1R5hTB+FdAAPJfl76ov1Wq5qVFQ/7YD9Lj68rbaO5y8mslld/A==",
+      "sha512": "sha512-CXOFjoB/Fz510ei2AzRM7jBoz89B9m7yn4BHpsHTMbC5J9aj2PMJO4zV1fQwjJJEEEAfp4YHM8eLRF+GFP4Xgw==",
       "type": "package"
     },
     "Hellang.Middleware.ProblemDetails/6.5.1": {
@@ -47,18 +47,18 @@
       "sha512": "sha512-2Mos1aDPwEbIRjgxiopobMu3p79GK1T3ChKLiLrtV/O4Bp9mU1FvLI5f6AdaJRMuEa63E640a80pPEDsdpWfoA==",
       "type": "package"
     },
-    "Microsoft.AspNetCore.JsonPatch/7.0.3": {
-      "hashPath": "microsoft.aspnetcore.jsonpatch.7.0.3.nupkg.sha512",
-      "path": "microsoft.aspnetcore.jsonpatch/7.0.3",
+    "Microsoft.AspNetCore.JsonPatch/10.0.12": {
+      "hashPath": "microsoft.aspnetcore.jsonpatch.10.0.12.nupkg.sha512",
+      "path": "microsoft.aspnetcore.jsonpatch/10.0.12",
       "serviceable": true,
-      "sha512": "sha512-DNhby81jzx+fRuzprFCMnwmigwFPJ8NVBA+QtGRoLroCu9622ptv53MF4uVoWzDpEm2065ZqspQMFQUkvw5Uag==",
+      "sha512": "sha512-/dxAPtreSaBOg/oQTJo0rBKtF8dzwiWl3tlPm+X3qnysEKV5z11n+OfQmpWDw1oaSNATxli9LlbgOxP6vzWKEA==",
       "type": "package"
     },
-    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/7.0.3": {
-      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.7.0.3.nupkg.sha512",
-      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/7.0.3",
+    "Microsoft.AspNetCore.Mvc.NewtonsoftJson/10.0.12": {
+      "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.10.0.12.nupkg.sha512",
+      "path": "microsoft.aspnetcore.mvc.newtonsoftjson/10.0.12",
       "serviceable": true,
-      "sha512": "sha512-m8i75/TTzUqzIegqIxFSpVg6KFRYLN2QwB4SUgGbhqmxDyoUIDzTvwk8YPo+Hmb5R4Zaqeyyw66iVGBQGvfw0w==",
+      "sha512": "sha512-EQIQSLf07LJPcXGxj7kG5eEysWZpSRxVHHwtt/lySCVmy2+UcFJUccWIlfsltYkgxdvMMxKTGTsMwtYm5e1WSw==",
       "type": "package"
     },
     "Microsoft.Bcl.TimeProvider/8.0.1": {
@@ -103,11 +103,11 @@
       "sha512": "sha512-TCmyyV+2Bdp2WjyBdyV2gyDW4zD1QDoUK08vbiKFC0TaDkUMSmeqZuaaiYHJvIeW/laTj4pGjL4/YoDcpZSNug==",
       "type": "package"
     },
-    "Microsoft.Extensions.DependencyModel/8.0.2": {
-      "hashPath": "microsoft.extensions.dependencymodel.8.0.2.nupkg.sha512",
-      "path": "microsoft.extensions.dependencymodel/8.0.2",
+    "Microsoft.Extensions.DependencyModel/10.0.12": {
+      "hashPath": "microsoft.extensions.dependencymodel.10.0.12.nupkg.sha512",
+      "path": "microsoft.extensions.dependencymodel/10.0.12",
       "serviceable": true,
-      "sha512": "sha512-QqnlTFG1+ZodJq55ziGsy1IYpgCyU0YyqiwqTNysXSlC0pdvLJFf6FI+xeOQBDYHrGsKUw3p58u62eGEHs6jfg==",
+      "sha512": "sha512-+gOJOAuUejAsox0/B0JzNlDnmHjHW7lnBf0O2ZuTbTRP+SHxDYMAeAsGNy3tOrn0YbV/npj0cDeDvxT143noPg==",
       "type": "package"
     },
     "Microsoft.IdentityModel.Abstractions/8.17.0": {
@@ -166,11 +166,11 @@
       "sha512": "sha512-M52Tfhn8KzsfmTKHl9/KjVHvA6zWxuYa46HZ3ldqlT4U3N/pEeHvwtyzYx+3/jVnLb4t62hB2zWNVwDGl0VHfg==",
       "type": "package"
     },
-    "Newtonsoft.Json/13.0.3": {
-      "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512",
-      "path": "newtonsoft.json/13.0.3",
+    "Newtonsoft.Json/13.0.4": {
+      "hashPath": "newtonsoft.json.13.0.4.nupkg.sha512",
+      "path": "newtonsoft.json/13.0.4",
       "serviceable": true,
-      "sha512": "sha512-mbJSvHfRxfX3tR/U6n1WU+mWHXswYc+SB/hkOpx8yZZe68hNZGfymJu0cjsaJEkVzCMqePiU6LdIyogqfIn7kg==",
+      "sha512": "sha512-bR+v+E/yJ6g7GV2uXw2OrUSjYYfjLkOLC8JD4kCS23msLapnKtdJPBJA75fwHH++ErIffeIqzYITLxAur4KAXA==",
       "type": "package"
     },
     "Serilog.AspNetCore/4.1.0": {
@@ -257,11 +257,11 @@
       "sha512": "sha512-pTTSpHHkmvD9yCoFFhPV3giMOKtXirj0VVpRU3J7iS2/Xh7wBC5CHE5fNSqwFDpttc1IF99Hc/6qKQXrTcMkqg==",
       "type": "package"
     },
-    "System.Memory.Data/8.0.1": {
-      "hashPath": "system.memory.data.8.0.1.nupkg.sha512",
-      "path": "system.memory.data/8.0.1",
+    "System.Memory.Data/10.0.12": {
+      "hashPath": "system.memory.data.10.0.12.nupkg.sha512",
+      "path": "system.memory.data/10.0.12",
       "serviceable": true,
-      "sha512": "sha512-rz+4OvVEwrdWE4FhM7P97n8CYjb5v0Y0ioQfmvI7Lsir2auU+zfqxKH3e9DEsibBADT4LurcyEND4NDhliVMqw==",
+      "sha512": "sha512-mzyCyUcogHsXCOGwrAQZnlIFwgb5CsSfIBp9OenktoqrABA3U4n3nrg0T3oQbVwoVIXppfoOyfr+gs2Dx7aO5A==",
       "type": "package"
     },
     "System.Private.Uri/4.3.2": {
@@ -271,30 +271,30 @@
       "sha512": "sha512-G6xehzgf1cPvAp/BOiUBFxWeAzDBxwurC6u5R0OKXgtXPBb6GQFZUGVMOiEyc4HRAZVZ8B2ASwX0vkF0YiS5lw==",
       "type": "package"
     },
-    "System.Reflection.MetadataLoadContext/8.0.1": {
-      "hashPath": "system.reflection.metadataloadcontext.8.0.1.nupkg.sha512",
-      "path": "system.reflection.metadataloadcontext/8.0.1",
+    "System.Reflection.MetadataLoadContext/10.0.12": {
+      "hashPath": "system.reflection.metadataloadcontext.10.0.12.nupkg.sha512",
+      "path": "system.reflection.metadataloadcontext/10.0.12",
       "serviceable": true,
-      "sha512": "sha512-LdldCp5mgUbTK1rWuwkAPUkzOxUUQSWWLC//jgoLAuYveUr067UxJXwRSz+qFB5P+ye3CHtqPbRKy48H5MIxzw==",
+      "sha512": "sha512-suG/K386sbPsKG5ryj2pBhRm6d9Zv4gj5R23KzHr721nGI4mjBSiZDaOCcvcDqXamD+fNm259lC6iImjkFo3VA==",
       "type": "package"
     }
   },
   "runtimeTarget": {
-    "name": ".NETCoreApp,Version=v8.0.0",
+    "name": ".NETCoreApp,Version=v10.0.0",
     "signature": ""
   },
   "targets": {
-    ".NETCoreApp,Version=v8.0.0": {
+    ".NETCoreApp,Version=v10.0.0": {
       "CloudCode.Common/1.0.0": {
         "dependencies": {
-          "Com.Unity.Services.CloudCode.Core": "0.0.7",
+          "Com.Unity.Services.CloudCode.Core": "0.0.9",
           "Hellang.Middleware.ProblemDetails": "6.5.1",
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.DependencyInjection": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Logging": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
           "Microsoft.OpenApi": "1.6.13",
-          "Newtonsoft.Json": "13.0.3"
+          "Newtonsoft.Json": "13.0.4"
         },
         "resources": {},
         "runtime": {
@@ -331,22 +331,22 @@
           "CloudCode.Common": "1.0.0",
           "CloudCode.Metrics.Abstractions": "1.0.0",
           "CloudCode.ScriptRunner.Exceptions": "1.0.0",
-          "Com.Unity.Services.CloudCode.Core": "0.0.7",
+          "Com.Unity.Services.CloudCode.Core": "0.0.9",
           "Microsoft.CodeAnalysis.CSharp": "4.5.0",
           "Microsoft.CodeAnalysis.CSharp.Scripting": "4.5.0",
           "Microsoft.CodeAnalysis.Common": "4.5.0",
-          "Microsoft.Extensions.Caching.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Caching.Memory": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Caching.Memory": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
           "Microsoft.Extensions.Http": "3.1.9",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
-          "Microsoft.Extensions.Primitives": "8.0.0",
+          "Microsoft.Extensions.Logging": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Primitives": "10.0.12",
           "Microsoft.IdentityModel.Tokens": "8.17.0",
-          "Newtonsoft.Json": "13.0.3",
+          "Newtonsoft.Json": "13.0.4",
           "System.IdentityModel.Tokens.Jwt": "8.2.0",
-          "System.Reflection.MetadataLoadContext": "8.0.1"
+          "System.Reflection.MetadataLoadContext": "10.0.12"
         },
         "resources": {},
         "runtime": {
@@ -361,19 +361,19 @@
           "CloudCode.Common": "1.0.0",
           "CloudCode.Metrics.Abstractions": "1.0.0",
           "CloudCode.ScriptRunner": "1.0.0",
-          "Com.Unity.Services.CloudCode.Apis": "0.0.27",
-          "Com.Unity.Services.CloudCode.Core": "0.0.7",
+          "Com.Unity.Services.CloudCode.Apis": "0.0.28",
+          "Com.Unity.Services.CloudCode.Core": "0.0.9",
           "Hellang.Middleware.ProblemDetails": "6.5.1",
           "Microsoft.AspNetCore.Hosting.Abstractions": "2.3.9",
           "Microsoft.AspNetCore.Hosting.Server.Abstractions": "2.3.9",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "7.0.3",
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Logging": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
           "Microsoft.IdentityModel.Tokens": "8.17.0",
           "Microsoft.OpenApi": "1.6.13",
-          "Newtonsoft.Json": "13.0.3",
+          "Newtonsoft.Json": "13.0.4",
           "Serilog": "4.3.1",
           "Serilog.AspNetCore": "4.1.0",
           "Serilog.Expressions": "3.2.1",
@@ -384,7 +384,7 @@
           "Serilog.Sinks.File": "7.0.0",
           "System.CommandLine": "2.0.0",
           "System.IdentityModel.Tokens.Jwt": "8.2.0",
-          "System.Memory.Data": "8.0.1"
+          "System.Memory.Data": "10.0.12"
         },
         "resources": {},
         "runtime": {
@@ -394,31 +394,31 @@
         },
         "runtimeTargets": {}
       },
-      "Com.Unity.Services.CloudCode.Apis/0.0.27": {
+      "Com.Unity.Services.CloudCode.Apis/0.0.28": {
         "dependencies": {
-          "Com.Unity.Services.CloudCode.Core": "0.0.7",
-          "Newtonsoft.Json": "13.0.3",
+          "Com.Unity.Services.CloudCode.Core": "0.0.9",
+          "Newtonsoft.Json": "13.0.4",
           "System.Private.Uri": "4.3.2"
         },
         "resources": {},
         "runtime": {
           "Unity.Services.CloudCode.Apis.dll": {
-            "assemblyVersion": "0.0.27.0"
+            "assemblyVersion": "0.0.28.0"
           }
         },
         "runtimeTargets": {}
       },
-      "Com.Unity.Services.CloudCode.Core/0.0.7": {
+      "Com.Unity.Services.CloudCode.Core/0.0.9": {
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Newtonsoft.Json": "13.0.3",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Newtonsoft.Json": "13.0.4",
           "System.Private.Uri": "4.3.2",
           "System.Runtime": "4.3.1"
         },
         "resources": {},
         "runtime": {
           "Unity.Services.CloudCode.Core.dll": {
-            "assemblyVersion": "0.0.7.0"
+            "assemblyVersion": "0.0.9.0"
           }
         },
         "runtimeTargets": {}
@@ -435,29 +435,28 @@
         },
         "runtimeTargets": {}
       },
-      "Microsoft.AspNetCore.JsonPatch/7.0.3": {
+      "Microsoft.AspNetCore.JsonPatch/10.0.12": {
         "dependencies": {
-          "Microsoft.CSharp": "4.7.0",
-          "Newtonsoft.Json": "13.0.3"
+          "Newtonsoft.Json": "13.0.4"
         },
         "resources": {},
         "runtime": {
           "Microsoft.AspNetCore.JsonPatch.dll": {
-            "assemblyVersion": "7.0.3.0"
+            "assemblyVersion": "10.0.12.0"
           }
         },
         "runtimeTargets": {}
       },
-      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/7.0.3": {
+      "Microsoft.AspNetCore.Mvc.NewtonsoftJson/10.0.12": {
         "dependencies": {
-          "Microsoft.AspNetCore.JsonPatch": "7.0.3",
-          "Newtonsoft.Json": "13.0.3",
+          "Microsoft.AspNetCore.JsonPatch": "10.0.12",
+          "Newtonsoft.Json": "13.0.4",
           "Newtonsoft.Json.Bson": "1.0.2"
         },
         "resources": {},
         "runtime": {
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {
-            "assemblyVersion": "7.0.3.0"
+            "assemblyVersion": "10.0.12.0"
           }
         },
         "runtimeTargets": {}
@@ -549,12 +548,12 @@
         },
         "runtimeTargets": {}
       },
-      "Microsoft.Extensions.DependencyModel/8.0.2": {
+      "Microsoft.Extensions.DependencyModel/10.0.12": {
         "dependencies": {},
         "resources": {},
         "runtime": {
           "Microsoft.Extensions.DependencyModel.dll": {
-            "assemblyVersion": "8.0.2.0"
+            "assemblyVersion": "10.0.12.0"
           }
         },
         "runtimeTargets": {}
@@ -596,7 +595,7 @@
       },
       "Microsoft.IdentityModel.Tokens/8.17.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
           "Microsoft.IdentityModel.Logging": "8.17.0"
         },
         "resources": {},
@@ -631,7 +630,7 @@
       },
       "Newtonsoft.Json.Bson/1.0.2": {
         "dependencies": {
-          "Newtonsoft.Json": "13.0.3"
+          "Newtonsoft.Json": "13.0.4"
         },
         "resources": {},
         "runtime": {
@@ -641,20 +640,20 @@
         },
         "runtimeTargets": {}
       },
-      "Newtonsoft.Json/13.0.3": {
+      "Newtonsoft.Json/13.0.4": {
         "dependencies": {},
         "resources": {},
         "runtime": {
           "Newtonsoft.Json.dll": {
-            "assemblyVersion": "13.0.3.0"
+            "assemblyVersion": "13.0.4.0"
           }
         },
         "runtimeTargets": {}
       },
       "Serilog.AspNetCore/4.1.0": {
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.Logging": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection": "10.0.12",
+          "Microsoft.Extensions.Logging": "10.0.12",
           "Serilog": "4.3.1",
           "Serilog.Extensions.Hosting": "8.0.0",
           "Serilog.Formatting.Compact": "3.0.0",
@@ -685,9 +684,9 @@
       },
       "Serilog.Extensions.Hosting/8.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Hosting.Abstractions": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
           "Serilog": "4.3.1",
           "Serilog.Extensions.Logging": "8.0.0"
         },
@@ -701,7 +700,7 @@
       },
       "Serilog.Extensions.Logging/8.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging": "8.0.1",
+          "Microsoft.Extensions.Logging": "10.0.12",
           "Serilog": "4.3.1"
         },
         "resources": {},
@@ -726,8 +725,8 @@
       },
       "Serilog.Settings.Configuration/3.1.0": {
         "dependencies": {
-          "Microsoft.Extensions.DependencyModel": "8.0.2",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.12",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "10.0.12",
           "Serilog": "4.3.1"
         },
         "resources": {},
@@ -811,12 +810,12 @@
         },
         "runtimeTargets": {}
       },
-      "System.Memory.Data/8.0.1": {
+      "System.Memory.Data/10.0.12": {
         "dependencies": {},
         "resources": {},
         "runtime": {
           "System.Memory.Data.dll": {
-            "assemblyVersion": "8.0.1.0"
+            "assemblyVersion": "10.0.12.0"
           }
         },
         "runtimeTargets": {}
@@ -830,12 +829,12 @@
         "runtime": {},
         "runtimeTargets": {}
       },
-      "System.Reflection.MetadataLoadContext/8.0.1": {
+      "System.Reflection.MetadataLoadContext/10.0.12": {
         "dependencies": {},
         "resources": {},
         "runtime": {
           "System.Reflection.MetadataLoadContext.dll": {
-            "assemblyVersion": "8.0.1.0"
+            "assemblyVersion": "10.0.12.0"
           }
         },
         "runtimeTargets": {}

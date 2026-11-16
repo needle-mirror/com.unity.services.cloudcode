@@ -87,12 +87,50 @@ namespace Unity.Services.CloudCode
         /// <param name="callbacks">SubscriptionEvents that will be registered.</param>
         /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
         Task<ISubscriptionEvents> SubscribeToProjectMessagesAsync(SubscriptionEventCallbacks callbacks);
+
+        /// <summary>
+        /// Subscribe to push messages a module sends to a scope with <c>IPushClient.SendScopeMessageAsync</c>.
+        /// Subscribers to the same scope share one channel.
+        /// </summary>
+        /// <remarks>While the scope's channel is open, a later subscriber joins it without calling its
+        /// <paramref name="function"/>. The channel calls the function of the subscriber that opened it again on
+        /// every reconnect, and a failure there shows as an <c>Error</c> connection state.</remarks>
+        /// <param name="module">Cloud Code Module that issues the subscription token.</param>
+        /// <param name="function">A function of <paramref name="module"/>, in the scope's class, that returns the
+        /// reply of <c>IPushClient.GenerateScopeTokenAsync</c>. It runs in <paramref name="scope"/>, so its access
+        /// rules decide who can open the scope's channel.</param>
+        /// <param name="scope">The scope whose messages to receive.</param>
+        /// <returns>SubscriptionEvents object that can be used to subscribe or unsubscribe from messages.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <paramref name="module"/> or <paramref name="function"/> is empty, or <paramref name="scope"/> has no id.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the Wire package, which subscriptions need, is not installed.</exception>
+        Task<ISubscriptionEvents> SubscribeToScopeMessagesAsync(string module, string function, CloudCodeScope scope);
+
+        /// <summary>
+        /// Subscribe to push messages a module sends to a scope with <c>IPushClient.SendScopeMessageAsync</c>.
+        /// Subscribers to the same scope share one channel.
+        /// </summary>
+        /// <remarks>While the scope's channel is open, a later subscriber joins it without calling its
+        /// <paramref name="function"/>. The channel calls the function of the subscriber that opened it again on
+        /// every reconnect, and a failure there shows as an <c>Error</c> connection state.</remarks>
+        /// <param name="module">Cloud Code Module that issues the subscription token.</param>
+        /// <param name="function">A function of <paramref name="module"/>, in the scope's class, that returns the
+        /// reply of <c>IPushClient.GenerateScopeTokenAsync</c>. It runs in <paramref name="scope"/>, so its access
+        /// rules decide who can open the scope's channel.</param>
+        /// <param name="scope">The scope whose messages to receive.</param>
+        /// <param name="callbacks">SubscriptionEvents that will be registered.</param>
+        /// <returns>SubscriptionEvents object that can be used to subscribe or unsubscribe from messages.</returns>
+        /// <exception cref="CloudCodeException">Thrown if request is unsuccessful.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <paramref name="module"/> or <paramref name="function"/> is empty, or <paramref name="scope"/> has no id.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the Wire package, which subscriptions need, is not installed.</exception>
+        Task<ISubscriptionEvents> SubscribeToScopeMessagesAsync(string module, string function, CloudCodeScope scope,
+            SubscriptionEventCallbacks callbacks);
     }
 
     /// <summary>
     /// Provides access to the Cloud Code methods
     /// </summary>
-    public class CloudCodeService
+    public sealed class CloudCodeService
     {
         /// <summary>
         /// The instance of the Cloud Code service

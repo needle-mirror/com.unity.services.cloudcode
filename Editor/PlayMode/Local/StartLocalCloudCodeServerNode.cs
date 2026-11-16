@@ -31,22 +31,44 @@ namespace Unity.Services.CloudCode.Editor.PlayMode
             var deployer = services.GetService<LocalAutoDeployer>();
 
             var status = await WaitUntilSettled(server, cancellationToken);
-            if (status == LocalCloudCodeServerStatus.Idle)
+            var deployed = true;
+            try
             {
-                // Records that this run started the server, for the endpoint nodes downstream.
-                SetOutput(StartedByScenario, true);
-                await StartServer(server, cancellationToken);
-                LocalServerOwnership.Claim(server);
+                if (status == LocalCloudCodeServerStatus.Idle)
+                {
+                    // Records that this run started the server, for the endpoint nodes downstream.
+                    SetOutput(StartedByScenario, true);
+                    await StartServer(server, cancellationToken);
+                    LocalServerOwnership.Claim(server);
+                }
+                else
+                {
+                    SetOutput(StartedByScenario, false);
+                    deployed = await deployer.DeployChangedModulesAsync(cancellationToken);
+                }
+
+                // The server can stop while the deploy is awaited, from the toolbar or a failed health check.
+                ThrowIfServerNotStarted(server);
+                ThrowIfModulesFailed(deployer.GetModulesInErrorState());
             }
-            else
+            catch (Exception e) when (e is not OperationCanceledException)
             {
-                SetOutput(StartedByScenario, false);
-                await deployer.DeployChangedModulesAsync(cancellationToken);
+                CloudCodeDeploymentRecord.Record(
+                    CloudCodeDeployTarget.Local, LocalEnvironmentName(server), CloudCodeDeploymentOutcome.Failed, e.Message);
+                throw;
             }
 
-            // The server can stop while the deploy is awaited, from the toolbar or a failed health check.
-            ThrowIfServerNotStarted(server);
-            ThrowIfModulesFailed(deployer.GetModulesInErrorState());
+            var environment = LocalEnvironmentName(server);
+            if (deployed || !CloudCodeDeploymentRecord.HasSucceeded(CloudCodeDeployTarget.Local, environment))
+            {
+                CloudCodeDeploymentRecord.Record(
+                    CloudCodeDeployTarget.Local,
+                    environment,
+                    CloudCodeDeploymentRecord.HasModules(services)
+                        ? CloudCodeDeploymentOutcome.Succeeded
+                        : CloudCodeDeploymentOutcome.NoModules);
+            }
+
             SetOutput(Endpoint, CloudCodeEndpoint.Local(server.GetPort(), server.GetServerPid()));
         }
 
@@ -78,6 +100,8 @@ namespace Unity.Services.CloudCode.Editor.PlayMode
                 server.OnServerStatusChanged -= OnStatusChanged;
             }
         }
+
+        internal static string LocalEnvironmentName(ICloudCodeLocalServer server) => $"localhost:{server.GetPort()}";
 
         static bool IsSettled(LocalCloudCodeServerStatus status)
         {

@@ -12,9 +12,9 @@ using UnityEngine;
 namespace Unity.Services.CloudCode.Subscriptions
 {
     /// <summary>
-    /// Owns the lifecycle of Cloud Code push-message channels, one per mode (Player/Project). All
-    /// subscribers of a mode share a single wire channel, guarded by a per-mode async gate that
-    /// serializes subscribe and teardown so they never collide on the same server channel. Each
+    /// Owns the lifecycle of Cloud Code push-message channels: one per mode (Player/Project), and one per
+    /// <see cref="CloudCodeScope"/>. All subscribers of a channel share a single wire channel, guarded by a
+    /// per-channel async gate that serializes subscribe and teardown so they never collide on it. Each
     /// subscriber gets its own <see cref="ISubscriptionEvents"/> whose callbacks the provider fans the
     /// shared channel's events into. The channel is torn down when the last subscriber leaves.
     /// </summary>
@@ -28,7 +28,10 @@ namespace Unity.Services.CloudCode.Subscriptions
         readonly ICloudProjectId m_CloudProjectId;
         readonly IPlayerId m_PlayerIdService;
 
-        readonly Dictionary<TokenProvider.TokenProviderMode, ChannelGuard> m_ChannelGuards = new();
+        /// <summary>Keyed by a <see cref="TokenProvider.TokenProviderMode"/> or a <see cref="CloudCodeScope"/>.</summary>
+        readonly Dictionary<object, ChannelGuard> m_ChannelGuards = new();
+
+        internal int ChannelGuardCount => m_ChannelGuards.Count;
 
         /// <summary>
         /// Bumped on every player change. Captured before a subscribe's awaits and re-checked after, so a
@@ -37,14 +40,19 @@ namespace Unity.Services.CloudCode.Subscriptions
         int m_PlayerChangedCount;
 
         /// <summary>
-        /// The per-mode state guarding one shared wire channel: the async <see cref="Gate"/> that
+        /// The per-channel state guarding one shared wire channel: the async <see cref="Gate"/> that
         /// serializes subscribe and teardown so they never overlap on the same server channel, the single
-        /// <see cref="Channel"/> that all subscribers of the mode share (null when none is up), and the
-        /// <see cref="Subscribers"/> the channel's events are fanned out to. One guard exists per mode for the
-        /// lifetime of the provider and is reused across that mode's channel rebuilds.
+        /// <see cref="Channel"/> that all its subscribers share (null when none is up), and the
+        /// <see cref="Subscribers"/> the channel's events are fanned out to. A guard is created on first use and
+        /// removed once it has no channel, no subscribers and no caller holding or awaiting its gate, so scope keys
+        /// do not accumulate and nobody is ever left waiting on a removed guard.
         /// </summary>
         sealed class ChannelGuard
         {
+            internal ChannelGuard(object key) => Key = key;
+
+            internal readonly object Key;
+            internal int GateCallers;
 #if UNITY_WEBGL && !UNITY_EDITOR
             internal readonly BinaryAsyncGate Gate = new();
 #else
@@ -64,19 +72,36 @@ namespace Unity.Services.CloudCode.Subscriptions
             // The player id service's lifetime is the same as the program's
             // one, so it "okay" to not unsubscribe OnPlayerChangedInvalidateAll
             m_PlayerIdService.PlayerIdChanged += OnPlayerChangedInvalidateAll;
+        }
 
-            foreach (var mode in GetModeList())
+        /// <summary>Counts the caller as a user before it awaits the gate; pair with <see cref="ReleaseChannelGuard"/>.</summary>
+        ChannelGuard AcquireChannelGuard(object key)
+        {
+            if (!m_ChannelGuards.TryGetValue(key, out var guard))
             {
-                m_ChannelGuards[mode] = new ChannelGuard();
+                guard = new ChannelGuard(key);
+                m_ChannelGuards[key] = guard;
+            }
+            guard.GateCallers++;
+            return guard;
+        }
+
+        void ReleaseChannelGuard(ChannelGuard guard)
+        {
+            guard.GateCallers--;
+            RemoveIfIdle(guard);
+            guard.Gate.Release();
+        }
+
+        void RemoveIfIdle(ChannelGuard guard)
+        {
+            // A subscriber callback may already have replaced this guard under the same key.
+            if (guard.GateCallers == 0 && guard.Channel == null && guard.Subscribers.Count == 0
+                && m_ChannelGuards.TryGetValue(guard.Key, out var current) && ReferenceEquals(current, guard))
+            {
+                m_ChannelGuards.Remove(guard.Key);
             }
         }
-
-        static IEnumerable<TokenProvider.TokenProviderMode> GetModeList()
-        {
-            return Enum.GetValues(typeof(TokenProvider.TokenProviderMode)).Cast<TokenProvider.TokenProviderMode>().Distinct();
-        }
-
-        ChannelGuard GetChannelGuard(TokenProvider.TokenProviderMode mode) => m_ChannelGuards[mode];
 
         /// <summary>
         /// Subscribes a new subscriber to the shared channel for <paramref name="mode"/>, creating and
@@ -88,8 +113,28 @@ namespace Unity.Services.CloudCode.Subscriptions
         /// <returns>A task resolving to this subscriber's <see cref="ISubscriptionEvents"/> handle once subscribed.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the Wire SDK dependency is unavailable.</exception>
         /// <exception cref="CloudCodeException">Thrown when the channel subscription fails.</exception>
-        public async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks,
+        public Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks,
             TokenProvider.TokenProviderMode mode)
+        {
+            return SubscribeAsync(callbacks, mode, new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
+        }
+
+        /// <summary>
+        /// Subscribes to the shared channel of <paramref name="scope"/>. A joiner's
+        /// <paramref name="tokenProvider"/> is unused: the channel keeps the one it was created with.
+        /// </summary>
+        /// <param name="callbacks">The callbacks this subscriber receives channel events on; a new instance is used if null.</param>
+        /// <param name="scope">The scope whose channel to subscribe to.</param>
+        /// <param name="tokenProvider">Fetches the scope channel's token when the channel is created.</param>
+        /// <returns>A task resolving to this subscriber's <see cref="ISubscriptionEvents"/> handle once subscribed.</returns>
+        public Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, CloudCodeScope scope,
+            IChannelTokenProvider tokenProvider)
+        {
+            return SubscribeAsync(callbacks, (object)scope, tokenProvider);
+        }
+
+        async Task<ISubscriptionEvents> SubscribeAsync(SubscriptionEventCallbacks callbacks, object key,
+            IChannelTokenProvider tokenProvider)
         {
             if (m_Wire == null)
             {
@@ -100,14 +145,14 @@ namespace Unity.Services.CloudCode.Subscriptions
             /* TODO: Handle null instead of allocating a
              * default instance of SubscriptionEventCallbacks.
              */
-            var subscriber = new Subscriber(this, mode, callbacks ?? new SubscriptionEventCallbacks());
-            await RegisterAsync(mode, subscriber);
+            var subscriber = new Subscriber(this, key, tokenProvider, callbacks ?? new SubscriptionEventCallbacks());
+            await RegisterAsync(subscriber);
             return subscriber;
         }
 
-        async Task RegisterAsync(TokenProvider.TokenProviderMode mode, Subscriber subscriber)
+        async Task RegisterAsync(Subscriber subscriber)
         {
-            var channelGuard = GetChannelGuard(mode);
+            var channelGuard = AcquireChannelGuard(subscriber.Key);
             await channelGuard.Gate.WaitAsync();
             try
             {
@@ -129,7 +174,7 @@ namespace Unity.Services.CloudCode.Subscriptions
                 {
                     try
                     {
-                        channelGuard.Channel = await CreateChannelAsync(mode, channelGuard);
+                        channelGuard.Channel = await CreateChannelAsync(subscriber.TokenProvider, channelGuard);
                     }
                     catch
                     {
@@ -145,7 +190,7 @@ namespace Unity.Services.CloudCode.Subscriptions
             }
             finally
             {
-                channelGuard.Gate.Release();
+                ReleaseChannelGuard(channelGuard);
             }
         }
 
@@ -182,14 +227,14 @@ namespace Unity.Services.CloudCode.Subscriptions
             }
         }
 
-        async Task<SubscriptionChannel> CreateChannelAsync(TokenProvider.TokenProviderMode mode, ChannelGuard state)
+        async Task<SubscriptionChannel> CreateChannelAsync(IChannelTokenProvider tokenProvider, ChannelGuard state)
         {
             // The player and change-count this subscribe is for, captured before any await so a switch
             // mid-subscribe - including a switch away and back to the same player - is detected afterward.
             var intendedPlayer = m_PlayerIdService.PlayerId;
             var playerChangedCountPreSubscribe = m_PlayerChangedCount;
 
-            var rawWireChannel = m_Wire.CreateChannel(new TokenProvider(m_ApiClient, m_CloudProjectId, mode));
+            var rawWireChannel = m_Wire.CreateChannel(tokenProvider);
             var upstreamCallbacks = new SubscriptionEventCallbacks();
             var subscription = new SubscriptionChannel(rawWireChannel, upstreamCallbacks);
             subscription.PlayerId = intendedPlayer;
@@ -229,7 +274,7 @@ namespace Unity.Services.CloudCode.Subscriptions
 
         void FanOut(ChannelGuard state, SubscriptionChannel source, Action<SubscriptionEventCallbacks> invoke)
         {
-            // A retired channel (torn down / evicted) must not route to the mode's current subscribers.
+            // A retired channel (torn down / evicted) must not route to the guard's current subscribers.
             if (source.IsRetired)
             {
                 return;
@@ -258,6 +303,7 @@ namespace Unity.Services.CloudCode.Subscriptions
             channel.IsRetired = true;
             state.Channel = null;
             state.Subscribers.Clear();
+            RemoveIfIdle(state);
         }
 
         void ThrowIfPlayerChangedDuringSubscribe(SubscriptionChannel channel, int playerChangedCountPreSubscribe)
@@ -281,19 +327,22 @@ namespace Unity.Services.CloudCode.Subscriptions
 
             // A player switch resets Wire's connection and clears its subscriptions, so drop every cached
             // channel here too (notifying current subscribers) rather than reusing a channel Wire discarded.
-            foreach (TokenProvider.TokenProviderMode mode in
-                     Enum.GetValues(typeof(TokenProvider.TokenProviderMode)))
+            foreach (var state in m_ChannelGuards.Values.ToArray())
             {
-                if (m_ChannelGuards.TryGetValue(mode, out var state))
-                {
-                    DropChannelAndNotify(state);
-                }
+                DropChannelAndNotify(state);
+                RemoveIfIdle(state);
             }
         }
 
-        async Task UnregisterAsync(TokenProvider.TokenProviderMode mode, Subscriber subscriber)
+        async Task UnregisterAsync(Subscriber subscriber)
         {
-            var channelGuard = GetChannelGuard(mode);
+            // A guard outlives its subscribers and queued callers, so no guard means nothing to undo.
+            if (!m_ChannelGuards.ContainsKey(subscriber.Key))
+            {
+                return;
+            }
+
+            var channelGuard = AcquireChannelGuard(subscriber.Key);
             await channelGuard.Gate.WaitAsync();
             try
             {
@@ -340,7 +389,7 @@ namespace Unity.Services.CloudCode.Subscriptions
             }
             finally
             {
-                channelGuard.Gate.Release();
+                ReleaseChannelGuard(channelGuard);
             }
         }
 
@@ -390,33 +439,35 @@ namespace Unity.Services.CloudCode.Subscriptions
         }
 
         /// <summary>
-        /// One subscriber's handle to a mode's shared channel, handed back from
+        /// One subscriber's handle to a shared channel, handed back from
         /// <see cref="SubscriptionProvider.SubscribeAsync"/>. It carries this subscriber's own
         /// <see cref="SubscriptionEventCallbacks"/>, which the provider fans the shared channel's events into.
         /// </summary>
         sealed class Subscriber : ISubscriptionEvents
         {
             readonly SubscriptionProvider m_Provider;
-            readonly TokenProvider.TokenProviderMode m_Mode;
 
+            internal object Key { get; }
+            internal IChannelTokenProvider TokenProvider { get; }
             public SubscriptionEventCallbacks Callbacks { get; }
 
-            internal Subscriber(SubscriptionProvider provider, TokenProvider.TokenProviderMode mode,
+            internal Subscriber(SubscriptionProvider provider, object key, IChannelTokenProvider tokenProvider,
                                 SubscriptionEventCallbacks callbacks)
             {
                 m_Provider = provider;
-                m_Mode = mode;
+                Key = key;
+                TokenProvider = tokenProvider;
                 Callbacks = callbacks;
             }
 
             public Task SubscribeAsync()
             {
-                return m_Provider.RegisterAsync(m_Mode, this);
+                return m_Provider.RegisterAsync(this);
             }
 
             public Task UnsubscribeAsync()
             {
-                return m_Provider.UnregisterAsync(m_Mode, this);
+                return m_Provider.UnregisterAsync(this);
             }
         }
     }

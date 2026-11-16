@@ -11,23 +11,16 @@ using Unity.Services.CloudCode.Authoring.Client.Http;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
 #endif
 using Unity.Services.CloudCode.Editor.Shared.Infrastructure.IO;
-using Unity.Services.Core.Editor;
-using Unity.Services.Core.Editor.Environments;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-#if DEPLOYMENT_API_AVAILABLE_V1_1
-using IProjectID = Unity.Services.DeploymentApi.Editor.IProjectIdentifierProvider;
-#else
-using IProjectID = Unity.Services.CloudCode.Authoring.Editor.Deployment.IProjectIdentifierProvider;
-#endif
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Observability
 {
     class CloudCodeLogsWindow : EditorWindow
     {
         const string k_QuerySyntaxDocsUrl =
-            "https://docs.unity.com/ugs/en-us/manual/cloud-code/manual/logging/concepts/filter-logs";
+            "https://docs.unity.com/en-us/cloud-code/3.0.0/logging/concepts/filter-logs";
 
         static readonly string k_AssetPath =
             PathUtils.Join(CloudCodePackage.EditorPath, "Authoring", "Observability", "Assets");
@@ -102,7 +95,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Observability
         void CreateGUI()
         {
             m_InitialQueryDone = false;
-            m_Client = CreateClient();
+            m_Client = LogsClientFactory.CreateClient();
             m_Query.From = k_TimeRanges[LoadTimeRangeIndex()].From;
             m_Query.Severity = LoadSeverity();
 
@@ -261,16 +254,6 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Observability
 #endif
         }
 
-        static ILogsClient CreateClient()
-        {
-            var services = CloudCodeAuthoringServices.Instance;
-            return new LogsClient(
-                services.GetService<IAccessTokens>(),
-                services.GetService<IProjectID>(),
-                services.GetService<IEnvironmentsApi>(),
-                services.GetService<IHttpClient>());
-        }
-
         VisualElement MakeRecordRow()
         {
             var row = m_RecordRowTemplate.CloneTree().Q<VisualElement>(className: "log-row");
@@ -355,13 +338,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Observability
 
         void ResetPagingAndQuery()
         {
-            m_Query.To = FormatQueryTimestamp(DateTime.UtcNow);
+            m_Query.To = LogsQueryHelpers.FormatQueryTimestamp(DateTime.UtcNow);
             SetOffsetAndQuery(0);
-        }
-
-        internal static string FormatQueryTimestamp(DateTime utc)
-        {
-            return utc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
         }
 
         void LoadPreviousPage()
@@ -533,22 +511,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Observability
             m_PrevButton.SetEnabled(!m_RequestInFlight && m_Query.NormalizedOffset > 0);
 
             var hasMore = m_LastResponse != null
-                && HasMorePages(
+                && LogsQueryHelpers.HasMorePages(
                 m_Query.NormalizedOffset,
                 m_Query.NormalizedLimit,
                 m_Records.Count,
                 m_LastResponse.Total);
             m_NextButton.SetEnabled(!m_RequestInFlight && hasMore);
-        }
-
-        internal static bool HasMorePages(int offset, int limit, int recordCount, int total)
-        {
-            if (recordCount < limit)
-            {
-                return false;
-            }
-
-            return total <= 0 || offset + limit < total;
         }
 
         void RefreshDetailPane()

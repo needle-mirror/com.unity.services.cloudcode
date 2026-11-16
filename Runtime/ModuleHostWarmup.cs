@@ -42,14 +42,12 @@ namespace Unity.Services.CloudCode
         /// Drops the shared instance so the next <see cref="Default"/> starts afresh. Runs at
         /// <c>SubsystemRegistration</c> on every Play Mode entry, because statics survive Fast Enter Play Mode.
         /// </summary>
-        public static void ResetDefault()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        internal static void ResetDefaultOnLoad()
         {
             s_Default?.Reset();
             s_Default = null;
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetDefaultOnLoad() => ResetDefault();
 
         // Test seam so the backoff can be driven without real time passing.
         internal Func<TimeSpan, CancellationToken, Task> Delay = System.Threading.Tasks.Task.Delay;
@@ -72,7 +70,10 @@ namespace Unity.Services.CloudCode
         /// </summary>
         public Task Task { get; private set; }
 
-        /// <summary>Creates a warm-up bound to <paramref name="services"/>.</summary>
+        /// <summary>
+        /// Creates a warm-up bound to <paramref name="services"/>. Use <see cref="Default"/> unless the
+        /// client runs on its own <see cref="IUnityServices"/> instance.
+        /// </summary>
         /// <param name="services">
         /// The registry to resolve authentication and Cloud Code from, or <c>null</c> to use
         /// <see cref="UnityServices.Instance"/>.
@@ -86,9 +87,8 @@ namespace Unity.Services.CloudCode
         /// Arms the warm-up. Runs at once if services are initialized and a player is signed in;
         /// otherwise waits for both and runs then, once. Stays armed until <see cref="Reset"/>; a run
         /// that spends its attempts disarms the instance, so the next call from a re-enabled client
-        /// runs again. Calling this on an armed instance does nothing. Called on <see cref="Default"/>
-        /// before Core has created <see cref="UnityServices.Instance"/>, at <c>AfterAssembliesLoaded</c>,
-        /// it logs a warning and does nothing: call it from that phase or later.
+        /// runs again. Calling this on an armed instance does nothing. Call it from
+        /// <c>BeforeSceneLoad</c> or later.
         /// </summary>
         public void Arm()
         {
@@ -98,7 +98,7 @@ namespace Unity.Services.CloudCode
             var services = Services;
             if (services == null)
             {
-                Debug.LogWarning("[ModuleHostWarmup] Arm() was called before UnityServices.Instance exists and was ignored. Call it from AfterAssembliesLoaded or later.");
+                Debug.LogWarning("[ModuleHostWarmup] Arm() was called before UnityServices.Instance exists and was ignored. Call it from BeforeSceneLoad or later.");
                 return;
             }
 
@@ -235,12 +235,12 @@ namespace Unity.Services.CloudCode
             }
         }
 
-        // 500/503 are provisioning failures, 422 an invoker timeout, and an unknown status is the
-        // gateway cutting a long provision; a missing player, 401, 404 or 429 will not improve by waiting.
+        // 5xx are provisioning failures (a 504 is the gateway cutting a long one), 422 an invoker timeout;
+        // a missing player, 401, 403, 404 or 429 will not improve by waiting.
         static bool IsRetryable(CloudCodeException e) =>
             e.Reason == CloudCodeExceptionReason.ServiceUnavailable
             || e.Reason == CloudCodeExceptionReason.ScriptError
             || e.Reason == CloudCodeExceptionReason.NoInternetConnection
-            || e.Reason == CloudCodeExceptionReason.Unknown;  // Gateway answers 504 - unknown for provisioning failure
+            || e.Reason == CloudCodeExceptionReason.Unknown;
     }
 }

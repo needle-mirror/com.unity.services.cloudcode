@@ -3,7 +3,7 @@ using Unity.Services.CloudCode.Core;
 namespace CloudCodeModuleAssemblyTemplate.Cloud
 {
     // A Cloud Code script's scope determines how its state is persisted.
-    // For more details on available scopes, refer to https://docs.unity.com/en-us/cloud-code/stateful-cloud-code/stateful-cloud-code
+    // For more details on available scopes, refer to https://docs.unity.com/en-us/cloud-code/3.0.0/modules/stateful-cloud-code/state-scopes
     [StateScope(Scope.Player)]
     public class CloudCodeModuleCloudTemplate
     {

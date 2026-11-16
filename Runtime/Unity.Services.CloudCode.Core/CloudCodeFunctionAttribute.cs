@@ -105,7 +105,7 @@ namespace Unity.Services.CloudCode.Core
     /// </example>
     /// <seealso cref="Unity.Services.CloudCode.Core.Access"/>
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-    public class CloudCodeFunctionAttribute : Attribute
+    public sealed class CloudCodeFunctionAttribute : Attribute
     {
         /// <summary>
         /// The name of the Cloud Code callable function.

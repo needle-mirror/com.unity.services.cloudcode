@@ -1,17 +1,22 @@
 using Unity.Multiplayer.PlayMode.Editor;
 using Unity.Services.CloudCode.Authoring.Editor;
 using Unity.Services.CloudCode.Authoring.Editor.Debugger;
+using Unity.Services.CloudCode.Authoring.Editor.Modules.UI;
 using UnityEditor;
+using UnityEngine.UIElements;
 using LocalCloudCodeServerStatus = Unity.Services.CloudCode.Authoring.Editor.Debugger.ICloudCodeLocalServer.LocalCloudCodeServerStatus;
 
 namespace Unity.Services.CloudCode.Editor.PlayMode
 {
     class CloudCodeController : PlayModeController<CloudCodeSettings>
     {
+        internal const string k_DisplayName = "Cloud Code Server";
+
         [InitializeOnLoadMethod]
         static void Initialize()
         {
             PlayModeControllerRegistry.RegisterScenarioController<CloudCodeController>();
+            CloudCodeLocalServerScenarioControl.GetActiveControl = LocalServerScenarioControl.GetActiveScenarioControl;
         }
 
         protected internal override void SetupExecutionGraph(ExecutionGraphBuilder graph)
@@ -53,6 +58,22 @@ namespace Unity.Services.CloudCode.Editor.PlayMode
                     break;
                 }
             }
+        }
+
+        protected internal override VisualElement CreateTitleBarUI(ControllerRuntime runtime)
+        {
+            // The window titles the section with the controller's name, which defaults to the type name.
+            // It reads the name after both hooks return, so setting it here is enough.
+            name = k_DisplayName;
+            var settings = Settings;
+            return settings.DeployCloudCode ? CloudCodeStatusView.CreateTitleBar(settings) : null;
+        }
+
+        protected internal override VisualElement CreateControllerUI(ControllerRuntime runtime)
+        {
+            name = k_DisplayName;
+            var settings = Settings;
+            return settings.DeployCloudCode ? new CloudCodeStatusView(settings) : null;
         }
 
         internal override bool NeedsTearDown(ControllerRuntime runtime, out string reason)

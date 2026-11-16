@@ -98,7 +98,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules
             return type.Assembly.GetName().Name == assemblyName;
         }
 
-        // By name: referencing Core or CloudBehaviours would force their UNITY_6000_5_OR_NEWER
+        // By name: referencing Core or CloudBehaviours would force their UNITY_6000_7_OR_NEWER
         // constraint onto this assembly, which must compile on the package minimum.
         static Type FindType(string assemblyQualifiedName)
         {

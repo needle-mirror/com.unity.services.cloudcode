@@ -52,7 +52,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
             {
                 string detail = string.IsNullOrEmpty(s.MessageDetail) ? string.Empty : "- " + s.MessageDetail;
                 builder.Append($"[{t:HH:mm:ss.fff}] {s.Message}{detail}{Environment.NewLine}");
-                if (statusLevel < s.MessageSeverity)
+                if (s.MessageSeverity == SeverityLevel.Error || (statusLevel != SeverityLevel.Error && statusLevel < s.MessageSeverity))
                     statusLevel = s.MessageSeverity;
             }
 
@@ -84,11 +84,14 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 
         public DateTime DeployedAtUtc;
 
+        // Not DeployedAtUtc: that is the staleness baseline, which a module reference sets to the deploy start.
+        public DateTime UploadCompletedAtUtc;
+
         /// <summary>
         /// Hash of the module's source content captured for this deployment (as opposed to
         /// <c>CloudCodeModule.CurrentContentHash</c>, the module's present state), used to tell a real
         /// local change apart from a routine re-import. Recorded for content-hashed Cloud Code Modules;
-        /// module references always record null, their staleness being judged by file timestamps instead.
+        /// a remote module reference deploy records a fingerprint of its solution's file paths and contents.
         /// For a module, null means the source could not be hashed (e.g. a corrupt module missing an
         /// assembly definition), in which case the modified-tracker leaves the module un-tracked.
         /// </summary>
@@ -96,10 +99,12 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Core.Model
 
         public static LastSuccessfulDeploymentInfo Create(DeploymentTarget target, string contentHash)
         {
+            var now = DateTime.UtcNow;
             return new LastSuccessfulDeploymentInfo
             {
                 Target = target,
-                DeployedAtUtc = DateTime.UtcNow,
+                DeployedAtUtc = now,
+                UploadCompletedAtUtc = now,
                 LastDeployedContentHash = contentHash
             };
         }

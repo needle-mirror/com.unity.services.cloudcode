@@ -22,7 +22,7 @@ namespace Unity.Services.CloudCode.Core
     {
         /// <summary>
         ///     Only service-account callers may invoke the function.
-        ///     Valid for any scope.
+        ///     Valid for any scope. Generated client bindings have no method for it.
         /// </summary>
         Service = 0,
 

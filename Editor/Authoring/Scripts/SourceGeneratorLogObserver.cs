@@ -1,4 +1,4 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 
 using System;
 using System.Collections.Specialized;

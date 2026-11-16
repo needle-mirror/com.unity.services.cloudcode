@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -67,6 +68,11 @@ namespace Unity.Services.CloudCode.Subscriptions
             try
             {
                 await m_Channel.SubscribeAsync();
+            }
+            catch (RequestFailedException ex) when (ex.InnerException is CloudCodeException tokenError)
+            {
+                ExceptionDispatchInfo.Capture(tokenError).Throw();
+                throw;
             }
             catch (RequestFailedException ex)
             {

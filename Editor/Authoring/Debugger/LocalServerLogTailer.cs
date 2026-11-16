@@ -2,7 +2,9 @@
 using System;
 using System.IO;
 using System.Text;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.Services.CloudCode.Authoring.Editor.Observability;
 using UnityEditor;
 using ILogger = Unity.Services.CloudCode.Authoring.Editor.Core.Logging.ILogger;
 
@@ -10,7 +12,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 {
     // Re-pipes the Local Cloud Code Server's --log-file (CLEF JSON lines from the server's
     // Serilog file sink) into the Unity Editor console. The read offset is persisted in
-    // EditorPrefs so tailing resumes — without gaps or duplicates — after a domain reload,
+    // SessionState so tailing resumes — without gaps or duplicates — after a domain reload,
     // when the server process survives but the launching Process (and its stdout subscription)
     // does not.
     class LocalServerLogTailer
@@ -70,8 +72,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         internal LocalServerLogTailer(ILogger logger)
         {
             m_Logger = logger;
-            m_LogFilePath = EditorPrefs.GetString(k_LogFileKey, string.Empty);
-            m_Offset = long.TryParse(EditorPrefs.GetString(k_LogOffsetKey, "0"), out var v) ? v : 0L;
+            m_LogFilePath = SessionState.GetString(k_LogFileKey, string.Empty);
+            m_Offset = long.TryParse(SessionState.GetString(k_LogOffsetKey, "0"), out var v) ? v : 0L;
             // PumpOnce advances the offset in memory; persisting only on state changes and right
             // before a domain reload avoids a disk/registry write on every 500ms poll.
             AssemblyReloadEvents.beforeAssemblyReload += PersistState;
@@ -82,8 +84,8 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
 
         internal void PersistState()
         {
-            EditorPrefs.SetString(k_LogFileKey, m_LogFilePath ?? string.Empty);
-            EditorPrefs.SetString(k_LogOffsetKey, m_Offset.ToString());
+            SessionState.SetString(k_LogFileKey, m_LogFilePath ?? string.Empty);
+            SessionState.SetString(k_LogOffsetKey, m_Offset.ToString());
         }
 
         // Begin tailing a fresh log file from the start.
@@ -213,18 +215,29 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
         // LogVerbose out unless the verbose-logging define is set.
         internal static (Level level, string message) Format(string clefLine)
         {
+            var (level, message, _) = Parse(clefLine);
+            return (level, message);
+        }
+
+        // Dates stay strings so @t comes back verbatim (null when the line carries none).
+        internal static (Level level, string message, string time) Parse(string clefLine)
+        {
             if (string.IsNullOrWhiteSpace(clefLine))
-                return (Level.Info, string.Empty);
+                return (Level.Info, string.Empty, null);
 
             JObject obj;
             try
             {
-                obj = JObject.Parse(clefLine);
+                using var reader = new JsonTextReader(new StringReader(clefLine));
+                obj = LogValue.LoadWithoutDateCoercion(reader) as JObject;
             }
             catch (Exception)
             {
-                return (Level.Info, clefLine);
+                return (Level.Info, clefLine, null);
             }
+
+            if (obj == null)
+                return (Level.Info, clefLine, null);
 
             var message = obj.Value<string>("@m");
             if (string.IsNullOrEmpty(message))
@@ -246,7 +259,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger
                 (level == Level.Info && IsInfrastructureNoise(sourceContext, message)))
                 level = Level.Verbose;
 
-            return (level, message);
+            return (level, message, obj.Value<string>("@t"));
         }
 
         // True for sources whose entries are plumbing at every level, warnings and errors included.

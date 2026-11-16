@@ -1,4 +1,4 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using System;
 using System.IO;
 using Unity.Services.CloudCode.Authoring.Editor.Deployment;

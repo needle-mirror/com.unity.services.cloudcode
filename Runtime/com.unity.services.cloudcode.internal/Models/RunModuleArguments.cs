@@ -33,11 +33,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         /// </summary>
         /// <param name="@params">Object containing key-value pairs that map on to the parameter definitions for the given function of a module. Parameters are required according to the arguments defined in the function signature. </param>
         /// <param name="scope">scope param</param>
+        /// <param name="version">The module version to run: `latest`, a version number, or a release ID.</param>
         [Preserve]
-        public RunModuleArguments(object @params, RunModuleArgumentsScope scope = default)
+        public RunModuleArguments(object @params, RunModuleArgumentsScope scope = default, string version = default)
         {
             Params = (IDeserializable) JsonObject.GetNewJsonObjectResponse(@params);
             Scope = scope;
+            Version = version;
         }
 
         /// <summary>
@@ -55,6 +57,13 @@ namespace Unity.Services.CloudCode.Internal.Models
         public RunModuleArgumentsScope Scope{ get; }
 
         /// <summary>
+        /// The module version to run: `latest`, a version number, or a release ID.
+        /// </summary>
+        [Preserve]
+        [DataMember(Name = "version", EmitDefaultValue = false)]
+        public string Version{ get; }
+
+        /// <summary>
         /// Formats a RunModuleArguments into a string of key-value pairs for use as a path parameter.
         /// </summary>
         /// <returns>Returns a string representation of the key-value pairs.</returns>
@@ -68,7 +77,11 @@ namespace Unity.Services.CloudCode.Internal.Models
             }
             if (Scope != null)
             {
-                serializedModel += "scope," + Scope.ToString();
+                serializedModel += "scope," + Scope.ToString() + ",";
+            }
+            if (Version != null)
+            {
+                serializedModel += "version," + Version;
             }
             return serializedModel;
         }

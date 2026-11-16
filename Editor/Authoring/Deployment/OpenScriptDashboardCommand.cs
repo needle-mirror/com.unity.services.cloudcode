@@ -23,7 +23,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Deployment
 
         public override async Task ExecuteAsync(IEnumerable<IDeploymentItem> items, CancellationToken cancellationToken = default)
         {
-            var scriptNames = items.Select(x => x.Name.TrimEnd(".js".ToCharArray()));
+            var scriptNames = items.Select(x => System.IO.Path.GetFileNameWithoutExtension(x.Name));
 
             foreach (var name in scriptNames)
             {

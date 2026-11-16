@@ -1,4 +1,4 @@
-#if UNITY_6000_5_OR_NEWER
+#if UNITY_6000_7_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,7 +17,7 @@ using Unity.Services.DeploymentApi.Editor;
 
 namespace Unity.Services.CloudCode.Authoring.Editor.Modules
 {
-    [HelpURL("https://docs.unity3d.com/Packages/com.unity.services.cloudcode@2.8/manual/Authoring/cloud_code_modules.html"),
+    [HelpURL("https://docs.unity.com/en-us/cloud-code/3.0.0/modules/how-to-guides/write-modules/unity-editor"),
      Icon("Packages/com.unity.services.cloudcode/Editor/Authoring/Modules/UI/Assets/icon.png")]
     class CloudCodeModule : ScriptableObject, ICloudCodeModuleItem, IPath, ITrackableItem
     {

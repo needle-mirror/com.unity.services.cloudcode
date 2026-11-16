@@ -72,6 +72,7 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Debugger.Deployment
             // A module's status is the highest severity in its log, and CompileForDebug skips a module in
             // Error, so a failure left from an earlier attempt would keep a fixed module from deploying.
             m_DeployHandler.ClearDeploymentStatuses(ccmrs);
+            m_DeployHandler.ThrowIfPlaying(ccmrs);
 
             var deployStartedAtUtc = DateTime.UtcNow;
             var sourceLastWriteUtcAtDeployStart = ccmrs.ToDictionary(ccmr => ccmr, LocalAutoDeployer.SourceLastWriteUtcFor);
