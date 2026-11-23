@@ -34,6 +34,9 @@ using Unity.Services.CloudCode.Authoring.Editor.Projects.Dotnet;
 using Unity.Services.CloudCode.Authoring.Editor.Projects.Settings;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts;
 using Unity.Services.CloudCode.Authoring.Editor.Scripts.Validation;
+#if UNITY_SERVICES_CLOUDCODE_INTERNAL
+using Unity.Services.CloudCode.Authoring.Editor.SourceGenerator;
+#endif
 using Unity.Services.CloudCode.Authoring.Editor.UI;
 using Unity.Services.CloudCode.Editor.Shared.Analytics;
 using Unity.Services.CloudCode.Editor.Shared.Assets;
@@ -200,6 +203,9 @@ namespace Unity.Services.CloudCode.Authoring.Editor
             collection.Register(Default<IDashboardUrlResolver, DashboardUrlResolver>);
             collection.Register(_ => EnvironmentsApi.Instance);
             collection.Register(Default<IProjectID, ProjectIdentifierProvider>);
+#if UNITY_SERVICES_CLOUDCODE_INTERNAL
+            collection.Register(Default<ISourceGeneratorBuilder, SourceGeneratorBuilder>);
+#endif
         }
 
         string ServiceHost()

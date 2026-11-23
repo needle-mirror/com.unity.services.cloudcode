@@ -54,6 +54,11 @@ namespace Unity.Services.CloudCode
         DeserializationFailed = 14,
 
 
+        /// <summary>
+        /// A Cloud Behaviour endpoint call or <c>Hydrate()</c> ran on the server, but the client's scope changed
+        /// before its result returned. The result was not applied; retrying would run the call against the new scope.
+        /// </summary>
+        ScopeChangedDuringCall = 16,
     }
 
     /// <summary>
@@ -76,7 +81,7 @@ namespace Unity.Services.CloudCode
         /// <remarks>
         /// <c>null</c> for other reasons, for JavaScript scripts, and for servers that don't send it.
         /// </remarks>
-        internal string ScriptErrorMessage
+        public string ScriptErrorMessage
         {
             get
             {

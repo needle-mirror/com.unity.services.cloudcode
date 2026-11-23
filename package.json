@@ -1,7 +1,7 @@
 {
   "name": "com.unity.services.cloudcode",
   "displayName": "Cloud Code",
-  "version": "3.1.1",
+  "version": "3.2.0-exp.1",
   "unity": "6000.7",
   "unityRelease": "0b5",
   "description": "Run your game logic in the cloud as serverless functions and interact with other backend services.\n\nThis package allows you to call out to Cloud Code from within your project as a secure player.\n\nCloud Code can be used to: \n-Change game logic for all players without re-distributing your game \n-Grant timed rewards \n-Create randomized values",
@@ -12,9 +12,6 @@
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.services.deployment": "1.8.0",
     "com.unity.services.wire": "1.6.0"
-  },
-  "relatedPackages": {
-    "com.unity.services.cloudcode.tests": "0.0.0"
   },
   "_upm": {
     "gameService": {
@@ -32,7 +29,7 @@
       "Windows 8 Universal",
       "Windows 10 Universal"
     ],
-    "changelog": "### Changed\n- Script errors from C# modules no longer include the server stack trace, so `CloudCodeException.Message` no longer ends with stack lines. The stack trace is in the Cloud Code logs in the Unity Dashboard and, for the local Cloud Code server, in its log.\n- Cloud Code warnings about a type or base class declared in another assembly, such as a shared assembly, now appear in the Unity Console and in Rider's problem list, pointing at the class that uses it. They were previously only written to `Editor.log`.\n- The documentation for `ITriggersEventClient.PublishEventAsync` now says that the task returns the full event type of the published event, such as `com.unity.services.cloud-code.custom.match-ended.v1`. It previously said the task returns the event's ID.\n\n### Fixed\n- The package now compiles without C# compiler warnings on Unity 7000.0 and later.\n- The local Cloud Code server now supports `ITriggersEventClient`. It applies the same checks to the event as Cloud Code, then logs it instead of sending it to Triggers. A module function that used the client previously failed on the local server.\n- The local Cloud Code server now rejects push messages over 51,200 bytes (50 KiB) and message types over 128 bytes, as the cloud does, and logs why. The `IPushClient` documentation now states these limits; it previously said 10 kilobytes.\n- Fixed an Editor memory leak on CoreCLR (Unity 6.7+).\n- Creating a Cloud Code module now fails when an assembly definition with the same name in a different case already exists, such as `foo` and `Foo`. The two would collide in `Library/ScriptAssemblies` on macOS and Windows.\n- Source generator warnings and errors for Cloud Code modules about a type in another assembly, such as a shared assembly definition, or that had no source location, now show in the Unity Console instead of only in the Editor log. They point at a class in your module and still name the type or member they're about, so projects with shared assemblies may see warnings they didn't see before.\n- The local Cloud Code server now counts the time a function spends producing a lazily returned result against the call's timeout."
+    "changelog": "### Added\n- `ConnectionStateChanged` on `PlayerConnection`, `PlayerScopeProvider`, `MultiplayerScopeProvider` and generated Cloud Behaviour clients reports the player's message channel dropping (`Unsynced`), recovering (`Subscribed`) or failing to resubscribe (`Error`). Subscription errors are now logged as warnings instead of being ignored.\n- New Cloud Behaviour modules set a root namespace on their cloud and client assembly definitions, prefixed with the project's root namespace when one is set in Project Settings. Scripts added to a module use its assembly definitions' root namespaces.\n- Cloud Behaviours now report warning CCSG159 for a get-only property that saved state does not fully restore.\n- `MultiplayerScopeProvider.UseScopeChannel(string module, string tokenFunction)`, which generated Cloud Behaviour clients call so that the provider also listens on its session's own push channel, using the subscription token that the named module function returns. It is hidden from IDE autocomplete and is not meant to be called from game code. While that channel is opening, `Scope` stays `null`. Messages on the channel are raised through `MessageReceived` and its connection state changes through `ConnectionStateChanged`. A failure to open it or the channel being closed remotely raises `Failed` and disables the provider. An error on it is reported through `ConnectionStateChanged` and does not disable the provider.\n- `CloudCodeExceptionReason.ScopeChangedDuringCall`, the reason a generated Cloud Behaviour client's endpoint call or `Hydrate()` throws when the client's scope changed before its result returned.\n- A public number, `bool`, `char`, `string` or enum `const` on a Cloud Behaviour is now generated on its client with the same value, so rules such as a board size can be shared without a separate assembly. A const isn't synchronized state, so it's never part of the sync message. If the client class already declares a member of the same name, such as a const copied in by hand, the client keeps its own declaration, and warning CCSG167 reports it unless it is the same const with the same value.\n- Cloud Behaviours now report warning CCSG168 when an endpoint awaits a `ForScopeAsync` call into a scope that the source shows is still waiting for it, such as passing `Context.ScopeId` to a behaviour that calls back with it. The warning names the calls in between. Such a call previously waited until the request timed out; if it runs now, it fails when it is made, as described under Fixed.\n\n### Changed\n- New Cloud Behaviour modules' assembly definitions now require `UNITY_6000_7_OR_NEWER` instead of `UNITY_6000_5_OR_NEWER`, matching the package's minimum Unity version.\n- A Cloud Behaviour property with a non-public setter, such as `{ get; private set; }`, now synchronizes to clients, matching the members that persist. Get-only and computed properties still report CCSG113, whose message now points to `[SyncView]` for computed values.\n- Cloud Behaviour saved state no longer reports CCSG146 for computed properties, or for get-only collections and objects that can be refilled in place. Get-only collections that can't be refilled, indexers and set-only properties still report it.\n- Generated Cloud Behaviour clients now ignore fields the result type doesn't declare instead of throwing `DeserializationException`, so a server that returns extra fields no longer breaks existing clients.\n- A Cloud Behaviour data type member you can read but not assign now reports warning CCSG131 instead of an error, and a computed property on the module's own data types reports warning CCSG163. Each message says how to send the value to the client or keep it on the server.\n- Messages a Cloud Behaviour client receives before it is ready are now delivered after `ScopeChanged`, each with the state it carried.\n- Cloud Behaviour warnings about a type or base class declared in another assembly, such as a shared assembly, now appear in the Unity Console and in Rider's problem list, pointing at the class that uses it. They were previously only written to `Editor.log`.\n- "
   },
   "samples": [
     {
@@ -47,12 +44,12 @@
     }
   ],
   "upmCi": {
-    "footprint": "916ebfde15117ba4d308b93c1cead489de320e28"
+    "footprint": "ec1bf4c3dcd0e46d9e344cc16b7437c7ece91ab4"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.1/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.services.cloudcode@3.2/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git",
     "type": "git",
-    "revision": "d9e4b902143a8654cb052038e60b28c870e5f7eb"
+    "revision": "b5ee03161eba9419e810a245507844cde9b4c5c6"
   }
 }

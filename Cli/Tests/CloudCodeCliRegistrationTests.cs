@@ -29,6 +29,8 @@ namespace Unity.Services.CloudCode.Cli.Tests
 #if UNITY_6000_7_OR_NEWER
                 (k_Group, "create_module"),
                 (k_Group, "create_module_script"),
+                (k_Group, "create_cloudbehaviour"),
+                (k_Group, "get_cloudbehaviour_state"),
 #endif
             };
 
