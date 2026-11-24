@@ -85,7 +85,7 @@ namespace Unity.Services.CloudCode
             const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
             foreach (var field in type.GetFields(flags))
             {
-                if (!field.IsNotSerialized && !IsJsonIgnored(field))
+                if (!field.IsDefined(typeof(NonSerializedAttribute), false) && !IsJsonIgnored(field))
                     yield return field.Name;
             }
 

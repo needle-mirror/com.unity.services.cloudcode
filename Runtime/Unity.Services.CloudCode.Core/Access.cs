@@ -35,7 +35,9 @@ namespace Unity.Services.CloudCode.Core
 
         /// <summary>
         ///     Only the host of the session (and service accounts) may invoke the
-        ///     function. Requires <see cref="Scope.MultiplayerSession"/>.
+        ///     function. Requires <see cref="Scope.MultiplayerSession"/>. The host is checked on every call,
+        ///     so access follows the session to its new host when the host leaves. Prefer it over comparing
+        ///     the caller to a host ID stored in the behaviour, which does not change when the host does.
         /// </summary>
         SessionHost = 1,
 

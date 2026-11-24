@@ -48,7 +48,7 @@ namespace Unity.Services.CloudCode.Shared
                 {
                     foreach (DictionaryEntry entry in dictionary)
                     {
-                        parameters.Add(entry.Key.ToString(), ParameterToString(configuration, entry.Value));
+                        parameters.Add(entry.Key.ToString()!, ParameterToString(configuration, entry.Value));
                     }
                 }
             }
@@ -68,7 +68,7 @@ namespace Unity.Services.CloudCode.Shared
         /// <param name="configuration">The api configuration</param>
         /// <param name="obj">The parameter (header, path, query, form).</param>
         /// <returns>Formatted string.</returns>
-        public static string? ParameterToString(IApiConfiguration configuration, object obj)
+        public static string? ParameterToString(IApiConfiguration configuration, object? obj)
         {
             if (obj is DateTime dateTime)
                 // Return a formatted date string - Can be customized with ApiConfiguration.DateTimeFormat

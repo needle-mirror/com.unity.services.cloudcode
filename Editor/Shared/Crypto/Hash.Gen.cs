@@ -1,5 +1,4 @@
 // WARNING: Auto generated code. Modifications will be lost!
-
 using System.Security.Cryptography;
 using System.Text;
 
@@ -9,7 +8,7 @@ namespace Unity.Services.CloudCode.Editor.Shared.Crypto
     {
         public static string SHA1(string input)
         {
-            using var sha1 = new SHA1Managed();
+            using var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(input));
             var sb = new StringBuilder(hash.Length * 2);
             foreach (var b in hash)

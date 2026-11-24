@@ -267,11 +267,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             try
             {
                 // First check for duplicate Module Names
-                if (AssemblyNameConflicts(assemblyNameCloud, out string foundCloudPath))
-                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameCloud, foundCloudPath));
+                if (AssemblyNameConflicts(assemblyNameCloud, out string foundCloudPath, out string foundCloudName))
+                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(foundCloudName, foundCloudPath));
 
-                if (AssemblyNameConflicts(assemblyNameClient, out string foundClientPath))
-                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(assemblyNameClient, foundClientPath));
+                if (AssemblyNameConflicts(assemblyNameClient, out string foundClientPath, out string foundClientName))
+                    throw new AssemblyNameConflictException(CloudCodeSetupMessages.AssemblyNameConflict(foundClientName, foundClientPath));
 
                 // Parent all module files under a folder named after the module. Reuse the folder if it
                 // already exists; a folder that already contains a module is a conflict.
@@ -633,9 +633,10 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
                 documentationUrl: message.DocumentationUrl);
         }
 
-        bool AssemblyNameConflicts(string assemblyName, out string existingAsmdefPath)
+        bool AssemblyNameConflicts(string assemblyName, out string existingAsmdefPath, out string existingAssemblyName)
         {
             existingAsmdefPath = null;
+            existingAssemblyName = null;
             if (string.IsNullOrEmpty(assemblyName))
                 return false;
 
@@ -646,9 +647,11 @@ namespace Unity.Services.CloudCode.Authoring.Editor.Modules.UI
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 var asmdef = AsmdefJsonData.DeserializeFromPath(path);
-                if (asmdef != null && asmdef.name == assemblyName)
+                // Assembly file names collide case-insensitively in Library/ScriptAssemblies on macOS and Windows.
+                if (asmdef != null && string.Equals(asmdef.name, assemblyName, StringComparison.OrdinalIgnoreCase))
                 {
                     existingAsmdefPath = path;
+                    existingAssemblyName = asmdef.name;
                     return true;
                 }
             }

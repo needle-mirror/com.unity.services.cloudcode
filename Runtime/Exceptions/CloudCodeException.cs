@@ -1,5 +1,9 @@
 using System;
 using System.Text;
+using UnityEngine.Scripting;
+using System.Runtime.Serialization;
+using System.Linq;
+using System.Collections.Generic;
 using Unity.Services.CloudCode.Internal.Http;
 using Unity.Services.CloudCode.Internal.Models;
 using Unity.Services.Core;
@@ -63,6 +67,67 @@ namespace Unity.Services.CloudCode
         /// The reason the exception was thrown, selected from the CloudCodeExceptionReason enum.
         /// </summary>
         public CloudCodeExceptionReason Reason { get; private set; }
+
+        /// <summary>
+        /// For a <see cref="CloudCodeExceptionReason.ScriptError"/> from a C# module, the message of the exception the
+        /// module function threw. It contains no server type names or stack frames, so you can show it to the player,
+        /// for example to explain why a move was rejected. Use it instead of parsing <see cref="Exception.Message"/>.
+        /// </summary>
+        /// <remarks>
+        /// <c>null</c> for other reasons, for JavaScript scripts, and for servers that don't send it.
+        /// </remarks>
+        internal string ScriptErrorMessage
+        {
+            get
+            {
+                if (!m_ScriptErrorMessageResolved)
+                {
+                    m_ScriptErrorMessage = ReadScriptErrorMessage();
+                    m_ScriptErrorMessageResolved = true;
+                }
+
+                return m_ScriptErrorMessage;
+            }
+        }
+
+        bool m_ScriptErrorMessageResolved;
+        string m_ScriptErrorMessage;
+
+        string ReadScriptErrorMessage()
+        {
+            if (Reason != CloudCodeExceptionReason.ScriptError
+                || !(InnerException is HttpException<InvocationErrorResponse> invocationErr)
+                || invocationErr.Response?.Data == null)
+            {
+                return null;
+            }
+
+            // Read from the raw body: the generated response model has no exceptionMessage field.
+            if (!Encoding.UTF8.GetString(invocationErr.Response.Data).TryParseJson<ScriptErrorBody>(out var body))
+            {
+                return null;
+            }
+
+            return body?.Details?.FirstOrDefault(d => !string.IsNullOrEmpty(d?.ExceptionMessage))?.ExceptionMessage;
+        }
+
+        [Preserve]
+        [DataContract]
+        sealed class ScriptErrorBody
+        {
+            [Preserve]
+            [DataMember(Name = "details")]
+            public List<ScriptErrorDetail> Details { get; set; }
+        }
+
+        [Preserve]
+        [DataContract]
+        sealed class ScriptErrorDetail
+        {
+            [Preserve]
+            [DataMember(Name = "exceptionMessage")]
+            public string ExceptionMessage { get; set; }
+        }
 
         CloudCodeException(CloudCodeExceptionReason reason, int errorCode, string message)
             : base(errorCode, message)
@@ -141,7 +206,10 @@ namespace Unity.Services.CloudCode
                     foreach (var errorMessage in invocationErr.ActualError.Details)
                     {
                         sb.AppendLine($"{errorMessage.Name}: {errorMessage.Message}");
-                        sb.AppendLine($"{string.Join(Environment.NewLine + "  ", errorMessage.StackTrace)}");
+                        if (errorMessage.StackTrace != null && errorMessage.StackTrace.Count > 0)
+                        {
+                            sb.AppendLine($"{string.Join(Environment.NewLine + "  ", errorMessage.StackTrace)}");
+                        }
                     }
                 }
             }

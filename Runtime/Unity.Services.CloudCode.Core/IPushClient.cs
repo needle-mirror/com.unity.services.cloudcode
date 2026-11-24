@@ -28,8 +28,8 @@ namespace Unity.Services.CloudCode.Core
         /// Send a message to an individual player.
         /// </summary>
         /// <param name="executionContext">The Cloud Code execution context.</param>
-        /// <param name="message">The message to be sent. Maximum size: 10 kilobytes</param>
-        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 characters</param>
+        /// <param name="message">The message to be sent. Maximum size: 51,200 bytes (50 KiB) of UTF-8. A larger message isn't sent, and the reply's <c>Error</c> says why.</param>
+        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 bytes of UTF-8.</param>
         /// <param name="playerId">Optional target playerId, if missing or different from the playerId in the execution context.</param>
         /// <returns>A task eventually representing the response data for sending a message.</returns>
         Task<SendMessageReply> SendPlayerMessageAsync(IExecutionContext executionContext, string message, string messageType = null, string playerId = null);
@@ -38,8 +38,8 @@ namespace Unity.Services.CloudCode.Core
         /// Send a message to all players in a project.
         /// </summary>
         /// <param name="executionContext">The Cloud Code execution context.</param>
-        /// <param name="message">The message to be sent. Maximum size: 10 kilobytes</param>
-        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 characters</param>
+        /// <param name="message">The message to be sent. Maximum size: 51,200 bytes (50 KiB) of UTF-8. A larger message isn't sent, and the reply's <c>Error</c> says why.</param>
+        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 bytes of UTF-8.</param>
         /// <returns>A task eventually representing the response data for sending a message.</returns>
         Task<SendMessageReply> SendProjectMessageAsync(IExecutionContext executionContext, string message, string messageType = null);
 
@@ -82,8 +82,8 @@ namespace Unity.Services.CloudCode.Core
         /// error in the reply.
         /// </remarks>
         /// <param name="executionContext">The Cloud Code execution context.</param>
-        /// <param name="message">The message to be sent. Maximum size: 10 kilobytes</param>
-        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 characters</param>
+        /// <param name="message">The message to be sent. Maximum size: 51,200 bytes (50 KiB) of UTF-8. A larger message isn't sent, and the reply's <c>Error</c> says why.</param>
+        /// <param name="messageType">The user defined message type to be sent. Maximum length: 128 bytes of UTF-8.</param>
         /// <returns>A task eventually representing the response data for sending a message.</returns>
         Task<SendMessageReply> SendScopeMessageAsync(IExecutionContext executionContext, string message, string messageType = null);
 

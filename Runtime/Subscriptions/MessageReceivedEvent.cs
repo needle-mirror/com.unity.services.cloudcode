@@ -10,7 +10,7 @@ namespace Unity.Services.CloudCode.Subscriptions
     class MessageReceivedEvent : IMessageReceivedEvent
     {
         /// <summary>
-        /// The message received, base64 encoded. The maximum size of the message payload is 10 kilobytes.
+        /// The message received, base64 encoded. The maximum size of the message payload is 51,200 bytes (50 KiB) of UTF-8.
         /// </summary>
         [DataMember(Name = "data_base64", IsRequired = true, EmitDefaultValue = true)]
         internal string data_base64;

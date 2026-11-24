@@ -32,8 +32,9 @@ namespace Unity.Services.CloudCode.Apis.Triggers
         /// a contract with existing triggers; add keys freely, but to remove or rename one, publish a new event name.
         /// </param>
         /// <returns>
-        /// A task eventually representing the ID of the published event. The ID means Cloud Code accepted the event,
-        /// not that Triggers has received it, as delivery happens asynchronously.
+        /// A task eventually representing the full event type of the published event, such as
+        /// <c>com.unity.services.cloud-code.custom.match-ended.v1</c>. Configure a trigger on this event type to respond to
+        /// the event. The task completes once Cloud Code accepts the event; Triggers receives it asynchronously.
         /// </returns>
         /// <exception cref="System.ArgumentException">Thrown when <paramref name="eventName"/> is not a valid event name.</exception>
         Task<string> PublishEventAsync(IExecutionContext executionContext, string eventName, Dictionary<string, object>? payload = null);

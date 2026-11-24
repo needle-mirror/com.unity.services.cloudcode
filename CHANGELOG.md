@@ -4,6 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-11-24
+
+### Changed
+- Script errors from C# modules no longer include the server stack trace, so `CloudCodeException.Message` no longer ends with stack lines. The stack trace is in the Cloud Code logs in the Unity Dashboard and, for the local Cloud Code server, in its log.
+- Cloud Code warnings about a type or base class declared in another assembly, such as a shared assembly, now appear in the Unity Console and in Rider's problem list, pointing at the class that uses it. They were previously only written to `Editor.log`.
+- The documentation for `ITriggersEventClient.PublishEventAsync` now says that the task returns the full event type of the published event, such as `com.unity.services.cloud-code.custom.match-ended.v1`. It previously said the task returns the event's ID.
+
+### Fixed
+- The package now compiles without C# compiler warnings on Unity 7000.0 and later.
+- The local Cloud Code server now supports `ITriggersEventClient`. It applies the same checks to the event as Cloud Code, then logs it instead of sending it to Triggers. A module function that used the client previously failed on the local server.
+- The local Cloud Code server now rejects push messages over 51,200 bytes (50 KiB) and message types over 128 bytes, as the cloud does, and logs why. The `IPushClient` documentation now states these limits; it previously said 10 kilobytes.
+- Fixed an Editor memory leak on CoreCLR (Unity 6.7+).
+- Creating a Cloud Code module now fails when an assembly definition with the same name in a different case already exists, such as `foo` and `Foo`. The two would collide in `Library/ScriptAssemblies` on macOS and Windows.
+- Source generator warnings and errors for Cloud Code modules about a type in another assembly, such as a shared assembly definition, or that had no source location, now show in the Unity Console instead of only in the Editor log. They point at a class in your module and still name the type or member they're about, so projects with shared assemblies may see warnings they didn't see before.
+- The local Cloud Code server now counts the time a function spends producing a lazily returned result against the call's timeout.
+
 ## [3.1.0] - 2026-11-16
 
 ### Added

@@ -20,12 +20,15 @@ namespace Unity.Services.CloudCode.Core
         string Id { get; }
 
         /// <summary>
-        ///     The player ID of the session host.
+        ///     The player ID of the session host, read when the call starts. The session moves the host when
+        ///     the host leaves, so a copy kept in a behaviour's field goes stale; for host-only functions use
+        ///     <see cref="Access.SessionHost"/>, which checks the current host on every call.
         /// </summary>
         string HostId { get; }
 
         /// <summary>
-        ///     The player IDs of all current session members.
+        ///     The player IDs of all current session members, in no particular order. The order is not join
+        ///     order, so use <see cref="HostId"/> to find the host.
         /// </summary>
         IReadOnlyList<string> PlayerIds { get; }
     }

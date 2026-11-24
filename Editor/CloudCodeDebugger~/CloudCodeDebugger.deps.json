@@ -26,18 +26,18 @@
       "sha512": "",
       "type": "project"
     },
-    "Com.Unity.Services.CloudCode.Apis/0.0.28": {
-      "hashPath": "com.unity.services.cloudcode.apis.0.0.28.nupkg.sha512",
-      "path": "com.unity.services.cloudcode.apis/0.0.28",
+    "Com.Unity.Services.CloudCode.Apis/0.0.29": {
+      "hashPath": "com.unity.services.cloudcode.apis.0.0.29.nupkg.sha512",
+      "path": "com.unity.services.cloudcode.apis/0.0.29",
       "serviceable": true,
-      "sha512": "sha512-CzosjqlCo/IIl6kaomXdfmosJdnbEkU4K8vq2aoeq2lnwgEGuXmF7d/V8LcLWjV2VJHFO3aWYihm0f71szh8Vw==",
+      "sha512": "sha512-T4vLYYVY+szB2gR8HuMeGDN4Yr7shMHyaigGmL19R9NhBgosWDyJ4baSaEC7EY95FjTq3RMGEUPDQCRYmcWs5A==",
       "type": "package"
     },
     "Com.Unity.Services.CloudCode.Core/0.0.9": {
       "hashPath": "com.unity.services.cloudcode.core.0.0.9.nupkg.sha512",
       "path": "com.unity.services.cloudcode.core/0.0.9",
       "serviceable": true,
-      "sha512": "sha512-CXOFjoB/Fz510ei2AzRM7jBoz89B9m7yn4BHpsHTMbC5J9aj2PMJO4zV1fQwjJJEEEAfp4YHM8eLRF+GFP4Xgw==",
+      "sha512": "sha512-CB0jnxDrf/d/Evsc/+Q0rv7hZl3fgbwKas1JyusLqKnP5+QHCbE9oGiQowd4QRYQ4Ig1cGKyyZYNNkTWLp2Msg==",
       "type": "package"
     },
     "Hellang.Middleware.ProblemDetails/6.5.1": {
@@ -361,7 +361,7 @@
           "CloudCode.Common": "1.0.0",
           "CloudCode.Metrics.Abstractions": "1.0.0",
           "CloudCode.ScriptRunner": "1.0.0",
-          "Com.Unity.Services.CloudCode.Apis": "0.0.28",
+          "Com.Unity.Services.CloudCode.Apis": "0.0.29",
           "Com.Unity.Services.CloudCode.Core": "0.0.9",
           "Hellang.Middleware.ProblemDetails": "6.5.1",
           "Microsoft.AspNetCore.Hosting.Abstractions": "2.3.9",
@@ -394,7 +394,7 @@
         },
         "runtimeTargets": {}
       },
-      "Com.Unity.Services.CloudCode.Apis/0.0.28": {
+      "Com.Unity.Services.CloudCode.Apis/0.0.29": {
         "dependencies": {
           "Com.Unity.Services.CloudCode.Core": "0.0.9",
           "Newtonsoft.Json": "13.0.4",
@@ -403,7 +403,7 @@
         "resources": {},
         "runtime": {
           "Unity.Services.CloudCode.Apis.dll": {
-            "assemblyVersion": "0.0.28.0"
+            "assemblyVersion": "0.0.29.0"
           }
         },
         "runtimeTargets": {}

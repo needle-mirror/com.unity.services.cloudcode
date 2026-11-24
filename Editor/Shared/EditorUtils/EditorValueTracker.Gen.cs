@@ -1,7 +1,7 @@
 // WARNING: Auto generated code. Modifications will be lost!
 
 using System;
-using System.Timers;
+using UnityEditor;
 
 namespace Unity.Services.CloudCode.Editor.Shared.EditorUtils
 {
@@ -10,7 +10,10 @@ namespace Unity.Services.CloudCode.Editor.Shared.EditorUtils
         public EventHandler<T> ValueChanged;
         Func<T> m_Getter;
         T m_PreviousValue;
-        Timer m_Timer;
+        readonly EditorApplication.CallbackFunction m_UpdateCallback;
+        readonly double m_CheckIntervalSeconds;
+        double m_LastCheckTime;
+        bool m_Disposed;
 
         public T Value => m_Getter();
 
@@ -18,13 +21,26 @@ namespace Unity.Services.CloudCode.Editor.Shared.EditorUtils
         {
             m_Getter = getter;
             m_PreviousValue = m_Getter();
-            m_Timer = new Timer()
-            {
-                Interval = checkInterval
-            };
+            m_CheckIntervalSeconds = checkInterval / 1000.0;
+            m_LastCheckTime = EditorApplication.timeSinceStartup;
+            m_UpdateCallback = OnEditorUpdate;
+            EditorApplication.update += m_UpdateCallback;
+        }
 
-            m_Timer.Elapsed += (_a, _b) => Sync.RunNextUpdateOnMain(TrackValue);
-            m_Timer.Start();
+        void OnEditorUpdate()
+        {
+            if (m_Disposed)
+            {
+                return;
+            }
+
+            if (EditorApplication.timeSinceStartup - m_LastCheckTime < m_CheckIntervalSeconds)
+            {
+                return;
+            }
+
+            m_LastCheckTime = EditorApplication.timeSinceStartup;
+            TrackValue();
         }
 
         void TrackValue()
@@ -40,7 +56,10 @@ namespace Unity.Services.CloudCode.Editor.Shared.EditorUtils
 
         public void Dispose()
         {
-            m_Timer.Dispose();
+            m_Disposed = true;
+            EditorApplication.update -= m_UpdateCallback;
+            m_Getter = null;
+            ValueChanged = null;
         }
     }
 }
